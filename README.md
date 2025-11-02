@@ -1,10 +1,14 @@
-# 🌋 Proyecto Geotermia - Análisis de Potencial Geotérmico con Google Earth Engine
+# 🌋 Análisis de Potencial Geotérmico en Colombia mediante Imágenes Satelitales ASTER
+
+[![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
+[![Google Earth Engine](https://img.shields.io/badge/Google%20Earth%20Engine-API-green)](https://earthengine.google.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## 📋 Descripción
 
-Proyecto de análisis geotérmico utilizando imágenes satelitales ASTER (Advanced Spaceborne Thermal Emission and Reflection Radiometer) para identificar zonas con potencial geotérmico en Colombia mediante técnicas de Deep Learning y procesamiento de imágenes geoespaciales.
+Proyecto de grado universitario enfocado en el análisis geotérmico de Colombia utilizando imágenes satelitales ASTER (Advanced Spaceborne Thermal Emission and Reflection Radiometer) para identificar zonas con potencial geotérmico mediante técnicas de Deep Learning y procesamiento de imágenes geoespaciales.
 
-Este proyecto utiliza Google Earth Engine para descargar y procesar datos de emisividad térmica de zonas volcánicas y geotérmicas de Colombia, preparando datasets etiquetados para entrenar modelos de Machine Learning.
+Este proyecto utiliza **Google Earth Engine** para la adquisición y procesamiento de datos de emisividad térmica de zonas volcánicas y geotérmicas colombianas, generando datasets etiquetados para el entrenamiento de modelos de clasificación basados en Machine Learning.
 
 ## 🎯 Objetivo
 
@@ -215,18 +219,54 @@ Este proyecto es de código abierto y está disponible bajo la licencia MIT.
 
 ## 👥 Autores
 
-- **Cristian Vega** - Desarrollo inicial
+**Proyecto de Grado**  
+Universidad: [Nombre de tu Universidad]  
+Programa: [Ingeniería/Carrera]  
+Año: 2025
+
+**Desarrollado por:**
+- Cristian Vega - [GitHub](https://github.com/crisveg24)
+
+## 📚 Referencias Académicas
+
+Este proyecto utiliza los siguientes recursos científicos y datasets:
+
+1. **NASA ASTER GED AG100 v003**  
+   Abrams, M., & Hook, S. (2019). ASTER Global Emissivity Dataset 100-meter V003. NASA EOSDIS Land Processes DAAC.
+
+2. **Servicio Geológico Colombiano (SGC)**  
+   Mapa de recursos geotérmicos de Colombia. Disponible en: https://sgcolombiano.maps.arcgis.com/
+
+3. **Google Earth Engine**  
+   Gorelick, N., Hancher, M., Dixon, M., et al. (2017). Google Earth Engine: Planetary-scale geospatial analysis for everyone. Remote Sensing of Environment.
 
 ## 🙏 Agradecimientos
 
 - NASA/METI/AIST/Japan Spacesystems por el dataset ASTER
-- Google Earth Engine por la plataforma de procesamiento
-- Servicio Geológico Colombiano por los datos de referencia
+- Google Earth Engine por la plataforma de procesamiento geoespacial
+- Servicio Geológico Colombiano por los datos de referencia geotérmica
+- Comunidad científica de procesamiento de imágenes satelitales
 
 ## 📧 Contacto
 
-Para preguntas o colaboraciones, por favor abre un issue en el repositorio.
+Para preguntas académicas o colaboraciones:
+- **Email**: [tu-email@universidad.edu]
+- **GitHub Issues**: Para reportar problemas o sugerencias
+
+## 📜 Citación
+
+Si utilizas este proyecto en tu investigación, por favor cita:
+
+```bibtex
+@misc{vega2025geotermia,
+  author = {Vega, Cristian},
+  title = {Análisis de Potencial Geotérmico en Colombia mediante Imágenes Satelitales ASTER},
+  year = {2025},
+  publisher = {GitHub},
+  url = {https://github.com/[tu-usuario]/g_earth_geotermia-proyect}
+}
+```
 
 ---
 
-⭐ Si este proyecto te resulta útil, ¡no olvides darle una estrella en GitHub!
+⭐ Si este proyecto te resulta útil para tu investigación, ¡no olvides darle una estrella en GitHub!
