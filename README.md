@@ -80,14 +80,29 @@ pip install -r requirements.txt
 ```
 
 4. **Autenticación en Google Earth Engine**
-```bash
-earthengine authenticate
-```
+
+   **Opción A: Autenticación via CLI**
+   ```bash
+   earthengine authenticate
+   ```
+
+   **Opción B: Autenticación via Python (recomendado)**
+   ```python
+   import ee
+   ee.Authenticate()
+   ```
+   
+   Esto abrirá un navegador para autorizar el acceso a tu cuenta de Google Earth Engine.
 
 5. **Configurar proyecto de Earth Engine**
 ```bash
 earthengine set_project tu-proyecto-id
 ```
+
+⚠️ **Nota importante**: Necesitas tener una cuenta de Google Earth Engine activa y un proyecto creado en Google Cloud Platform. Si no tienes uno:
+- Visita: https://earthengine.google.com/
+- Regístrate para obtener acceso
+- Crea un proyecto en: https://console.cloud.google.com/
 
 ## 💻 Uso
 
