@@ -220,12 +220,12 @@ Este proyecto es de código abierto y está disponible bajo la licencia MIT.
 ## 👥 Autores
 
 **Proyecto de Grado**  
-Universidad: [Nombre de tu Universidad]  
-Programa: [Ingeniería/Carrera]  
+Universidad: Universidad de San Buenaventura - Bogotá  
+Facultad: Ingeniería  
 Año: 2025
 
 **Desarrollado por:**
-- Cristian Vega - [GitHub](https://github.com/crisveg24)
+- Cristian Vega - [GitHub](https://github.com/crisveg24) | [Email](mailto:ccvegas@academia.usbbog.edu.co)
 
 ## 📚 Referencias Académicas
 
@@ -250,8 +250,9 @@ Este proyecto utiliza los siguientes recursos científicos y datasets:
 ## 📧 Contacto
 
 Para preguntas académicas o colaboraciones:
-- **Email**: [tu-email@universidad.edu]
+- **Email**: ccvegas@academia.usbbog.edu.co
 - **GitHub Issues**: Para reportar problemas o sugerencias
+- **Universidad**: Universidad de San Buenaventura - Bogotá
 
 ## 📜 Citación
 
