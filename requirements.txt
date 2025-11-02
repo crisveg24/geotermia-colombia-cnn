@@ -1,0 +1,25 @@
+# Google Earth Engine y procesamiento geoespacial
+earthengine-api>=0.1.384
+geemap>=0.30.0
+
+# Procesamiento de datos geoespaciales
+rasterio>=1.3.9
+geopandas>=0.14.0
+fiona>=1.9.5
+
+# Visualización
+matplotlib>=3.8.0
+folium>=0.15.0
+
+# Jupyter
+notebook>=7.0.6
+ipykernel>=6.27.0
+ipywidgets>=8.1.1
+
+# Análisis de datos
+numpy>=1.26.0
+pandas>=2.1.3
+
+# Utilidades
+requests>=2.31.0
+openpyxl>=3.1.2
