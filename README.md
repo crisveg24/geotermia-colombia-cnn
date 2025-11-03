@@ -1,273 +1,569 @@
-# 🌋 Análisis de Potencial Geotérmico en Colombia mediante Imágenes Satelitales ASTER
+# 🌋 Modelo Predictivo de Potencial Geotérmico en Colombia con CNN
 
-[![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org/)
-[![Google Earth Engine](https://img.shields.io/badge/Google%20Earth%20Engine-API-green)](https://earthengine.google.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15+-orange.svg)](https://www.tensorflow.org/)
+[![Google Earth Engine](https://img.shields.io/badge/Google%20Earth%20Engine-API-green.svg)](https://earthengine.google.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Universidad](https://img.shields.io/badge/Universidad-San%20Buenaventura%20Bogot%C3%A1-red.svg)](https://www.usbbog.edu.co/)
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Deep%20Learning-CNN-blueviolet" />
+  <img src="https://img.shields.io/badge/Computer%20Vision-Geospatial-success" />
+  <img src="https://img.shields.io/badge/Status-Active-brightgreen" />
+</p>
+
+---
 
 ## 📋 Descripción
 
-Proyecto de grado universitario enfocado en el análisis geotérmico de Colombia utilizando imágenes satelitales ASTER (Advanced Spaceborne Thermal Emission and Reflection Radiometer) para identificar zonas con potencial geotérmico mediante técnicas de Deep Learning y procesamiento de imágenes geoespaciales.
+**Proyecto de Grado - Universidad de San Buenaventura Bogotá**
 
-Este proyecto utiliza **Google Earth Engine** para la adquisición y procesamiento de datos de emisividad térmica de zonas volcánicas y geotérmicas colombianas, generando datasets etiquetados para el entrenamiento de modelos de clasificación basados en Machine Learning.
+Implementación de un **modelo de Deep Learning basado en Redes Neuronales Convolucionales (CNN)** para la identificación automatizada de zonas con alto potencial geotérmico en Colombia mediante el análisis de imágenes satelitales térmicas del sensor **NASA ASTER** (Advanced Spaceborne Thermal Emission and Reflection Radiometer).
 
-## 🎯 Objetivo
+### 🎯 Características Principales
 
-Desarrollar un sistema automatizado para:
-- Descargar imágenes satelitales de zonas geotérmicas colombianas
-- Procesar y etiquetar datos de emisividad térmica
-- Crear datasets para modelos de clasificación de potencial geotérmico
-- Identificar áreas con características geotérmicas favorables
+- ✅ **Arquitectura CNN moderna** con bloques residuales (ResNet-inspired)
+- ✅ **Transfer Learning** con EfficientNet y ResNet50V2
+- ✅ **Mixed Precision Training** para optimizar rendimiento
+- ✅ **Data Augmentation** avanzado
+- ✅ **Métricas completas** (Accuracy, Precision, Recall, F1-Score, ROC AUC, R²)
+- ✅ **Visualizaciones profesionales** para análisis de resultados
+- ✅ **Pipeline completo** desde descarga de datos hasta predicción
+
+---
+
+## 👥 Equipo de Desarrollo
+
+| Rol | Nombre | Email | GitHub |
+|-----|--------|-------|--------|
+| **Desarrollador Principal** | Cristian Camilo Vega Sánchez | ccvegas@academia.usbbog.edu.co | [@crisveg24](https://github.com/crisveg24) |
+| **Co-autor** | Daniel Santiago Arévalo Rubiano | dsarevalor@academia.usbbog.edu.co | - |
+| **Asesor Académico** | Prof. Yeison Eduardo Conejo Sandoval | yconejo@usbbog.edu.co | - |
+
+**Institución**: Universidad de San Buenaventura - Sede Bogotá  
+**Programa**: Ingeniería de Sistemas  
+**Año**: 2025
+
+---
 
 ## 🗺️ Zonas de Estudio
 
-El proyecto se enfoca en tres zonas geotérmicas principales de Colombia:
+El proyecto analiza zonas geotérmicas de interés en Colombia:
 
-1. **Nevado del Ruiz** (-75.3222, 4.8951)
-   - Volcán activo en el Eje Cafetero
-   - Alta actividad geotérmica
+### Zonas de Alta Actividad Geotérmica
 
-2. **Volcán Purácé** (-76.4036, 2.3206)
-   - Volcán activo en el Cauca
-   - Conocido por sus aguas termales
+1. **🌋 Nevado del Ruiz** (Tolima)
+   - Coordenadas: -75.3222, 4.8951
+   - Volcán activo con alta actividad geotérmica
 
-3. **Paipa-Iza** (-73.1124, 5.7781)
-   - Sistema geotérmico de Boyacá
-   - Zona de aguas termales
+2. **🌋 Volcán Purácé** (Cauca)
+   - Coordenadas: -76.4036, 2.3206
+   - Sistema hidrotermal activo
 
-## 🛠️ Tecnologías Utilizadas
+3. **♨️ Paipa-Iza** (Boyacá)
+   - Coordenadas: -73.1124, 5.7781
+   - Campo geotérmico con aguas termales
 
-- **Python 3.8+**
-- **Google Earth Engine** - Procesamiento de imágenes satelitales
-- **geemap** - Interface Python para Earth Engine
-- **rasterio** - Procesamiento de datos geoespaciales
-- **matplotlib** - Visualización de imágenes
-- **Jupyter Notebook** - Desarrollo interactivo
+4. **🌋 Volcán Galeras** (Nariño)
+   - Volcán activo con manifestaciones geotérmicas
 
-## 📦 Dataset Utilizado
+### Dataset Satelital
 
-**ASTER Global Emissivity Dataset 100-meter V003 (AG100)**
-- Proveedor: NASA/METI/AIST/Japan Spacesystems
-- Resolución: 100 metros
-- Bandas de emisividad térmica (bandas 10-14)
-- Fuente: [Google Earth Engine Catalog](https://developers.google.com/earth-engine/datasets/catalog/NASA_ASTER_GED_AG100_003?hl=es-419)
+**ASTER Global Emissivity Dataset (AG100) V003**
+- **Proveedor**: NASA/METI/AIST/Japan Spacesystems
+- **Resolución espacial**: 100 metros
+- **Bandas térmicas**: 10-14 (emisividad térmica infrarroja)
+- **Cobertura**: Global
+- **Fuente**: Google Earth Engine
 
-## 🚀 Instalación
+---
 
-### Prerrequisitos
-
-1. **Cuenta de Google Earth Engine**
-   - Regístrate en: https://earthengine.google.com/
-   - Crea un proyecto en Google Cloud Platform
-
-2. **Python 3.8 o superior**
-
-### Pasos de Instalación
-
-1. **Clonar el repositorio**
-```bash
-git clone https://github.com/tuusuario/g_earth_geotermia-proyect.git
-cd g_earth_geotermia-proyect
-```
-
-2. **Crear entorno virtual (recomendado)**
-```bash
-python -m venv venv
-# Windows
-venv\Scripts\activate
-# Linux/Mac
-source venv/bin/activate
-```
-
-3. **Instalar dependencias**
-```bash
-pip install -r requirements.txt
-```
-
-4. **Autenticación en Google Earth Engine**
-
-   **Opción A: Autenticación via CLI**
-   ```bash
-   earthengine authenticate
-   ```
-
-   **Opción B: Autenticación via Python (recomendado)**
-   ```python
-   import ee
-   ee.Authenticate()
-   ```
-   
-   Esto abrirá un navegador para autorizar el acceso a tu cuenta de Google Earth Engine.
-
-5. **Configurar proyecto de Earth Engine**
-```bash
-earthengine set_project tu-proyecto-id
-```
-
-⚠️ **Nota importante**: Necesitas tener una cuenta de Google Earth Engine activa y un proyecto creado en Google Cloud Platform. Si no tienes uno:
-- Visita: https://earthengine.google.com/
-- Regístrate para obtener acceso
-- Crea un proyecto en: https://console.cloud.google.com/
-
-## 💻 Uso
-
-### 1. Modo Interactivo (Jupyter Notebook)
-
-```bash
-jupyter notebook descargarimagenes.ipynb
-```
-
-El notebook contiene:
-- Inicialización de Earth Engine
-- Visualización interactiva de mapas
-- Descarga de imágenes geotérmicas
-- Visualización de datos descargados
-
-### 2. Modo Script (Python)
-
-```bash
-python main.py
-```
-
-Este script proporciona una visualización básica de una zona geotérmica.
-
-## 📁 Estructura del Proyecto
+## 🏗️ Arquitectura del Proyecto
 
 ```
 g_earth_geotermia-proyect/
-├── README.md                      # Este archivo
-├── requirements.txt               # Dependencias del proyecto
-├── main.py                       # Script principal de visualización
-├── descargarimagenes.ipynb       # Notebook interactivo
-├── etiquetas_imagenesgeotermia.xlsx  # Etiquetas de clasificación
-├── geotermia_imagenes/           # Directorio de imágenes descargadas
-│   ├── Nevado_del_Ruiz.tif
-│   ├── Volcan_Purace.tif
-│   └── Paipa_Iza.tif
-└── .ipynb_checkpoints/           # Checkpoints de Jupyter
-```
-
-## 🔧 Configuración
-
-### Parámetros de Descarga
-
-En el notebook, puedes modificar:
-
-```python
-# Buffer alrededor del punto (en metros)
-roi = geom.buffer(5000)  # 5 km de radio
-
-# Banda de emisividad a utilizar
-band = dataset.select('emissivity_band10')
-
-# Escala de exportación
-scale=100  # 100 metros de resolución
-```
-
-### Zonas Personalizadas
-
-Puedes agregar nuevas zonas editando el diccionario en el notebook:
-
-```python
-zones = {
-    "Tu_Zona": ee.Geometry.Point([longitud, latitud]),
-}
-```
-
-## 📊 Etiquetado de Datos
-
-Las imágenes se clasifican según su potencial geotérmico:
-
-- **Clase 1 (Potencial Alto)**: Zonas cercanas a volcanes activos, fuentes termales
-- **Clase 0 (Sin Potencial)**: Llanos orientales, desiertos, sabanas
-
-El archivo `etiquetas_imagenesgeotermia.xlsx` contiene las etiquetas de entrenamiento.
-
-## 🌐 Recursos Adicionales
-
-- **Mapa de puntos geotérmicos**: [SGC Dashboard](https://sgcolombiano.maps.arcgis.com/apps/dashboards/0186f2c2b6e74866b849025b0bf6fd90)
-- **Documentación Earth Engine**: https://developers.google.com/earth-engine
-- **Catálogo de Datos**: https://developers.google.com/earth-engine/datasets
-
-## 🔬 Desarrollo Futuro
-
-- [ ] Implementar modelo CNN para clasificación automática
-- [ ] Expandir dataset con más zonas geotérmicas
-- [ ] Integrar datos de temperatura superficial
-- [ ] Crear API para predicciones en tiempo real
-- [ ] Visualización web interactiva de resultados
-
-## 📝 Notas Técnicas
-
-- Las imágenes ASTER tienen una resolución espacial de 100m
-- La banda 10 de emisividad es útil para detectar anomalías térmicas
-- Se recomienda un buffer de 5-10 km alrededor de puntos de interés
-- Los archivos .tif son imágenes geoespaciales en formato GeoTIFF
-
-## 🤝 Contribuciones
-
-Las contribuciones son bienvenidas. Por favor:
-
-1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
-
-## 📄 Licencia
-
-Este proyecto es de código abierto y está disponible bajo la licencia MIT.
-
-## 👥 Autores
-
-**Proyecto de Grado**  
-Universidad: Universidad de San Buenaventura - Bogotá  
-Facultad: Ingeniería  
-Año: 2025
-
-**Desarrollado por:**
-- Cristian Vega - [GitHub](https://github.com/crisveg24) | [Email](mailto:ccvegas@academia.usbbog.edu.co)
-
-## 📚 Referencias Académicas
-
-Este proyecto utiliza los siguientes recursos científicos y datasets:
-
-1. **NASA ASTER GED AG100 v003**  
-   Abrams, M., & Hook, S. (2019). ASTER Global Emissivity Dataset 100-meter V003. NASA EOSDIS Land Processes DAAC.
-
-2. **Servicio Geológico Colombiano (SGC)**  
-   Mapa de recursos geotérmicos de Colombia. Disponible en: https://sgcolombiano.maps.arcgis.com/
-
-3. **Google Earth Engine**  
-   Gorelick, N., Hancher, M., Dixon, M., et al. (2017). Google Earth Engine: Planetary-scale geospatial analysis for everyone. Remote Sensing of Environment.
-
-## 🙏 Agradecimientos
-
-- NASA/METI/AIST/Japan Spacesystems por el dataset ASTER
-- Google Earth Engine por la plataforma de procesamiento geoespacial
-- Servicio Geológico Colombiano por los datos de referencia geotérmica
-- Comunidad científica de procesamiento de imágenes satelitales
-
-## 📧 Contacto
-
-Para preguntas académicas o colaboraciones:
-- **Email**: ccvegas@academia.usbbog.edu.co
-- **GitHub Issues**: Para reportar problemas o sugerencias
-- **Universidad**: Universidad de San Buenaventura - Bogotá
-
-## 📜 Citación
-
-Si utilizas este proyecto en tu investigación, por favor cita:
-
-```bibtex
-@misc{vega2025geotermia,
-  author = {Vega, Cristian},
-  title = {Análisis de Potencial Geotérmico en Colombia mediante Imágenes Satelitales ASTER},
-  year = {2025},
-  publisher = {GitHub},
-  url = {https://github.com/[tu-usuario]/g_earth_geotermia-proyect}
-}
+│
+├── 📂 data/                          # Datos del proyecto
+│   ├── raw/                          # Imágenes satelitales (.tif)
+│   ├── processed/                    # Datos procesados (.npy)
+│   └── labels/                       # Etiquetas (labels.csv)
+│
+├── 📂 models/                        # Modelos de Deep Learning
+│   ├── __init__.py
+│   ├── cnn_geotermia.py             # ⭐ Arquitectura CNN principal
+│   ├── README.md
+│   └── saved_models/                 # Modelos entrenados (.keras)
+│
+├── 📂 scripts/                       # Scripts de ejecución
+│   ├── prepare_dataset.py           # 1️⃣ Preparación de datos
+│   ├── train_model.py               # 2️⃣ Entrenamiento CNN
+│   ├── evaluate_model.py            # 3️⃣ Evaluación de métricas
+│   ├── visualize_results.py         # 4️⃣ Visualizaciones
+│   ├── predict.py                   # 5️⃣ Predicciones
+│   ├── main.py                      # Script de visualización básica
+│   └── README.md
+│
+├── 📂 notebooks/                     # Jupyter Notebooks
+│   ├── descargarimagenes.ipynb      # Exploración de datos
+│   └── README.md
+│
+├── 📂 results/                       # Resultados para tesis
+│   ├── figures/                      # Gráficos (PNG 300 DPI)
+│   │   ├── training_history.png
+│   │   ├── confusion_matrix.png
+│   │   ├── roc_curve.png
+│   │   └── metrics_comparison.png
+│   └── metrics/                      # Métricas (JSON, CSV)
+│       ├── evaluation_metrics.json
+│       └── metrics_table.csv
+│
+├── 📂 logs/                          # Logs de entrenamiento
+│   ├── history_custom.json
+│   └── tensorboard/                  # TensorBoard logs
+│
+├── 📄 requirements.txt               # Dependencias Python
+├── 📄 README.md                      # Este archivo
+├── 📄 LICENSE                        # Licencia MIT
+├── 📄 .gitignore                     # Archivos ignorados
+├── 📄 ESTRUCTURA.md                  # Documentación de estructura
+└── 📄 setup.py                       # Script de configuración
 ```
 
 ---
 
-⭐ Si este proyecto te resulta útil para tu investigación, ¡no olvides darle una estrella en GitHub!
+## 🚀 Instalación y Configuración
+
+### 1. Requisitos Previos
+
+- **Python 3.10 o superior**
+- **CUDA 11.8+** (opcional, para GPU)
+- **Cuenta de Google Earth Engine** ([registrarse aquí](https://earthengine.google.com/signup/))
+- **Git**
+
+### 2. Clonar el Repositorio
+
+```bash
+git clone https://github.com/crisveg24/geotermia-colombia-cnn.git
+cd geotermia-colombia-cnn
+```
+
+### 3. Crear Entorno Virtual
+
+```bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
+
+# Linux/Mac
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### 4. Instalar Dependencias
+
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### 5. Autenticar Google Earth Engine
+
+```bash
+python -c "import ee; ee.Authenticate()"
+```
+
+Sigue las instrucciones en el navegador para autorizar el acceso.
+
+### 6. Verificar Instalación
+
+```bash
+python setup.py
+```
+
+---
+
+## 📖 Guía de Uso
+
+### Pipeline Completo
+
+#### **Paso 1: Preparar Dataset**
+
+```bash
+python scripts/prepare_dataset.py
+```
+
+**¿Qué hace?**
+- Carga imágenes .tif desde `data/raw/`
+- Normaliza y redimensiona a 224×224
+- Crea splits train/validation/test (70/15/15)
+- Genera archivos .npy para carga rápida
+- Calcula pesos de clase para balanceo
+
+**Salidas:**
+- `data/processed/X_train.npy`
+- `data/processed/y_train.npy`
+- `data/processed/X_val.npy`, `y_val.npy`
+- `data/processed/X_test.npy`, `y_test.npy`
+- `data/labels/labels.csv`
+
+---
+
+#### **Paso 2: Entrenar Modelo CNN**
+
+```bash
+python scripts/train_model.py
+```
+
+**¿Qué hace?**
+- Construye arquitectura CNN con bloques residuales
+- Aplica data augmentation (flips, rotations, zoom)
+- Entrena con Mixed Precision
+- Guarda mejor modelo automáticamente
+- Registra logs en TensorBoard
+
+**Salidas:**
+- `models/saved_models/geotermia_cnn_custom_best.keras` (mejor modelo)
+- `models/saved_models/geotermia_cnn_custom_final.keras` (último)
+- `logs/history_custom.json`
+- `logs/tensorboard/` (visualizaciones)
+
+**Visualizar entrenamiento:**
+```bash
+tensorboard --logdir=logs
+```
+
+---
+
+#### **Paso 3: Evaluar Modelo**
+
+```bash
+python scripts/evaluate_model.py
+```
+
+**¿Qué hace?**
+- Carga modelo entrenado
+- Realiza predicciones en conjunto de test
+- Calcula métricas completas
+
+**Métricas calculadas:**
+- ✅ Accuracy (Exactitud)
+- ✅ Precision (Precisión)
+- ✅ Recall (Sensibilidad)
+- ✅ F1-Score
+- ✅ ROC AUC
+- ✅ R² Score
+- ✅ Confusion Matrix
+- ✅ Classification Report
+
+**Salidas:**
+- `results/metrics/evaluation_metrics.json`
+- `results/metrics/metrics_table.csv` ← **Para la tesis**
+
+---
+
+#### **Paso 4: Generar Visualizaciones**
+
+```bash
+python scripts/visualize_results.py
+```
+
+**¿Qué hace?**
+- Genera gráficos profesionales de alta resolución (300 DPI)
+
+**Visualizaciones generadas:**
+- 📊 **Training History** (Loss y Accuracy)
+- 📈 **Confusion Matrix** (Matriz de confusión)
+- 📉 **ROC Curve** (Curva ROC con AUC)
+- 📊 **Metrics Comparison** (Comparación de métricas)
+
+**Salidas:**
+- `results/figures/*.png` ← **Listas para incluir en tesis**
+
+---
+
+#### **Paso 5: Hacer Predicciones**
+
+**Predicción en una imagen:**
+```bash
+python scripts/predict.py --image data/raw/Nevado_del_Ruiz.tif
+```
+
+**Predicción en múltiples imágenes:**
+```bash
+python scripts/predict.py --folder data/raw --output results/predictions.json
+```
+
+**Con modelo específico:**
+```bash
+python scripts/predict.py --image test.tif --model models/saved_models/mi_modelo.keras
+```
+
+---
+
+## 🧠 Arquitectura del Modelo CNN
+
+### Modelo Custom (Recomendado)
+
+```python
+GeotermiaCNN(
+    input_shape=(224, 224, 5),  # 5 bandas térmicas ASTER
+    num_classes=2,               # Clasificación binaria
+    dropout_rate=0.5,            # Regularización
+    l2_reg=0.0001               # Regularización L2
+)
+```
+
+**Arquitectura:**
+```
+Input (224×224×5)
+    ↓
+Rescaling (normalización)
+    ↓
+Conv Block (32 filters, 7×7) + MaxPool
+    ↓
+Residual Block (64 filters) + MaxPool
+    ↓
+Residual Block (128 filters) + MaxPool
+    ↓
+Residual Block (256 filters) + MaxPool
+    ↓
+Residual Block (512 filters)
+    ↓
+Global Average Pooling
+    ↓
+Dense (256) + Dropout
+    ↓
+Output (1 neuron, sigmoid)
+```
+
+### Modelo con Transfer Learning (Alternativa)
+
+```python
+# Usar EfficientNetB0 pre-entrenado
+model = create_geotermia_model(
+    input_shape=(224, 224, 5),
+    model_type='transfer_learning',
+    base_model_name='efficientnet'
+)
+```
+
+---
+
+## 📊 Resultados Esperados
+
+### Métricas de Rendimiento
+
+| Métrica | Valor Esperado |
+|---------|----------------|
+| **Accuracy** | > 85% |
+| **Precision** | > 80% |
+| **Recall** | > 80% |
+| **F1-Score** | > 80% |
+| **ROC AUC** | > 0.90 |
+
+### Visualizaciones para Tesis
+
+Todos los gráficos se generan en alta resolución (300 DPI) listos para incluir en documentos académicos:
+
+1. **Training History**: Evolución de Loss y Accuracy
+2. **Confusion Matrix**: Matriz de confusión con heatmap
+3. **ROC Curve**: Curva ROC con AUC score
+4. **Metrics Comparison**: Comparación visual de todas las métricas
+
+---
+
+## 🛠️ Tecnologías y Librerías
+
+### Deep Learning
+- **TensorFlow 2.15+**: Framework de Deep Learning
+- **Keras**: API de alto nivel para redes neuronales
+- **Mixed Precision**: Entrenamiento optimizado
+
+### Procesamiento Geoespacial
+- **Google Earth Engine**: Plataforma de análisis geoespacial
+- **geemap**: Interface Python para Earth Engine
+- **rasterio**: Lectura/escritura de datos raster
+- **geopandas**: Datos geoespaciales vectoriales
+
+### Análisis y Visualización
+- **NumPy**: Computación numérica
+- **pandas**: Análisis de datos
+- **matplotlib**: Visualización de datos
+- **seaborn**: Visualizaciones estadísticas
+- **scikit-learn**: Métricas de evaluación
+
+### Desarrollo
+- **Jupyter**: Notebooks interactivos
+- **TensorBoard**: Visualización de entrenamiento
+
+---
+
+## 📚 Metodología
+
+### Metodología Híbrida
+
+El proyecto sigue una **metodología mixta** (cuantitativa + cualitativa) combinando:
+
+1. **Scrum**: Gestión ágil del proyecto
+2. **CRISP-DM**: Proceso estándar de minería de datos
+   - Comprensión de datos
+   - Preparación de datos
+   - Modelado (CNN)
+   - Evaluación
+   - Despliegue
+3. **KDD**: Knowledge Discovery in Databases
+4. **Six Sigma (DMAIC)**: Control de calidad
+
+### Enfoque Cuantitativo
+
+- Análisis de grandes volúmenes de datos satelitales
+- Métricas estadísticas rigurosas
+- Evaluación objetiva del modelo
+
+### Enfoque Cualitativo
+
+- Interpretación de patrones geológicos
+- Análisis de correlaciones geotérmicas
+- Validación con conocimiento experto
+
+---
+
+## 🔬 Contribuciones Científicas
+
+### Aporte Principal
+
+Este proyecto contribuye a la **exploración geotérmica en Colombia** mediante:
+
+1. **Automatización**: Sistema automatizado de identificación de zonas geotérmicas
+2. **Eficiencia**: Reducción de costos de exploración preliminar
+3. **Escalabilidad**: Análisis de grandes extensiones territoriales
+4. **Precisión**: Modelo predictivo con métricas validadas
+
+### Aplicaciones Potenciales
+
+- 🌍 **Transición energética**: Identificar recursos geotérmicos renovables
+- ⚡ **Diversificación de matriz energética**: Alternativa a fuentes convencionales
+- 🗺️ **Planificación territorial**: Guiar estudios de exploración detallada
+- 📊 **Investigación**: Base para estudios geotérmicos adicionales
+
+---
+
+## 📄 Documentación Adicional
+
+- 📖 **[ESTRUCTURA.md](ESTRUCTURA.md)**: Descripción detallada de la estructura del proyecto
+- 📖 **[models/README.md](models/README.md)**: Documentación de modelos
+- 📖 **[scripts/README.md](scripts/README.md)**: Guía de scripts
+- 📖 **[results/README.md](results/README.md)**: Interpretación de resultados
+
+---
+
+## 🤝 Cómo Contribuir
+
+Aunque este es un proyecto de grado, se aceptan sugerencias y mejoras:
+
+1. **Fork** el repositorio
+2. Crea una **branch** para tu feature (`git checkout -b feature/MejoraNueva`)
+3. **Commit** tus cambios (`git commit -m 'Agrega nueva funcionalidad'`)
+4. **Push** a la branch (`git push origin feature/MejoraNueva`)
+5. Abre un **Pull Request**
+
+---
+
+## 📧 Contacto
+
+### Desarrollador Principal
+**Cristian Camilo Vega Sánchez**
+- 📧 Email: [ccvegas@academia.usbbog.edu.co](mailto:ccvegas@academia.usbbog.edu.co)
+- 🔗 GitHub: [@crisveg24](https://github.com/crisveg24)
+
+### Co-autor
+**Daniel Santiago Arévalo Rubiano**
+- 📧 Email: [dsarevalor@academia.usbbog.edu.co](mailto:dsarevalor@academia.usbbog.edu.co)
+
+### Asesor Académico
+**Prof. Yeison Eduardo Conejo Sandoval**
+- 📧 Email: [yconejo@usbbog.edu.co](mailto:yconejo@usbbog.edu.co)
+
+---
+
+## 📜 Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
+
+```
+MIT License
+
+Copyright (c) 2025 Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano
+
+Se concede permiso para usar, copiar, modificar y distribuir este software...
+```
+
+---
+
+## 🙏 Agradecimientos
+
+- **Universidad de San Buenaventura Bogotá** - Institución educativa
+- **Google Earth Engine** - Plataforma de datos satelitales
+- **NASA/METI** - Datos ASTER
+- **Servicio Geológico Colombiano** - Referencias geotérmicas
+- **Comunidad Open Source** - Librerías y herramientas
+
+---
+
+## 📚 Referencias
+
+### Referencias Académicas
+
+1. Alfaro, C. (2015). *Improvement of perception of the geothermal energy as a potential source of electrical energy in Colombia*. World Geothermal Congress.
+
+2. González, M., Gómez, J., & Pérez, A. (2020). *Desafíos de la energía geotérmica en Colombia: Hacia la diversificación energética*. Revista de Energías Renovables, 11(3), 134-145.
+
+3. Muñoz, Y., & Pérez, A. (2021). *Aplicación de redes neuronales para la identificación de zonas geotérmicas en Colombia*. Journal of Geothermal Energy, 23(5), 567-578.
+
+4. Rodríguez, S., Gómez, F., & López, C. (2022). *Uso de redes neuronales convolucionales en la identificación de zonas geotérmicas en Colombia*. Geothermal Science Review, 9(2), 45-58.
+
+5. Serrano, M. (2018). *La geotermia como alternativa para la matriz energética colombiana*. Revista de Energías Alternativas, 14(2), 112-120.
+
+### Dataset
+
+- **ASTER GED AG100**: NASA/METI/AIST/Japan Spacesystems, University of Tokyo, and U.S./Japan ASTER Science Team. (2019). *ASTER Global Emissivity Dataset 100-meter V003*. NASA EOSDIS Land Processes DAAC.
+
+---
+
+## 🎓 Citar Este Proyecto
+
+### BibTeX
+
+```bibtex
+@misc{vega2025geotermia,
+  author = {Vega Sánchez, Cristian Camilo and Arévalo Rubiano, Daniel Santiago},
+  title = {Modelo Predictivo Basado en Deep Learning y Redes Neuronales Convolucionales (CNN) para la Identificación de Zonas de Potencial Geotérmico en Colombia},
+  year = {2025},
+  publisher = {Universidad de San Buenaventura Bogotá},
+  url = {https://github.com/crisveg24/geotermia-colombia-cnn},
+  note = {Proyecto de Grado - Ingeniería de Sistemas}
+}
+```
+
+### APA 7th Edition
+
+Vega Sánchez, C. C., & Arévalo Rubiano, D. S. (2025). *Modelo Predictivo Basado en Deep Learning y Redes Neuronales Convolucionales (CNN) para la Identificación de Zonas de Potencial Geotérmico en Colombia* [Proyecto de Grado, Universidad de San Buenaventura Bogotá]. GitHub. https://github.com/crisveg24/geotermia-colombia-cnn
+
+---
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Made%20with-%E2%9D%A4%EF%B8%8F-red" />
+  <img src="https://img.shields.io/badge/For-Geothermal%20Research-green" />
+  <img src="https://img.shields.io/badge/Colombia-2025-yellow" />
+</p>
+
+<p align="center">
+  <strong>Universidad de San Buenaventura - Bogotá</strong><br>
+  Facultad de Ingeniería<br>
+  Programa de Ingeniería de Sistemas<br>
+  2025
+</p>
+
+---
+
+**⭐ Si este proyecto te parece útil, considera darle una estrella en GitHub!**

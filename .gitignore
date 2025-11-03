@@ -42,6 +42,22 @@ geotermia_imagenes/*.tif
 *.pdf
 Proyecto_Geotermia_CNN_APA7.pdf
 
+# Modelos entrenados (muy grandes)
+models/saved_models/*.keras
+models/saved_models/*.h5
+
+# Datos procesados (muy grandes)
+data/processed/*.npy
+data/raw/*.tif
+
+# Logs de TensorBoard
+logs/tensorboard/
+
+# Archivos temporales de análisis
+leer_pdf.py
+ANALISIS_PROYECTO.md
+ESTRUCTURA.md
+
 # Archivos de sistema
 .DS_Store
 Thumbs.db

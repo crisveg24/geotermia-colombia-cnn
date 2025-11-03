@@ -1,25 +1,52 @@
-# Google Earth Engine y procesamiento geoespacial
+# ============================================
+# DEEP LEARNING Y CNN
+# ============================================
+tensorflow>=2.15.0
+keras>=2.15.0
+scikit-learn>=1.3.0
+
+# ============================================
+# GOOGLE EARTH ENGINE Y PROCESAMIENTO GEOESPACIAL
+# ============================================
 earthengine-api>=0.1.384
 geemap>=0.30.0
-
-# Procesamiento de datos geoespaciales
 rasterio>=1.3.9
 geopandas>=0.14.0
 fiona>=1.9.5
 
-# Visualización
+# ============================================
+# VISUALIZACIÓN Y GRÁFICOS
+# ============================================
 matplotlib>=3.8.0
+seaborn>=0.13.0
+plotly>=5.17.0
 folium>=0.15.0
 
-# Jupyter
+# ============================================
+# JUPYTER NOTEBOOKS
+# ============================================
 notebook>=7.0.6
 ipykernel>=6.27.0
 ipywidgets>=8.1.1
 
-# Análisis de datos
+# ============================================
+# ANÁLISIS DE DATOS
+# ============================================
 numpy>=1.26.0
 pandas>=2.1.3
+scipy>=1.11.0
 
-# Utilidades
+# ============================================
+# PROCESAMIENTO DE IMÁGENES
+# ============================================
+Pillow>=10.0.0
+opencv-python>=4.8.0
+scikit-image>=0.22.0
+
+# ============================================
+# UTILIDADES
+# ============================================
 requests>=2.31.0
 openpyxl>=3.1.2
+PyPDF2>=3.0.0
+tqdm>=4.66.0
