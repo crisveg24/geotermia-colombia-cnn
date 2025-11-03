@@ -38,6 +38,10 @@ ENV/
 geotermia_imagenes/*.tif
 !geotermia_imagenes/.gitkeep
 
+# Documentos del proyecto (no subir PDFs)
+*.pdf
+Proyecto_Geotermia_CNN_APA7.pdf
+
 # Archivos de sistema
 .DS_Store
 Thumbs.db
