@@ -43,9 +43,9 @@ class GeoDataPreparator:
     
     def __init__(
         self,
-        raw_data_path: str = 'data/raw',
+        raw_data_path: str = 'data/augmented',
         processed_data_path: str = 'data/processed',
-        labels_path: str = 'data/labels',
+        labels_path: str = 'data/augmented',
         target_size: Tuple[int, int] = (224, 224),
         test_size: float = 0.15,
         val_size: float = 0.15,
@@ -88,11 +88,11 @@ class GeoDataPreparator:
             file_path: Ruta al archivo .tif
             
         Returns:
-            Array numpy con las bandas de la imagen
+            Array numpy con las bandas de la imagen (siempre 5 bandas)
         """
         try:
             with rasterio.open(file_path) as src:
-                # Leer todas las bandas
+                # Leer todas las bandas disponibles
                 bands = []
                 for i in range(1, src.count + 1):
                     band = src.read(i)
@@ -100,6 +100,17 @@ class GeoDataPreparator:
                 
                 # Stack de bandas
                 image = np.stack(bands, axis=-1)
+                
+                # Asegurar que siempre haya 5 bandas
+                if image.shape[-1] < 5:
+                    # Si tiene menos de 5 bandas, duplicar la última banda hasta llegar a 5
+                    logger.debug(f"Imagen con {image.shape[-1]} bandas, expandiendo a 5: {file_path.name}")
+                    while image.shape[-1] < 5:
+                        image = np.concatenate([image, image[..., -1:]], axis=-1)
+                elif image.shape[-1] > 5:
+                    # Si tiene más de 5 bandas, tomar solo las primeras 5
+                    logger.debug(f"Imagen con {image.shape[-1]} bandas, tomando primeras 5: {file_path.name}")
+                    image = image[..., :5]
                 
                 return image
         except Exception as e:
@@ -390,9 +401,9 @@ def main():
     
     # Inicializar preparador
     preparator = GeoDataPreparator(
-        raw_data_path='data/raw',
+        raw_data_path='data/augmented',
         processed_data_path='data/processed',
-        labels_path='data/labels',
+        labels_path='data/augmented',
         target_size=(224, 224),
         test_size=0.15,
         val_size=0.15,

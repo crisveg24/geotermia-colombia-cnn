@@ -72,9 +72,13 @@ class GeotermiaCNNTrainer:
             use_mixed_precision: Si True, usa Mixed Precision Training
             use_augmentation: Si True, aplica data augmentation
         """
-        self.processed_data_path = Path(processed_data_path)
-        self.model_save_path = Path(model_save_path)
-        self.logs_path = Path(logs_path)
+        # Obtener la ruta base del proyecto (directorio padre de scripts/)
+        project_root = Path(__file__).parent.parent.absolute()
+        
+        # Convertir rutas relativas a absolutas basadas en project_root
+        self.processed_data_path = project_root / processed_data_path
+        self.model_save_path = project_root / model_save_path
+        self.logs_path = project_root / logs_path
         self.input_shape = input_shape
         self.batch_size = batch_size
         self.epochs = epochs
