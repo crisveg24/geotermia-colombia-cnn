@@ -1,0 +1,1624 @@
+{
+  "dataset_name": "Colombia_Geothermal_ASTER",
+  "download_date": "2025-11-03T17:47:42.395549",
+  "total_images": 85,
+  "positive_images": 45,
+  "negative_images": 40,
+  "image_details": [
+    {
+      "name": "Nevado_del_Ruiz_center",
+      "filename": "Nevado_del_Ruiz_center.tif",
+      "label": 1,
+      "coords": [
+        -75.3222,
+        4.8951
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.04,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Nevado_del_Ruiz_north",
+      "filename": "Nevado_del_Ruiz_north.tif",
+      "label": 1,
+      "coords": [
+        -75.315,
+        4.91
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.04,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Nevado_del_Ruiz_south",
+      "filename": "Nevado_del_Ruiz_south.tif",
+      "label": 1,
+      "coords": [
+        -75.33,
+        4.88
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.04,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Nevado_del_Ruiz_east",
+      "filename": "Nevado_del_Ruiz_east.tif",
+      "label": 1,
+      "coords": [
+        -75.3,
+        4.895
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.04,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Nevado_del_Ruiz_west",
+      "filename": "Nevado_del_Ruiz_west.tif",
+      "label": 1,
+      "coords": [
+        -75.345,
+        4.895
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.04,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Purace_center",
+      "filename": "Volcan_Purace_center.tif",
+      "label": 1,
+      "coords": [
+        -76.4036,
+        2.3206
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Purace_north",
+      "filename": "Volcan_Purace_north.tif",
+      "label": 1,
+      "coords": [
+        -76.4,
+        2.335
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Purace_south",
+      "filename": "Volcan_Purace_south.tif",
+      "label": 1,
+      "coords": [
+        -76.407,
+        2.305
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Purace_east",
+      "filename": "Volcan_Purace_east.tif",
+      "label": 1,
+      "coords": [
+        -76.385,
+        2.32
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Purace_west",
+      "filename": "Volcan_Purace_west.tif",
+      "label": 1,
+      "coords": [
+        -76.42,
+        2.32
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Galeras_center",
+      "filename": "Volcan_Galeras_center.tif",
+      "label": 1,
+      "coords": [
+        -77.36,
+        1.22
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Galeras_north",
+      "filename": "Volcan_Galeras_north.tif",
+      "label": 1,
+      "coords": [
+        -77.355,
+        1.235
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Galeras_south",
+      "filename": "Volcan_Galeras_south.tif",
+      "label": 1,
+      "coords": [
+        -77.365,
+        1.205
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Galeras_east",
+      "filename": "Volcan_Galeras_east.tif",
+      "label": 1,
+      "coords": [
+        -77.34,
+        1.22
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Galeras_west",
+      "filename": "Volcan_Galeras_west.tif",
+      "label": 1,
+      "coords": [
+        -77.38,
+        1.22
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Paipa_Iza_center",
+      "filename": "Paipa_Iza_center.tif",
+      "label": 1,
+      "coords": [
+        -73.1124,
+        5.7781
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Paipa_Iza_north",
+      "filename": "Paipa_Iza_north.tif",
+      "label": 1,
+      "coords": [
+        -73.11,
+        5.79
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Paipa_Iza_south",
+      "filename": "Paipa_Iza_south.tif",
+      "label": 1,
+      "coords": [
+        -73.115,
+        5.765
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Paipa_Iza_east",
+      "filename": "Paipa_Iza_east.tif",
+      "label": 1,
+      "coords": [
+        -73.095,
+        5.778
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Paipa_Iza_west",
+      "filename": "Paipa_Iza_west.tif",
+      "label": 1,
+      "coords": [
+        -73.13,
+        5.778
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Nevado_del_Tolima_center",
+      "filename": "Nevado_del_Tolima_center.tif",
+      "label": 1,
+      "coords": [
+        -75.33,
+        4.66
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Nevado_del_Tolima_north",
+      "filename": "Nevado_del_Tolima_north.tif",
+      "label": 1,
+      "coords": [
+        -75.325,
+        4.675
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Nevado_del_Tolima_south",
+      "filename": "Nevado_del_Tolima_south.tif",
+      "label": 1,
+      "coords": [
+        -75.335,
+        4.645
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Nevado_del_Tolima_east",
+      "filename": "Nevado_del_Tolima_east.tif",
+      "label": 1,
+      "coords": [
+        -75.31,
+        4.66
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Nevado_del_Tolima_west",
+      "filename": "Nevado_del_Tolima_west.tif",
+      "label": 1,
+      "coords": [
+        -75.35,
+        4.66
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.04,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Cumbal_center",
+      "filename": "Volcan_Cumbal_center.tif",
+      "label": 1,
+      "coords": [
+        -77.88,
+        0.95
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Cumbal_north",
+      "filename": "Volcan_Cumbal_north.tif",
+      "label": 1,
+      "coords": [
+        -77.875,
+        0.965
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Cumbal_south",
+      "filename": "Volcan_Cumbal_south.tif",
+      "label": 1,
+      "coords": [
+        -77.885,
+        0.935
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Cumbal_east",
+      "filename": "Volcan_Cumbal_east.tif",
+      "label": 1,
+      "coords": [
+        -77.86,
+        0.95
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Cumbal_west",
+      "filename": "Volcan_Cumbal_west.tif",
+      "label": 1,
+      "coords": [
+        -77.9,
+        0.95
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Sotara_center",
+      "filename": "Volcan_Sotara_center.tif",
+      "label": 1,
+      "coords": [
+        -76.59,
+        2.11
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.02,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Sotara_north",
+      "filename": "Volcan_Sotara_north.tif",
+      "label": 1,
+      "coords": [
+        -76.585,
+        2.125
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.02,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Sotara_south",
+      "filename": "Volcan_Sotara_south.tif",
+      "label": 1,
+      "coords": [
+        -76.595,
+        2.095
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.02,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Sotara_east",
+      "filename": "Volcan_Sotara_east.tif",
+      "label": 1,
+      "coords": [
+        -76.57,
+        2.11
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.02,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Sotara_west",
+      "filename": "Volcan_Sotara_west.tif",
+      "label": 1,
+      "coords": [
+        -76.61,
+        2.11
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.02,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Azufral_center",
+      "filename": "Volcan_Azufral_center.tif",
+      "label": 1,
+      "coords": [
+        -77.68,
+        1.085
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Azufral_north",
+      "filename": "Volcan_Azufral_north.tif",
+      "label": 1,
+      "coords": [
+        -77.675,
+        1.1
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Azufral_south",
+      "filename": "Volcan_Azufral_south.tif",
+      "label": 1,
+      "coords": [
+        -77.685,
+        1.07
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Azufral_east",
+      "filename": "Volcan_Azufral_east.tif",
+      "label": 1,
+      "coords": [
+        -77.66,
+        1.085
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Volcan_Azufral_west",
+      "filename": "Volcan_Azufral_west.tif",
+      "label": 1,
+      "coords": [
+        -77.7,
+        1.085
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Manizales_thermal",
+      "filename": "Manizales_thermal.tif",
+      "label": 1,
+      "coords": [
+        -75.52,
+        5.07
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Coconuco_thermal",
+      "filename": "Coconuco_thermal.tif",
+      "label": 1,
+      "coords": [
+        -76.385,
+        2.43
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.02,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Santa_Rosa_Cabal",
+      "filename": "Santa_Rosa_Cabal.tif",
+      "label": 1,
+      "coords": [
+        -75.62,
+        4.87
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Herveo_thermal",
+      "filename": "Herveo_thermal.tif",
+      "label": 1,
+      "coords": [
+        -75.13,
+        4.88
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Villa_Maria_thermal",
+      "filename": "Villa_Maria_thermal.tif",
+      "label": 1,
+      "coords": [
+        -74.98,
+        4.9
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Casanare_Yopal",
+      "filename": "Casanare_Yopal.tif",
+      "label": 0,
+      "coords": [
+        -72.395,
+        5.3378
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Casanare_Paz_Ariporo",
+      "filename": "Casanare_Paz_Ariporo.tif",
+      "label": 0,
+      "coords": [
+        -71.88,
+        5.88
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Casanare_Hato_Corozal",
+      "filename": "Casanare_Hato_Corozal.tif",
+      "label": 0,
+      "coords": [
+        -71.76,
+        6.17
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Casanare_Trinidad",
+      "filename": "Casanare_Trinidad.tif",
+      "label": 0,
+      "coords": [
+        -71.66,
+        5.43
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Arauca_Arauca",
+      "filename": "Arauca_Arauca.tif",
+      "label": 0,
+      "coords": [
+        -70.76,
+        7.09
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Arauca_Saravena",
+      "filename": "Arauca_Saravena.tif",
+      "label": 0,
+      "coords": [
+        -71.88,
+        6.96
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Vichada_Puerto_Carreno",
+      "filename": "Vichada_Puerto_Carreno.tif",
+      "label": 0,
+      "coords": [
+        -67.49,
+        6.19
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Meta_Villavicencio",
+      "filename": "Meta_Villavicencio.tif",
+      "label": 0,
+      "coords": [
+        -73.62,
+        4.142
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Meta_Puerto_Lopez",
+      "filename": "Meta_Puerto_Lopez.tif",
+      "label": 0,
+      "coords": [
+        -72.96,
+        4.08
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Meta_Puerto_Gaitan",
+      "filename": "Meta_Puerto_Gaitan.tif",
+      "label": 0,
+      "coords": [
+        -72.08,
+        4.32
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Amazonas_Leticia",
+      "filename": "Amazonas_Leticia.tif",
+      "label": 0,
+      "coords": [
+        -69.94,
+        -4.2153
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Amazonas_Puerto_Narino",
+      "filename": "Amazonas_Puerto_Narino.tif",
+      "label": 0,
+      "coords": [
+        -70.38,
+        -3.77
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Caqueta_Florencia",
+      "filename": "Caqueta_Florencia.tif",
+      "label": 0,
+      "coords": [
+        -75.6144,
+        1.6144
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Caqueta_San_Vicente",
+      "filename": "Caqueta_San_Vicente.tif",
+      "label": 0,
+      "coords": [
+        -74.77,
+        0.64
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Putumayo_Mocoa",
+      "filename": "Putumayo_Mocoa.tif",
+      "label": 0,
+      "coords": [
+        -76.65,
+        1.15
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Putumayo_Puerto_Asis",
+      "filename": "Putumayo_Puerto_Asis.tif",
+      "label": 0,
+      "coords": [
+        -76.4989,
+        0.5054
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Guaviare_San_Jose",
+      "filename": "Guaviare_San_Jose.tif",
+      "label": 0,
+      "coords": [
+        -72.64,
+        2.57
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Vaupes_Mitu",
+      "filename": "Vaupes_Mitu.tif",
+      "label": 0,
+      "coords": [
+        -70.17,
+        1.25
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.02,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Atlantico_Barranquilla",
+      "filename": "Atlantico_Barranquilla.tif",
+      "label": 0,
+      "coords": [
+        -74.7813,
+        10.9639
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Magdalena_Santa_Marta",
+      "filename": "Magdalena_Santa_Marta.tif",
+      "label": 0,
+      "coords": [
+        -74.21,
+        11.2408
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.02,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Cesar_Valledupar",
+      "filename": "Cesar_Valledupar.tif",
+      "label": 0,
+      "coords": [
+        -73.25,
+        10.4631
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "La_Guajira_Riohacha",
+      "filename": "La_Guajira_Riohacha.tif",
+      "label": 0,
+      "coords": [
+        -72.9072,
+        11.5444
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.02,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Cordoba_Monteria",
+      "filename": "Cordoba_Monteria.tif",
+      "label": 0,
+      "coords": [
+        -75.8814,
+        8.7479
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Sucre_Sincelejo",
+      "filename": "Sucre_Sincelejo.tif",
+      "label": 0,
+      "coords": [
+        -75.3978,
+        9.3047
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Bolivar_Cartagena",
+      "filename": "Bolivar_Cartagena.tif",
+      "label": 0,
+      "coords": [
+        -75.5144,
+        10.391
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.02,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Bolivar_Magangue",
+      "filename": "Bolivar_Magangue.tif",
+      "label": 0,
+      "coords": [
+        -74.7542,
+        9.2417
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Santander_Bucaramanga",
+      "filename": "Santander_Bucaramanga.tif",
+      "label": 0,
+      "coords": [
+        -73.1198,
+        7.1254
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Santander_Barrancabermeja",
+      "filename": "Santander_Barrancabermeja.tif",
+      "label": 0,
+      "coords": [
+        -73.8542,
+        7.0653
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Norte_Santander_Cucuta",
+      "filename": "Norte_Santander_Cucuta.tif",
+      "label": 0,
+      "coords": [
+        -72.5047,
+        7.8939
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Boyaca_Tunja",
+      "filename": "Boyaca_Tunja.tif",
+      "label": 0,
+      "coords": [
+        -73.3678,
+        5.5353
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Boyaca_Sogamoso",
+      "filename": "Boyaca_Sogamoso.tif",
+      "label": 0,
+      "coords": [
+        -72.9342,
+        5.7142
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Cundinamarca_Girardot",
+      "filename": "Cundinamarca_Girardot.tif",
+      "label": 0,
+      "coords": [
+        -74.8039,
+        4.3011
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Cundinamarca_Zipaquira",
+      "filename": "Cundinamarca_Zipaquira.tif",
+      "label": 0,
+      "coords": [
+        -74.0042,
+        5.0214
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Valle_Cali_norte",
+      "filename": "Valle_Cali_norte.tif",
+      "label": 0,
+      "coords": [
+        -76.5225,
+        3.5
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Valle_Palmira",
+      "filename": "Valle_Palmira.tif",
+      "label": 0,
+      "coords": [
+        -76.3036,
+        3.5394
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Valle_Tulua",
+      "filename": "Valle_Tulua.tif",
+      "label": 0,
+      "coords": [
+        -76.1953,
+        4.0864
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Valle_Buga",
+      "filename": "Valle_Buga.tif",
+      "label": 0,
+      "coords": [
+        -76.3,
+        3.9014
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Valle_Cartago",
+      "filename": "Valle_Cartago.tif",
+      "label": 0,
+      "coords": [
+        -75.9114,
+        4.7467
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Choco_Quibdo",
+      "filename": "Choco_Quibdo.tif",
+      "label": 0,
+      "coords": [
+        -76.6611,
+        5.6919
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.03,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    },
+    {
+      "name": "Choco_Bahia_Solano",
+      "filename": "Choco_Bahia_Solano.tif",
+      "label": 0,
+      "coords": [
+        -77.4094,
+        6.1989
+      ],
+      "buffer_size": 5000,
+      "scale": 90,
+      "file_size_mb": 0.01,
+      "bands": [
+        "emissivity_band10",
+        "emissivity_band11",
+        "emissivity_band12",
+        "emissivity_band13",
+        "emissivity_band14"
+      ]
+    }
+  ]
+}

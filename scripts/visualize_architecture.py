@@ -97,10 +97,16 @@ class ArchitectureVisualizer:
         trainable_params = 0
         
         for layer in model.layers:
+            # Manejar InputLayer que puede no tener output_shape
+            try:
+                output_shape = str(layer.output_shape) if hasattr(layer, 'output_shape') else str(model.output_shape)
+            except:
+                output_shape = "N/A"
+            
             layer_config = {
                 'name': layer.name,
                 'type': layer.__class__.__name__,
-                'output_shape': str(layer.output_shape),
+                'output_shape': output_shape,
                 'params': layer.count_params()
             }
             layers_info.append(layer_config)
