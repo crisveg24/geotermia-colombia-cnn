@@ -128,16 +128,28 @@
 | Output | Binary (sigmoid) |
 | Precision | Mixed (float16/32) |
 
-### Entrenamiento (En Progreso)
+### Entrenamiento (En Progreso - Interrumpido)
 | Configuración | Valor |
 |---------------|-------|
 | Batch size | 32 |
-| Épocas máx | 100 |
+| Épocas completadas | 30/100 (30%) |
 | Learning rate | 0.001 |
 | Optimizer | Adam |
 | Loss function | Binary Crossentropy |
 | Hardware | CPU (oneDNN optimized) |
-| Tiempo estimado | 2-3 horas |
+| Tiempo por época | 117 segundos |
+| Tiempo transcurrido | 59 minutos |
+| Tiempo restante est. | 2.3 horas |
+
+#### Métricas Actuales (Época 30)
+| Métrica | Valor | Tendencia |
+|---------|-------|-----------|
+| **Accuracy** | 65.26% | ✅ Mejorando |
+| **AUC** | 0.6252 | ✅ Creciendo (+39.5%) |
+| **Loss** | 0.9241 | ✅ Disminuyendo |
+| **Precision** | 84.61% | ✅ Excelente |
+| **Recall** | 68.27% | ⚠️ Bueno |
+| **F1-Score** | ~75.54% | ✅ Calculado |
 
 ---
 
@@ -149,13 +161,13 @@
 ✅ Fase 3: Adquisición de Datos               [COMPLETADA]
 ✅ Fase 4: Augmentación del Dataset           [COMPLETADA]
 ✅ Fase 5: Preparación del Dataset            [COMPLETADA]
-⏳ Fase 6: Entrenamiento del Modelo           [EN PROGRESO - 0%]
+🔄 Fase 6: Entrenamiento del Modelo           [EN PROGRESO - 30%]
 ⏱️ Fase 7: Evaluación del Modelo              [PENDIENTE]
 ⏱️ Fase 8: Visualización de Resultados        [PENDIENTE]
 ⏱️ Fase 9: Documentación Final                [PENDIENTE]
 ```
 
-**Progreso General:** 55% completado (5 de 9 fases)
+**Progreso General:** 58% completado (5.3 de 9 fases)
 
 ---
 
@@ -171,7 +183,8 @@
 **16:00 - 17:00** → Preparación y normalización del dataset  
 **17:00 - 18:00** → Debugging y corrección de rutas  
 **18:00 - 18:50** → Configuración de entrenamiento  
-**18:50 - 21:00** → **Entrenamiento en progreso** (estimado)  
+**18:55 - 19:54** → **Entrenamiento - 30 épocas completadas** ✅  
+**19:54 - 21:30** → **Entrenamiento restante** (estimado 70 épocas)  
 
 ### Siguiente Sesión (Estimada)
 

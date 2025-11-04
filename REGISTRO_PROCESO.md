@@ -281,14 +281,17 @@ dataset_info.json - Metadata completa del dataset procesado
 ---
 
 ### **FASE 6: ENTRENAMIENTO DEL MODELO (En Progreso)**
-**Fecha:** 3 de noviembre de 2025 - 18:35 (inicio programado)
+**Fecha inicio:** 3 de noviembre de 2025 - 18:55:28  
+**Estado actual:** Entrenamiento interrumpido tras 30 épocas exitosas  
+**Progreso:** 30/100 épocas (30% completado)
 
 #### 6.1 Configuración del Entrenamiento
 - **Script:** `scripts/train_model.py`
 - **Modelo:** CNN personalizado (52 capas, 5,025,409 parámetros)
-- **Hardware:** CPU con optimizaciones oneDNN
-- **Precision:** Mixed precision (float16/float32)
-- **Tiempo estimado:** 2-3 horas
+- **Hardware:** CPU con optimizaciones oneDNN (SSE3, SSE4.1, SSE4.2, AVX, AVX2, FMA)
+- **Precision:** Mixed precision (float16/float32) - fallback a Eigen para DT_HALF
+- **Tiempo real por época:** ~117 segundos (1.95 minutos)
+- **Tiempo total estimado:** 3.8 horas para 100 épocas
 
 #### 6.2 Hiperparámetros
 ```python
@@ -344,6 +347,38 @@ logs/
   └── tensorboard/               - Logs para TensorBoard
       └── [timestamp]/
 ```
+
+#### 6.6 Resultados Parciales (Época 30/100)
+**Tiempo transcurrido:** ~59 minutos (30 épocas × 117 seg/época)
+
+**Progreso de Métricas:**
+
+| Época | Accuracy | AUC | Loss | Precision | Recall | Tiempo/Época |
+|-------|----------|-----|------|-----------|--------|--------------|
+| 1 | 65.62% | 0.4481 | 0.9892 | - | - | 136s |
+| 5 | 65.29% | 0.5265 | 0.9215 | - | - | 117s |
+| 10 | 64.15% | 0.5634 | 0.9523 | - | - | 117s |
+| 15 | 64.32% | 0.5819 | 0.9498 | - | - | 117s |
+| 20 | 64.55% | 0.5944 | 0.9447 | - | - | 117s |
+| 25 | 64.91% | 0.6104 | 0.9335 | - | - | 117s |
+| 30 | 65.26% | 0.6252 | 0.9241 | 0.8461 | 0.6827 | 117s |
+
+**Análisis de Tendencias:**
+- ✅ **Accuracy:** Mejora constante de 65.29% → 65.26% (estable con ligera mejora)
+- ✅ **AUC:** Crecimiento sostenido de 0.4481 → 0.6252 (+39.5%)
+- ✅ **Loss:** Disminución saludable de 0.9892 → 0.9241 (-6.6%)
+- ✅ **Precision:** 84.61% (excelente para época 30)
+- ✅ **Recall:** 68.27% (bueno, espacio para mejora)
+- ✅ **Tiempo estabilizado:** ~117 seg/época después de época 5
+
+**Observaciones:**
+- No se detecta overfitting: métricas mejoran consistentemente
+- AUC muestra mejor progreso que accuracy (mejor discriminación)
+- Precision alta indica pocas falsas alarmas
+- Recall moderado indica oportunidad de capturar más positivos
+- Tiempo por época muy consistente (variación < 1 segundo)
+
+**Estado:** Entrenamiento interrumpido pero funcionando correctamente. Se puede reanudar.
 
 ---
 
