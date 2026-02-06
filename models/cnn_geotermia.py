@@ -7,16 +7,24 @@ para la identificación de zonas con alto potencial geotérmico en Colombia.
 
 Características:
 - Arquitectura moderna con bloques residuales (ResNet-inspired)
+- SpatialDropout2D para regularización espacial efectiva
+- AdamW optimizer con weight decay correcto
+- Label Smoothing para reducir overfitting
 - Batch Normalization para estabilidad de entrenamiento
-- Dropout y L2 regularization para prevenir overfitting
 - Global Average Pooling para reducir parámetros
 - Mixed Precision Training compatible
 - Transfer Learning ready
 
-Autores: Cristian Vega, Daniel Santiago Arévalo Rubiano
+Autores: 
+    - Cristian Camilo Vega Sánchez
+    - Daniel Santiago Arévalo Rubiano
+    - Yuliet Katerin Espitia Ayala
+    - Laura Sophie Rivera Martin
+    
 Asesor: Prof. Yeison Eduardo Conejo Sandoval
 Universidad de San Buenaventura - Bogotá
-Fecha: Noviembre 2025
+Programa: Ingeniería de Sistemas (Pregrado)
+Fecha: 2025-2026
 """
 
 import tensorflow as tf
@@ -25,6 +33,14 @@ from tensorflow.keras import layers, models, regularizers
 from tensorflow.keras.applications import EfficientNetB0, ResNet50V2
 from typing import Tuple, Optional
 import logging
+import math
+
+# Importar F1Score (TensorFlow 2.13+)
+try:
+    from tensorflow.keras.metrics import F1Score
+    HAS_F1_METRIC = True
+except ImportError:
+    HAS_F1_METRIC = False
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -106,7 +122,8 @@ class GeotermiaCNN:
             x = layers.BatchNormalization(name=f'{name}_bn')(x)
         
         x = layers.Activation('relu', name=f'{name}_relu')(x)
-        x = layers.Dropout(self.dropout_rate * 0.5, name=f'{name}_dropout')(x)
+        # SpatialDropout2D es más efectivo para CNNs - apaga canales completos
+        x = layers.SpatialDropout2D(self.dropout_rate * 0.3, name=f'{name}_spatial_dropout')(x)
         
         return x
     
@@ -220,25 +237,39 @@ class GeotermiaCNN:
         if self.num_classes == 2:
             # Clasificación binaria
             outputs = layers.Dense(1, activation='sigmoid', name='output')(x)
-            loss = 'binary_crossentropy'
+            # Label Smoothing reduce overfitting (0.1 = 90% confianza máxima)
+            loss = keras.losses.BinaryCrossentropy(label_smoothing=0.1)
             metrics = [
                 'accuracy',
                 keras.metrics.Precision(name='precision'),
                 keras.metrics.Recall(name='recall'),
-                keras.metrics.AUC(name='auc')
+                keras.metrics.AUC(name='auc'),
+                keras.metrics.AUC(curve='PR', name='auc_pr'),  # Mejor para clases desbalanceadas
             ]
+            # Agregar F1Score si está disponible (TensorFlow 2.13+)
+            if HAS_F1_METRIC:
+                metrics.append(F1Score(name='f1_score', threshold=0.5))
         else:
             # Clasificación multiclase
             outputs = layers.Dense(self.num_classes, activation='softmax', name='output')(x)
-            loss = 'categorical_crossentropy'
+            loss = keras.losses.CategoricalCrossentropy(label_smoothing=0.1)
             metrics = ['accuracy']
         
         # Crear modelo
         model = models.Model(inputs=inputs, outputs=outputs, name='GeotermiaCNN')
         
-        # Compilar modelo con optimizador Adam moderno
+        # AdamW: Mejor regularización que Adam estándar (weight decay correcto)
+        optimizer = keras.optimizers.AdamW(
+            learning_rate=0.001,
+            weight_decay=0.0001,  # Regularización L2 correcta
+            beta_1=0.9,
+            beta_2=0.999,
+            epsilon=1e-07
+        )
+        
+        # Compilar modelo
         model.compile(
-            optimizer=keras.optimizers.Adam(learning_rate=0.001),
+            optimizer=optimizer,
             loss=loss,
             metrics=metrics
         )
@@ -358,6 +389,38 @@ class GeotermiaCNN:
     def get_model(self) -> Optional[keras.Model]:
         """Retorna el modelo construido."""
         return self.model
+
+
+def get_cosine_decay_schedule(
+    initial_learning_rate: float = 0.001,
+    decay_steps: int = 1000,
+    alpha: float = 0.0001
+) -> keras.optimizers.schedules.LearningRateSchedule:
+    """
+    Crea un schedule de Cosine Decay para el learning rate.
+    
+    El learning rate decrece siguiendo una función coseno, lo que permite:
+    - Exploración amplia al inicio (LR alto)
+    - Convergencia fina al final (LR bajo)
+    
+    Args:
+        initial_learning_rate: LR inicial
+        decay_steps: Pasos totales de decay (epochs * steps_per_epoch)
+        alpha: LR mínimo final como fracción del inicial
+        
+    Returns:
+        Schedule de learning rate para usar en el optimizador
+        
+    Example:
+        >>> schedule = get_cosine_decay_schedule(0.001, 10000)
+        >>> optimizer = keras.optimizers.AdamW(learning_rate=schedule)
+    """
+    return keras.optimizers.schedules.CosineDecay(
+        initial_learning_rate=initial_learning_rate,
+        decay_steps=decay_steps,
+        alpha=alpha,
+        name='cosine_decay'
+    )
 
 
 def create_geotermia_model(

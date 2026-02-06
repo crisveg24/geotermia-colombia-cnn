@@ -25,10 +25,14 @@ Implementación de un **modelo de Deep Learning basado en Redes Neuronales Convo
 - ✅ **Arquitectura CNN moderna** con bloques residuales (ResNet-inspired)
 - ✅ **Transfer Learning** con EfficientNet y ResNet50V2
 - ✅ **Mixed Precision Training** para optimizar rendimiento
-- ✅ **Data Augmentation** avanzado
-- ✅ **Métricas completas** (Accuracy, Precision, Recall, F1-Score, ROC AUC, R²)
+- ✅ **Data Augmentation** avanzado con SpatialDropout2D
+- ✅ **Métricas completas** (Accuracy, Precision, Recall, F1-Score, ROC AUC, PR-AUC)
 - ✅ **Visualizaciones profesionales** para análisis de resultados
 - ✅ **Pipeline completo** desde descarga de datos hasta predicción
+- ✅ **Interfaz Web** con Streamlit para visualización interactiva
+- ✅ **Optimizador AdamW** con regularización de pesos mejorada
+- ✅ **Label Smoothing** para reducir overfitting
+- ✅ **Cosine Learning Rate Decay** para mejor convergencia
 
 ---
 
@@ -36,13 +40,34 @@ Implementación de un **modelo de Deep Learning basado en Redes Neuronales Convo
 
 | Rol | Nombre | Email | GitHub |
 |-----|--------|-------|--------|
-| **Desarrollador Principal** | Cristian Camilo Vega Sánchez | ccvegas@academia.usbbog.edu.co | [@crisveg24](https://github.com/crisveg24) |
+| **Desarrollador** | Cristian Camilo Vega Sánchez | ccvegas@academia.usbbog.edu.co | [@crisveg24](https://github.com/crisveg24) |
 | **Co-autor** | Daniel Santiago Arévalo Rubiano | dsarevalor@academia.usbbog.edu.co | - |
+| **Co-autora** | Yuliet Katerin Espitia Ayala | ykespitiaa@academia.usbbog.edu.co | - |
+| **Co-autora** | Laura Sophie Rivera Martin | lsriveram@academia.usbbog.edu.co | - |
 | **Asesor Académico** | Prof. Yeison Eduardo Conejo Sandoval | yconejo@usbbog.edu.co | - |
 
 **Institución**: Universidad de San Buenaventura - Sede Bogotá  
-**Programa**: Ingeniería de Sistemas  
-**Año**: 2025
+**Programa**: Ingeniería de Sistemas (Pregrado)  
+**Año**: 2025-2026
+
+---
+
+## 🖥️ Interfaz Web Interactiva
+
+El proyecto incluye una **aplicación web** desarrollada con Streamlit para:
+
+- 🔮 **Predicción por coordenadas**: Ingresa latitud/longitud y obtén predicción de potencial geotérmico
+- 🗺️ **Mapa interactivo**: Visualiza zonas geotérmicas de Colombia
+- 📊 **Métricas del modelo**: Gráficos interactivos de rendimiento
+- 🧠 **Arquitectura**: Diagrama visual de la red neuronal
+
+### Ejecutar la interfaz
+
+```bash
+streamlit run app.py
+```
+
+La aplicación estará disponible en `http://localhost:8501`
 
 ---
 
@@ -81,12 +106,20 @@ El proyecto analiza zonas geotérmicas de interés en Colombia:
 ## 🏗️ Arquitectura del Proyecto
 
 ```
-g_earth_geotermia-proyect/
+geotermia-colombia-cnn/
+│
+├── 📂 app.py                        # ⭐ Interfaz web Streamlit
 │
 ├── 📂 data/                          # Datos del proyecto
 │   ├── raw/                          # Imágenes satelitales (.tif)
 │   ├── processed/                    # Datos procesados (.npy)
 │   └── labels/                       # Etiquetas (labels.csv)
+│
+├── 📂 docs/                          # 📚 Documentación técnica
+│   ├── MODELO_PREDICTIVO.md          # Documentación detallada del modelo
+│   ├── MEJORAS_MODELO.md             # Mejoras implementadas
+│   ├── ANALISIS_ENTRENAMIENTO.md     # Análisis de resultados
+│   └── *.md                          # Otros documentos
 │
 ├── 📂 models/                        # Modelos de Deep Learning
 │   ├── __init__.py
@@ -100,32 +133,22 @@ g_earth_geotermia-proyect/
 │   ├── evaluate_model.py            # 3️⃣ Evaluación de métricas
 │   ├── visualize_results.py         # 4️⃣ Visualizaciones
 │   ├── predict.py                   # 5️⃣ Predicciones
-│   ├── main.py                      # Script de visualización básica
+│   ├── miniprueba/                  # 🧪 Scripts de validación rápida
 │   └── README.md
 │
 ├── 📂 notebooks/                     # Jupyter Notebooks
-│   ├── descargarimagenes.ipynb      # Exploración de datos
-│   └── README.md
+│   └── descargarimagenes.ipynb      # Exploración de datos
 │
 ├── 📂 results/                       # Resultados para tesis
 │   ├── figures/                      # Gráficos (PNG 300 DPI)
-│   │   ├── training_history.png
-│   │   ├── confusion_matrix.png
-│   │   ├── roc_curve.png
-│   │   └── metrics_comparison.png
-│   └── metrics/                      # Métricas (JSON, CSV)
-│       ├── evaluation_metrics.json
-│       └── metrics_table.csv
+│   ├── metrics/                      # Métricas (JSON, CSV)
+│   └── reporte_mini_dataset.pdf     # 📝 Reporte PDF generado
 │
 ├── 📂 logs/                          # Logs de entrenamiento
-│   ├── history_custom.json
-│   └── tensorboard/                  # TensorBoard logs
 │
 ├── 📄 requirements.txt               # Dependencias Python
 ├── 📄 README.md                      # Este archivo
 ├── 📄 LICENSE                        # Licencia MIT
-├── 📄 .gitignore                     # Archivos ignorados
-├── 📄 ESTRUCTURA.md                  # Documentación de estructura
 └── 📄 setup.py                       # Script de configuración
 ```
 
@@ -319,22 +342,33 @@ Input (224×224×5)
     ↓
 Rescaling (normalización)
     ↓
-Conv Block (32 filters, 7×7) + MaxPool
+Conv Block (32 filters, 7×7) + SpatialDropout2D + MaxPool
     ↓
-Residual Block (64 filters) + MaxPool
+Residual Block (64 filters) + SpatialDropout2D + MaxPool
     ↓
-Residual Block (128 filters) + MaxPool
+Residual Block (128 filters) + SpatialDropout2D + MaxPool
     ↓
-Residual Block (256 filters) + MaxPool
+Residual Block (256 filters) + SpatialDropout2D + MaxPool
     ↓
-Residual Block (512 filters)
+Residual Block (512 filters) + SpatialDropout2D
     ↓
 Global Average Pooling
     ↓
-Dense (256) + Dropout
+Dense (256) + BatchNorm + Dropout
     ↓
 Output (1 neuron, sigmoid)
 ```
+
+### 🚀 Optimizaciones Implementadas
+
+| Técnica | Descripción | Beneficio |
+|---------|-------------|----------|
+| **SpatialDropout2D** | Dropout espacial para CNNs | Mejor regularización en imágenes |
+| **AdamW** | Adam con weight decay correcto | Mejor generalización |
+| **Label Smoothing** | Suavizado de etiquetas (0.1) | Reduce overfitting |
+| **Cosine LR Decay** | Learning rate decae como coseno | Mejor convergencia |
+| **PR-AUC Métric** | AUC de Precision-Recall | Mejor para clases desbalanceadas |
+| **F1-Score directo** | Métrica F1 durante entrenamiento | Monitoreo completo |
 
 ### Modelo con Transfer Learning (Alternativa)
 
@@ -377,7 +411,9 @@ Todos los gráficos se generan en alta resolución (300 DPI) listos para incluir
 ### Deep Learning
 - **TensorFlow 2.15+**: Framework de Deep Learning
 - **Keras**: API de alto nivel para redes neuronales
+- **AdamW Optimizer**: Optimizador con weight decay correcto
 - **Mixed Precision**: Entrenamiento optimizado
+- **Label Smoothing**: Regularización para reducir overfitting
 
 ### Procesamiento Geoespacial
 - **Google Earth Engine**: Plataforma de análisis geoespacial
@@ -390,11 +426,18 @@ Todos los gráficos se generan en alta resolución (300 DPI) listos para incluir
 - **pandas**: Análisis de datos
 - **matplotlib**: Visualización de datos
 - **seaborn**: Visualizaciones estadísticas
+- **Plotly**: Gráficos interactivos
 - **scikit-learn**: Métricas de evaluación
+
+### Interfaz Web
+- **Streamlit**: Aplicación web interactiva
+- **Folium**: Mapas interactivos
+- **streamlit-folium**: Integración de mapas
 
 ### Desarrollo
 - **Jupyter**: Notebooks interactivos
 - **TensorBoard**: Visualización de entrenamiento
+- **FPDF2**: Generación de reportes PDF
 
 ---
 
@@ -476,9 +519,15 @@ Aunque este es un proyecto de grado, se aceptan sugerencias y mejoras:
 - 📧 Email: [ccvegas@academia.usbbog.edu.co](mailto:ccvegas@academia.usbbog.edu.co)
 - 🔗 GitHub: [@crisveg24](https://github.com/crisveg24)
 
-### Co-autor
+### Co-autores
 **Daniel Santiago Arévalo Rubiano**
 - 📧 Email: [dsarevalor@academia.usbbog.edu.co](mailto:dsarevalor@academia.usbbog.edu.co)
+
+**Yuliet Katerin Espitia Ayala**
+- 📧 Email: [ykespitiaa@academia.usbbog.edu.co](mailto:ykespitiaa@academia.usbbog.edu.co)
+
+**Laura Sophie Rivera Martin**
+- 📧 Email: [lsriveram@academia.usbbog.edu.co](mailto:lsriveram@academia.usbbog.edu.co)
 
 ### Asesor Académico
 **Prof. Yeison Eduardo Conejo Sandoval**
@@ -493,7 +542,8 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para
 ```
 MIT License
 
-Copyright (c) 2025 Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano
+Copyright (c) 2025-2026 Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano,
+Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martin
 
 Se concede permiso para usar, copiar, modificar y distribuir este software...
 ```
@@ -535,10 +585,10 @@ Se concede permiso para usar, copiar, modificar y distribuir este software...
 ### BibTeX
 
 ```bibtex
-@misc{vega2025geotermia,
-  author = {Vega Sánchez, Cristian Camilo and Arévalo Rubiano, Daniel Santiago},
+@misc{vega2026geotermia,
+  author = {Vega Sánchez, Cristian Camilo and Arévalo Rubiano, Daniel Santiago and Espitia Ayala, Yuliet Katerin and Rivera Martin, Laura Sophie},
   title = {Modelo Predictivo Basado en Deep Learning y Redes Neuronales Convolucionales (CNN) para la Identificación de Zonas de Potencial Geotérmico en Colombia},
-  year = {2025},
+  year = {2026},
   publisher = {Universidad de San Buenaventura Bogotá},
   url = {https://github.com/crisveg24/geotermia-colombia-cnn},
   note = {Proyecto de Grado - Ingeniería de Sistemas}
@@ -547,21 +597,21 @@ Se concede permiso para usar, copiar, modificar y distribuir este software...
 
 ### APA 7th Edition
 
-Vega Sánchez, C. C., & Arévalo Rubiano, D. S. (2025). *Modelo Predictivo Basado en Deep Learning y Redes Neuronales Convolucionales (CNN) para la Identificación de Zonas de Potencial Geotérmico en Colombia* [Proyecto de Grado, Universidad de San Buenaventura Bogotá]. GitHub. https://github.com/crisveg24/geotermia-colombia-cnn
+Vega Sánchez, C. C., Arévalo Rubiano, D. S., Espitia Ayala, Y. K., & Rivera Martin, L. S. (2026). *Modelo Predictivo Basado en Deep Learning y Redes Neuronales Convolucionales (CNN) para la Identificación de Zonas de Potencial Geotérmico en Colombia* [Proyecto de Grado, Universidad de San Buenaventura Bogotá]. GitHub. https://github.com/crisveg24/geotermia-colombia-cnn
 
 ---
 
 <p align="center">
   <img src="https://img.shields.io/badge/Made%20with-%E2%9D%A4%EF%B8%8F-red" />
   <img src="https://img.shields.io/badge/For-Geothermal%20Research-green" />
-  <img src="https://img.shields.io/badge/Colombia-2025-yellow" />
+  <img src="https://img.shields.io/badge/Colombia-2026-yellow" />
 </p>
 
 <p align="center">
   <strong>Universidad de San Buenaventura - Bogotá</strong><br>
   Facultad de Ingeniería<br>
   Programa de Ingeniería de Sistemas<br>
-  2025
+  2025-2026
 </p>
 
 ---

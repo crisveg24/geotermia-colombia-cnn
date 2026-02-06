@@ -70,8 +70,22 @@ desktop.ini
 *.swo
 *~
 
-# Google Earth Engine
+# Google Earth Engine (CREDENCIALES - NO SUBIR)
 .config/earthengine/
+**/credentials
+**/credentials.json
+**/.credentials/
+*.json.bak
+earthengine-credentials*
+service_account*.json
+
+# Archivos con tokens o secretos
+.env
+.env.*
+*.secret
+*_secret*
+api_key*
+token*
 
 # Logs
 *.log
