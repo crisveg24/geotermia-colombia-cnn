@@ -40,14 +40,20 @@ logger = logging.getLogger(__name__)
 class GeotermalDatasetDownloader:
     """Clase para descargar dataset de imágenes ASTER para análisis geotérmico."""
     
-    def __init__(self, output_dir: str = "data/raw"):
+    def __init__(self, output_dir: str = None):
         """
         Inicializar descargador de dataset.
         
         Args:
-            output_dir: Directorio donde guardar las imágenes descargadas
+            output_dir: Directorio donde guardar las imágenes descargadas.
+                        Si es None, usa la ruta de config.py (soporta disco externo).
         """
-        self.output_dir = Path(output_dir)
+        # Importar configuración centralizada
+        import sys
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        from config import cfg
+        
+        self.output_dir = Path(output_dir) if output_dir else cfg.raw_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
         # Crear subdirectorios para imágenes positivas y negativas
@@ -380,8 +386,15 @@ def main():
     logger.info("Universidad de San Buenaventura - Bogotá")
     logger.info("="*80 + "\n")
     
-    # Crear descargador
-    downloader = GeotermalDatasetDownloader(output_dir="data/raw")
+    # Importar configuración centralizada (soporta disco externo)
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from config import cfg
+    logger.info(f"📂 Fuente de datos: {cfg.source}")
+    logger.info(f"📂 Data root: {cfg.data_root}")
+    cfg.ensure_dirs()
+    
+    # Crear descargador (usa ruta de config.py)
+    downloader = GeotermalDatasetDownloader()
     
     # Configurar cantidad de imágenes a descargar
     MAX_POSITIVE = 50  # Zonas geotérmicas

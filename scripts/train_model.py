@@ -72,12 +72,15 @@ class GeotermiaCNNTrainer:
             use_mixed_precision: Si True, usa Mixed Precision Training
             use_augmentation: Si True, aplica data augmentation
         """
-        # Obtener la ruta base del proyecto (directorio padre de scripts/)
+        # Importar configuración centralizada (soporta disco externo)
+        sys.path.append(str(Path(__file__).parent.parent))
+        from config import cfg
+        self._cfg = cfg
         project_root = Path(__file__).parent.parent.absolute()
         
-        # Convertir rutas relativas a absolutas basadas en project_root
-        self.processed_data_path = project_root / processed_data_path
-        self.model_save_path = project_root / model_save_path
+        # Rutas de datos desde config (puede ser disco externo)
+        self.processed_data_path = cfg.processed_dir if processed_data_path == 'data/processed' else project_root / processed_data_path
+        self.model_save_path = cfg.models_dir if model_save_path == 'models/saved_models' else project_root / model_save_path
         self.logs_path = project_root / logs_path
         self.input_shape = input_shape
         self.batch_size = batch_size
@@ -379,14 +382,19 @@ def main():
     print("Universidad de San Buenaventura - Bogotá")
     print("="*70)
     
-    # Configuración
+    # Importar configuración (soporta disco externo vía GEOTERMIA_DATA_ROOT)
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from config import cfg
+    print(cfg.summary())
+    
+    # Configuración (rutas desde config.py)
     trainer = GeotermiaCNNTrainer(
         processed_data_path='data/processed',
         model_save_path='models/saved_models',
         logs_path='logs',
-        input_shape=(224, 224, 5),
-        batch_size=32,
-        epochs=100,
+        input_shape=cfg.INPUT_SHAPE,
+        batch_size=cfg.BATCH_SIZE,
+        epochs=cfg.EPOCHS,
         use_mixed_precision=True,
         use_augmentation=True
     )

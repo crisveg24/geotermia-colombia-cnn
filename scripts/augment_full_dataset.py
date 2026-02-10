@@ -37,16 +37,23 @@ logger = logging.getLogger(__name__)
 class FullDatasetAugmenter:
     """Clase para ampliar el dataset completo mediante augmentación."""
     
-    def __init__(self, input_dir: str = "data/raw", output_dir: str = "data/augmented"):
+    def __init__(self, input_dir: str = None, output_dir: str = None):
         """
         Inicializar augmentador.
         
         Args:
-            input_dir: Directorio con imágenes descargadas (positive/ y negative/)
-            output_dir: Directorio de salida para dataset ampliado
+            input_dir: Directorio con imágenes descargadas (positive/ y negative/).
+                       Si es None, usa la ruta de config.py (soporta disco externo).
+            output_dir: Directorio de salida para dataset ampliado.
+                        Si es None, usa la ruta de config.py.
         """
-        self.input_dir = Path(input_dir)
-        self.output_dir = Path(output_dir)
+        # Importar configuración centralizada
+        import sys
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        from config import cfg
+        
+        self.input_dir = Path(input_dir) if input_dir else cfg.raw_dir
+        self.output_dir = Path(output_dir) if output_dir else cfg.augmented_dir
         
         # Crear estructura de directorios
         self.positive_dir_out = self.output_dir / "positive"

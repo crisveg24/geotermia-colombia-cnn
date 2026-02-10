@@ -43,9 +43,9 @@ class GeoDataPreparator:
     
     def __init__(
         self,
-        raw_data_path: str = 'data/augmented',
-        processed_data_path: str = 'data/processed',
-        labels_path: str = 'data/augmented',
+        raw_data_path: str = None,
+        processed_data_path: str = None,
+        labels_path: str = None,
         target_size: Tuple[int, int] = (224, 224),
         test_size: float = 0.15,
         val_size: float = 0.15,
@@ -55,17 +55,22 @@ class GeoDataPreparator:
         Inicializa el preparador de datos.
         
         Args:
-            raw_data_path: Ruta a imágenes sin procesar
-            processed_data_path: Ruta para guardar datos procesados
-            labels_path: Ruta al archivo de etiquetas
+            raw_data_path: Ruta a imágenes (augmented). None = usa config.py (soporta disco externo).
+            processed_data_path: Ruta para guardar datos procesados. None = usa config.py.
+            labels_path: Ruta al archivo de etiquetas. None = usa config.py.
             target_size: Tamaño objetivo de las imágenes (height, width)
             test_size: Proporción del conjunto de test
             val_size: Proporción del conjunto de validación
             random_state: Semilla para reproducibilidad
         """
-        self.raw_data_path = Path(raw_data_path)
-        self.processed_data_path = Path(processed_data_path)
-        self.labels_path = Path(labels_path)
+        # Importar configuración centralizada
+        import sys
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        from config import cfg
+        
+        self.raw_data_path = Path(raw_data_path) if raw_data_path else cfg.augmented_dir
+        self.processed_data_path = Path(processed_data_path) if processed_data_path else cfg.processed_dir
+        self.labels_path = Path(labels_path) if labels_path else cfg.augmented_dir
         self.target_size = target_size
         self.test_size = test_size
         self.val_size = val_size
@@ -78,6 +83,7 @@ class GeoDataPreparator:
         logger.info(f"GeoDataPreparator inicializado")
         logger.info(f"Raw data path: {self.raw_data_path}")
         logger.info(f"Processed data path: {self.processed_data_path}")
+        logger.info(f"Fuente de datos: {cfg.source}")
         logger.info(f"Target size: {self.target_size}")
     
     def load_tif_image(self, file_path: Path) -> np.ndarray:
@@ -399,15 +405,18 @@ def main():
     print("Geothermal CNN - Universidad de San Buenaventura")
     print("="*70)
     
-    # Inicializar preparador
+    # Importar configuración (soporta disco externo vía GEOTERMIA_DATA_ROOT)
+    import sys
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from config import cfg
+    print(cfg.summary())
+    
+    # Inicializar preparador (rutas desde config.py)
     preparator = GeoDataPreparator(
-        raw_data_path='data/augmented',
-        processed_data_path='data/processed',
-        labels_path='data/augmented',
-        target_size=(224, 224),
-        test_size=0.15,
-        val_size=0.15,
-        random_state=42
+        target_size=cfg.INPUT_SHAPE[:2],
+        test_size=cfg.TEST_SIZE,
+        val_size=cfg.VAL_SIZE,
+        random_state=cfg.RANDOM_STATE
     )
     
     # Preparar dataset
