@@ -72,7 +72,7 @@ class GeotermalDatasetDownloader:
             logger.error("SOLUCIÓN:")
             logger.error("1. Verifica que el proyecto 'alpine-air-469115-f0' esté activo")
             logger.error("2. Habilita la API de Earth Engine en: https://console.cloud.google.com/")
-            logger.error("3. Ejecuta: python scripts/setup_earthengine.py")
+            logger.error("3. Ejecuta: python -c \"import ee; ee.Authenticate()\" y luego python setup.py")
             raise
         
         # Cargar dataset ASTER

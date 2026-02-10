@@ -455,7 +455,7 @@ Al completar todos los pasos:
 
 **Si tienes problemas:**
 1. Revisa la sección "Solución de Problemas"
-2. Consulta `MONITOREO_ENTRENAMIENTO.md`
+2. Consulta `RESUMEN_PROYECTO.md` (sección Guía de Monitoreo)
 3. Revisa `ANALISIS_ENTRENAMIENTO.md`
 
 **Desarrollador:**

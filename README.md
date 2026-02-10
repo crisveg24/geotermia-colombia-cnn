@@ -1,7 +1,7 @@
 # 🌋 Modelo Predictivo de Potencial Geotérmico en Colombia con CNN
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
-[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15+-orange.svg)](https://www.tensorflow.org/)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-2.20+-orange.svg)](https://www.tensorflow.org/)
 [![Google Earth Engine](https://img.shields.io/badge/Google%20Earth%20Engine-API-green.svg)](https://earthengine.google.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Universidad](https://img.shields.io/badge/Universidad-San%20Buenaventura%20Bogot%C3%A1-red.svg)](https://www.usbbog.edu.co/)
@@ -111,15 +111,17 @@ geotermia-colombia-cnn/
 ├── 📂 app.py                        # ⭐ Interfaz web Streamlit
 │
 ├── 📂 data/                          # Datos del proyecto
-│   ├── raw/                          # Imágenes satelitales (.tif)
-│   ├── processed/                    # Datos procesados (.npy)
-│   └── labels/                       # Etiquetas (labels.csv)
+│   ├── raw/                          # Imágenes satelitales (.tif) + labels.csv
+│   ├── augmented/                    # Dataset augmentado (se genera)
+│   └── processed/                    # Datos procesados (.npy, se genera)
 │
 ├── 📂 docs/                          # 📚 Documentación técnica
-│   ├── MODELO_PREDICTIVO.md          # Documentación detallada del modelo
-│   ├── MEJORAS_MODELO.md             # Mejoras implementadas
-│   ├── ANALISIS_ENTRENAMIENTO.md     # Análisis de resultados
-│   └── *.md                          # Otros documentos
+│   ├── RESUMEN_PROYECTO.md           # Vista general, estado y monitoreo
+│   ├── MODELO_PREDICTIVO.md          # Documentación técnica del modelo CNN
+│   ├── REGISTRO_PROCESO.md           # Bitácora cronológica del proyecto
+│   ├── ANALISIS_ENTRENAMIENTO.md     # Análisis de métricas por época
+│   ├── MEJORAS_MODELO.md             # Roadmap de optimizaciones
+│   └── ENTRENAMIENTO_EXTERNO.md      # Guía para entrenar con GPU
 │
 ├── 📂 models/                        # Modelos de Deep Learning
 │   ├── __init__.py
@@ -493,7 +495,12 @@ Este proyecto contribuye a la **exploración geotérmica en Colombia** mediante:
 
 ## 📄 Documentación Adicional
 
-- 📖 **[ESTRUCTURA.md](ESTRUCTURA.md)**: Descripción detallada de la estructura del proyecto
+- 📖 **[docs/RESUMEN_PROYECTO.md](docs/RESUMEN_PROYECTO.md)**: Vista general del proyecto y guía de monitoreo
+- 📖 **[docs/MODELO_PREDICTIVO.md](docs/MODELO_PREDICTIVO.md)**: Documentación técnica completa del modelo CNN
+- 📖 **[docs/REGISTRO_PROCESO.md](docs/REGISTRO_PROCESO.md)**: Bitácora cronológica de todas las fases
+- 📖 **[docs/ENTRENAMIENTO_EXTERNO.md](docs/ENTRENAMIENTO_EXTERNO.md)**: Guía paso a paso para entrenar en GPU
+- 📖 **[docs/MEJORAS_MODELO.md](docs/MEJORAS_MODELO.md)**: Roadmap de optimizaciones aplicadas y futuras
+- 📖 **[docs/ANALISIS_ENTRENAMIENTO.md](docs/ANALISIS_ENTRENAMIENTO.md)**: Análisis detallado por época
 - 📖 **[models/README.md](models/README.md)**: Documentación de modelos
 - 📖 **[scripts/README.md](scripts/README.md)**: Guía de scripts
 - 📖 **[results/README.md](results/README.md)**: Interpretación de resultados
@@ -514,7 +521,7 @@ Aunque este es un proyecto de grado, se aceptan sugerencias y mejoras:
 
 ## 📧 Contacto
 
-### Desarrollador Principal
+### Desarrollador 
 **Cristian Camilo Vega Sánchez**
 - 📧 Email: [ccvegas@academia.usbbog.edu.co](mailto:ccvegas@academia.usbbog.edu.co)
 - 🔗 GitHub: [@crisveg24](https://github.com/crisveg24)
@@ -550,7 +557,7 @@ Se concede permiso para usar, copiar, modificar y distribuir este software...
 
 ---
 
-## 🙏 Agradecimientos
+##  Agradecimientos
 
 - **Universidad de San Buenaventura Bogotá** - Institución educativa
 - **Google Earth Engine** - Plataforma de datos satelitales

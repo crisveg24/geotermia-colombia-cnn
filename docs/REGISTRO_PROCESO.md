@@ -3,7 +3,7 @@
 
 **Proyecto:** Modelo Predictivo CNN - Geotermia Colombia  
 **Institución:** Universidad de San Buenaventura - Bogotá  
-**Autores:** Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano  
+**Autores:** Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano, Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martin  
 **Asesor:** Prof. Yeison Eduardo Conejo Sandoval  
 **Fecha Inicio:** Noviembre 2025  
 **Repositorio:** https://github.com/crisveg24/geotermia-colombia-cnn
@@ -382,7 +382,7 @@ logs/
 
 ---
 
-### **FASE 7: EVALUACIÓN DEL MODELO (Pendiente)**
+### **FASE 7: EVALUACIÓN DEL MODELO (Pendiente — Requiere Entrenamiento Completo)**
 
 #### 7.1 Métricas a Calcular
 - **Script:** `scripts/evaluate_model.py`
@@ -413,7 +413,7 @@ results/metrics/
 
 ---
 
-### **FASE 8: VISUALIZACIÓN DE RESULTADOS (Pendiente)**
+### **FASE 8: VISUALIZACIÓN DE RESULTADOS (Pendiente — Requiere Entrenamiento Completo)**
 
 #### 8.1 Gráficos de Entrenamiento
 - **Script:** `scripts/visualize_results.py`
@@ -457,7 +457,7 @@ results/figures/
 
 ---
 
-### **FASE 9: DOCUMENTACIÓN FINAL (Pendiente)**
+### **FASE 9: DOCUMENTACIÓN FINAL (Pendiente — Requiere Entrenamiento Completo)**
 
 #### 9.1 Actualización de README
 - Resultados finales del entrenamiento
@@ -480,6 +480,164 @@ git add REGISTRO_PROCESO.md
 git commit -m "feat: Modelo CNN entrenado con métricas completas"
 git push origin main
 ```
+
+---
+
+### **FASE 10: RECUPERACIÓN DEL REPOSITORIO Y VALIDACIÓN DEL PIPELINE (Completada)**
+**Fecha:** 5 de febrero de 2026
+
+#### 10.1 Clonación y Configuración del Entorno
+- **Situación:** El repositorio local fue perdido; se recuperó desde GitHub.
+- **Acción:** Clonación del repositorio desde `https://github.com/crisveg24/geotermia-colombia-cnn.git`.
+- **Entorno virtual:** Creado en `C:/Users/crsti/proyectos/.venv` (Python 3.10.11).
+- **Dependencias:** Instaladas desde `requirements.txt`.
+- **Earth Engine:** Autenticado con proyecto `geotermia-col` (nuevo proyecto GCP).
+
+#### 10.2 Validación con Mini-Dataset
+Para verificar que todo el pipeline funciona correctamente sin necesidad de descargar el dataset completo, se creó un flujo de validación con un mini-dataset:
+
+- **Descarga:** 20 imágenes ASTER (10 geotérmicas + 10 control) mediante `scripts/miniprueba/download_mini_dataset.py`.
+- **Preparación:** Normalización a 224×224×5, división train/val/test con `prepare_mini_dataset.py`.
+- **Entrenamiento:** Mini-modelo CNN de 6 épocas con `train_mini_model.py` — accuracy ~67%.
+- **Evaluación:** Métricas básicas calculadas con `evaluate_mini_model.py`.
+- **Predicción:** Script `predict_images.py` ejecutó predicciones sobre las 20 imágenes.
+- **Reporte PDF:** Generado con `generar_reporte_pdf.py` usando FPDF2.
+
+**Resultado:** Pipeline validado end-to-end. Las predicciones del mini-modelo (52-56% de confianza, todo predicho como geotérmico) fueron las esperadas dado el tamaño mínimo del dataset de prueba.
+
+**Archivos creados (organizados en `scripts/miniprueba/`):**
+```
+scripts/miniprueba/
+├── download_mini_dataset.py      # Descarga 20 imágenes de prueba
+├── prepare_mini_dataset.py       # Prepara y divide el mini-dataset
+├── train_mini_model.py           # Entrena modelo de validación (6 épocas)
+├── evaluate_mini_model.py        # Evalúa métricas del mini-modelo
+├── predict_images.py             # Ejecuta predicciones sobre imágenes
+├── generar_reporte_pdf.py        # Genera reporte PDF del experimento
+└── README.md                     # Documentación del mini-experimento
+```
+
+---
+
+### **FASE 11: OPTIMIZACIÓN DEL MODELO CNN (Completada)**
+**Fecha:** 5 de febrero de 2026
+
+#### 11.1 Análisis de Mejoras
+Se realizó un análisis técnico del modelo CNN existente identificando oportunidades de optimización basadas en literatura reciente de deep learning. Las mejoras se documentaron en `docs/MEJORAS_MODELO.md`.
+
+#### 11.2 Optimizaciones Implementadas en `models/cnn_geotermia.py`
+
+| Optimización | Antes | Después | Justificación |
+|-------------|-------|---------|---------------|
+| **SpatialDropout2D** | `Dropout` en bloques convolucionales | `SpatialDropout2D` | Más efectivo para datos espaciales; desactiva canales completos en vez de píxeles individuales, preservando coherencia espacial |
+| **AdamW** | `Adam` | `AdamW` (weight_decay=1e-4) | Separa la regularización L2 de la actualización de gradientes, mejorando la generalización |
+| **Label Smoothing** | `BinaryCrossentropy()` | `BinaryCrossentropy(label_smoothing=0.1)` | Suaviza etiquetas duras (0/1 → 0.05/0.95), reduciendo sobreconfianza y mejorando calibración |
+| **PR-AUC** | Solo AUC-ROC | + `AUC(curve='PR')` | Más informativo que ROC-AUC en datasets desbalanceados (77.5% positivos) |
+| **F1Score** | Calculado manualmente | `F1Score` como métrica nativa | Monitoreo directo del balance precision-recall durante entrenamiento |
+| **Cosine LR Decay** | No disponible | `get_cosine_decay_schedule()` | Learning rate decay suave sinusoidal, disponible como función auxiliar |
+
+**Verificación:** Modelo compilado exitosamente — 5,025,409 parámetros, optimizer AdamW confirmado.
+
+---
+
+### **FASE 12: INTERFAZ GRÁFICA CON STREAMLIT (Completada)**
+**Fecha:** 5 de febrero de 2026
+
+#### 12.1 Desarrollo de la Aplicación Web
+Se desarrolló una interfaz gráfica completa en `app.py` (674 líneas) usando Streamlit, integrando visualización de datos geoespaciales y funcionalidades de predicción.
+
+#### 12.2 Páginas Implementadas
+
+| Página | Funcionalidad |
+|--------|---------------|
+| **Inicio** | Descripción del proyecto, mapa interactivo de Colombia con zonas geotérmicas conocidas (Folium) |
+| **Predicción** | Ingreso de coordenadas (latitud, longitud) → predicción de potencial geotérmico con nivel de confianza |
+| **Métricas** | Gráficos interactivos de entrenamiento con Plotly (loss, accuracy, precision, recall) |
+| **Arquitectura** | Diagrama visual de la arquitectura CNN con detalle de cada capa |
+| **Acerca de** | Información del equipo, universidad, tecnologías y citación académica |
+
+#### 12.3 Tecnologías de la Interfaz
+- **Streamlit** para el framework web.
+- **Folium + streamlit-folium** para mapas interactivos.
+- **Plotly** para gráficos interactivos de métricas.
+
+**Ejecución:**
+```bash
+streamlit run app.py --server.headless true
+```
+
+---
+
+### **FASE 13: AUDITORÍA Y LIMPIEZA DEL PROYECTO (Completada)**
+**Fecha:** 9 de febrero de 2026
+
+#### 13.1 Auditoría Completa
+Se realizó una revisión exhaustiva de todos los archivos del repositorio (39+ archivos) analizando:
+- Redundancia entre archivos.
+- Referencias cruzadas entre scripts y documentación.
+- Archivos huérfanos (sin referencias).
+- Oportunidades de consolidación de documentación.
+
+#### 13.2 Archivos Eliminados
+
+| Archivo | Razón de eliminación |
+|---------|---------------------|
+| `verificar_config.py` | Funcionalidad duplicada con `setup.py` |
+| `scripts/main.py` | Borrador inicial sin uso; reemplazado por `download_dataset.py` |
+| `scripts/get_ee_project.py` | Script diagnóstico de 14 líneas, cubierto por `setup.py` |
+| `scripts/setup_earthengine.py` | Solo ejecutaba `ee.Authenticate()`; cubierto por `setup.py` |
+| `scripts/fix_labels.py` | Script de uso único ya ejecutado; `augment_full_dataset.py` genera labels correctamente |
+| `data/raw/*.tif.aux.xml` | Archivos auxiliares de GDAL auto-generados; no son código fuente |
+
+**Referencia actualizada:** `scripts/download_dataset.py` contenía un mensaje de error que referenciaba `setup_earthengine.py` — se actualizó para indicar `python -c "import ee; ee.Authenticate()"`.
+
+#### 13.3 Documentación Fusionada
+
+Tres documentos con alto solapamiento informativo fueron fusionados en uno solo:
+
+| Documentos originales | Documento resultante |
+|----------------------|---------------------|
+| `CONFIGURACION_COMPLETA.md` (383 líneas) | `RESUMEN_PROYECTO.md` |
+| `RESUMEN_EJECUTIVO.md` (428 líneas) | (fusión de los 3) |
+| `MONITOREO_ENTRENAMIENTO.md` (441 líneas) | |
+
+**Contenido preservado en `RESUMEN_PROYECTO.md`:**
+- Estado general del proyecto y logros (de CONFIGURACION y RESUMEN).
+- Historial de commits clave (de CONFIGURACION).
+- Guía completa de monitoreo del entrenamiento (de MONITOREO).
+- Configuración de callbacks (de MONITOREO).
+- Señales de alerta durante entrenamiento (de MONITOREO).
+- Métricas objetivo y problemas resueltos (de RESUMEN).
+- Tecnologías, estructura del repositorio y equipo.
+
+**Referencias actualizadas:**
+- `docs/README.md` — Índice de documentos actualizado con el nuevo archivo.
+- `docs/ENTRENAMIENTO_EXTERNO.md` — Referencia de contacto actualizada.
+
+#### 13.4 Archivos Reorganizados
+
+| Archivo | Origen | Destino | Razón |
+|---------|--------|---------|-------|
+| `etiquetas_imagenesgeotermia.xlsx` | Raíz del proyecto | `data/raw/` | Archivo de metadata del dataset; no era referenciado por ningún script pero pertenece lógicamente con los datos |
+
+**Verificación:** Ningún script del proyecto leía este archivo programáticamente. Se conserva como referencia histórica del etiquetado manual inicial.
+
+#### 13.5 Actualización del `.gitignore`
+Se agregaron las siguientes reglas para prevenir que archivos auxiliares auto-generados se incluyan en el repositorio:
+
+```gitignore
+# Archivos auxiliares de GDAL/QGIS (auto-generados)
+*.tif.aux.xml
+*.aux.xml
+```
+
+#### 13.6 Actualización del Registro de Proceso
+Se actualizó `docs/REGISTRO_PROCESO.md` (este documento) con el registro detallado de todas las actividades realizadas desde febrero de 2026, incluyendo:
+- Recuperación del repositorio.
+- Validación del pipeline con mini-dataset.
+- Optimizaciones del modelo.
+- Desarrollo de la interfaz gráfica.
+- Auditoría y limpieza del proyecto.
 
 ---
 
@@ -533,10 +691,16 @@ Balance de clases:
 - **earthengine-api:** Google Earth Engine
 - **Dataset:** NASA ASTER GED AG100_003
 
-### Visualización
+### Visualización e Interfaz
 - **matplotlib:** Gráficos estáticos
 - **seaborn:** Visualizaciones estadísticas
 - **TensorBoard:** Monitoreo de entrenamiento
+- **Plotly:** Gráficos interactivos de métricas
+- **Streamlit:** Framework web para la interfaz gráfica
+- **Folium / streamlit-folium:** Mapas interactivos
+
+### Reportes
+- **FPDF2:** Generación de reportes en PDF
 
 ### Control de Versiones
 - **Git:** Control de versiones
@@ -565,11 +729,12 @@ El modelo entrenado podrá:
 
 ## 🔄 PRÓXIMOS PASOS
 
-1. ⏳ **Completar entrenamiento del modelo** (~2-3 horas)
-2. ⏳ **Evaluar performance en test set**
-3. ⏳ **Generar visualizaciones de alta calidad**
+1. ⏳ **Completar entrenamiento del modelo en GPU** (RTX 5070 objetivo, 100 épocas)
+2. ⏳ **Evaluar performance en test set** (828 imágenes)
+3. ⏳ **Generar visualizaciones de alta calidad** (300 DPI para tesis)
 4. ⏳ **Documentar resultados finales**
-5. ⏳ **Preparar presentación para tesis**
+5. ⏳ **Preparar presentación para sustentación de tesis**
+6. ⏳ **Considerar dataset extendido** (50-100 GB con TFRecords en disco externo)
 
 ---
 
@@ -577,13 +742,15 @@ El modelo entrenado podrá:
 
 **Estudiantes:**
 - Cristian Camilo Vega Sánchez (Lead Developer)
-- Daniel Santiago Arévalo Rubiano (Co-author)
+- Daniel Santiago Arévalo Rubiano
+- Yuliet Katerin Espitia Ayala
+- Laura Sophie Rivera Martin
 
-**Asesor:**
+**Asesor Académico:**
 - Prof. Yeison Eduardo Conejo Sandoval
 
 **Institución:**
-- Universidad de San Buenavenaria - Bogotá
+- Universidad de San Buenaventura - Bogotá
 - Facultad de Ingeniería
 - Programa de Ingeniería de Sistemas
 
@@ -619,6 +786,6 @@ El modelo entrenado podrá:
 
 ---
 
-**Última actualización:** 3 de noviembre de 2025 - 18:35  
-**Estado del proyecto:** Fase 6 - Entrenamiento en progreso  
-**Próxima revisión:** Al completar entrenamiento
+**Última actualización:** 9 de febrero de 2026  
+**Estado del proyecto:** Fase 13 completada — Auditoría y limpieza del repositorio  
+**Próxima revisión:** Al completar entrenamiento en GPU

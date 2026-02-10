@@ -90,6 +90,10 @@ token*
 # Logs
 *.log
 
+# Archivos auxiliares de GDAL/QGIS (auto-generados)
+*.tif.aux.xml
+*.aux.xml
+
 # Archivos temporales
 *.tmp
 *.temp
