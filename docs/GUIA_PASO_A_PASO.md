@@ -85,13 +85,6 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-> ⚠️ **IMPORTANTE**: Si vas a usar también la interfaz Streamlit, instala estos
-> paquetes adicionales (ya están contemplados pero aún no están en requirements.txt):
->
-> ```bash
-> pip install streamlit streamlit-folium fpdf2
-> ```
-
 **Verificar TensorFlow**:
 ```bash
 python -c "import tensorflow as tf; print(tf.__version__)"

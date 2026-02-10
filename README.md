@@ -109,6 +109,7 @@ El proyecto analiza zonas geotérmicas de interés en Colombia:
 geotermia-colombia-cnn/
 │
 ├── 📂 app.py                        # ⭐ Interfaz web Streamlit
+├── 📂 config.py                     # ⚙️ Configuración centralizada de rutas
 │
 ├── 📂 data/                          # Datos del proyecto
 │   ├── raw/                          # Imágenes satelitales (.tif) + labels.csv
@@ -130,11 +131,14 @@ geotermia-colombia-cnn/
 │   └── saved_models/                 # Modelos entrenados (.keras)
 │
 ├── 📂 scripts/                       # Scripts de ejecución
-│   ├── prepare_dataset.py           # 1️⃣ Preparación de datos
-│   ├── train_model.py               # 2️⃣ Entrenamiento CNN
-│   ├── evaluate_model.py            # 3️⃣ Evaluación de métricas
-│   ├── visualize_results.py         # 4️⃣ Visualizaciones
-│   ├── predict.py                   # 5️⃣ Predicciones
+│   ├── download_dataset.py          # 1️⃣ Descarga de imágenes ASTER
+│   ├── augment_full_dataset.py      # 2️⃣ Augmentación del dataset
+│   ├── prepare_dataset.py           # 3️⃣ Preparación de datos (.npy)
+│   ├── train_model.py               # 4️⃣ Entrenamiento CNN
+│   ├── evaluate_model.py            # 5️⃣ Evaluación de métricas
+│   ├── visualize_results.py         # 6️⃣ Visualizaciones
+│   ├── predict.py                   # 7️⃣ Predicciones
+│   ├── visualize_architecture.py    # Visualización de arquitectura
 │   ├── miniprueba/                  # 🧪 Scripts de validación rápida
 │   └── README.md
 │
@@ -229,7 +233,6 @@ python scripts/prepare_dataset.py
 - `data/processed/y_train.npy`
 - `data/processed/X_val.npy`, `y_val.npy`
 - `data/processed/X_test.npy`, `y_test.npy`
-- `data/labels/labels.csv`
 
 ---
 
@@ -411,8 +414,8 @@ Todos los gráficos se generan en alta resolución (300 DPI) listos para incluir
 ## 🛠️ Tecnologías y Librerías
 
 ### Deep Learning
-- **TensorFlow 2.15+**: Framework de Deep Learning
-- **Keras**: API de alto nivel para redes neuronales
+- **TensorFlow 2.20+**: Framework de Deep Learning
+- **Keras 3.x**: API de alto nivel (incluido en TensorFlow)
 - **AdamW Optimizer**: Optimizador con weight decay correcto
 - **Mixed Precision**: Entrenamiento optimizado
 - **Label Smoothing**: Regularización para reducir overfitting

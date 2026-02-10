@@ -641,6 +641,35 @@ Se actualizó `docs/REGISTRO_PROCESO.md` (este documento) con el registro detall
 
 ---
 
+### Fase 14: Configuración Centralizada y Soporte Disco Externo (9 de febrero de 2026)
+
+**Objetivo:** Permitir que el pipeline funcione con datos en disco externo (USB/SSD) para entrenar en los computadores de la universidad sin depender de espacio local.
+
+#### 14.1 Nuevo archivo `config.py`
+- Configuración centralizada de todas las rutas del proyecto.
+- Variable de entorno `GEOTERMIA_DATA_ROOT` para apuntar a disco externo.
+- Método `validate()` para verificar estado de carpetas.
+- Hiperparámetros centralizados (batch_size, epochs, lr, etc.).
+
+#### 14.2 Scripts actualizados para usar `config.py`
+- `scripts/download_dataset.py` → usa `cfg.raw_dir`
+- `scripts/augment_full_dataset.py` → usa `cfg.raw_dir` y `cfg.augmented_dir`
+- `scripts/prepare_dataset.py` → usa `cfg.augmented_dir` y `cfg.processed_dir`
+- `scripts/train_model.py` → usa `cfg.processed_dir` y `cfg.models_dir`
+
+#### 14.3 Script obsoleto eliminado
+- `scripts/augment_dataset.py`: Script de prueba inicial con solo 3 imágenes hardcoded de `geotermia_imagenes/`. Reemplazado completamente por `augment_full_dataset.py`.
+
+#### 14.4 Actualizaciones de documentación y dependencias
+- `requirements.txt`: TF ≥2.20.0, agregado streamlit/streamlit-folium/fpdf2, eliminado keras separado y PyPDF2.
+- `setup.py`: Actualizado check de Python ≥3.10, siguiente paso apunta a `config.py`.
+- `README.md`: Árbol de estructura actualizado con `config.py` y todos los scripts.
+- `MODELO_PREDICTIVO.md`: TF 2.20+ / Keras 3.x.
+- `ENTRENAMIENTO_EXTERNO.md`: Branch corregido a `main`, agregada opción de disco externo.
+- `app.py`: Corregido `use_container_width` deprecado en `st.image()` → `width="stretch"`.
+
+---
+
 ## 📊 ESTADÍSTICAS DEL PROYECTO
 
 ### Dataset
@@ -787,5 +816,5 @@ El modelo entrenado podrá:
 ---
 
 **Última actualización:** 9 de febrero de 2026  
-**Estado del proyecto:** Fase 13 completada — Auditoría y limpieza del repositorio  
+**Estado del proyecto:** Fase 14 completada — Configuración centralizada y soporte disco externo  
 **Próxima revisión:** Al completar entrenamiento en GPU

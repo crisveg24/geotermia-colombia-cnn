@@ -37,11 +37,11 @@ def check_python_version():
     version = sys.version_info
     print(f"   Python {version.major}.{version.minor}.{version.micro} detectado")
     
-    if version.major >= 3 and version.minor >= 8:
+    if version.major >= 3 and version.minor >= 10:
         print("✅ Versión de Python compatible")
         return True
     else:
-        print("❌ Se requiere Python 3.8 o superior")
+        print("❌ Se requiere Python 3.10 o superior")
         return False
 
 def install_requirements():
@@ -121,13 +121,14 @@ def main():
         print("✅ Earth Engine autenticado")
         print("\n🎉 ¡Configuración completada con éxito!")
         print("\n📝 Siguiente paso:")
-        print("   - Ejecuta: jupyter notebook descargarimagenes.ipynb")
+        print("   - Verifica la configuración: python config.py")
+        print("   - Para descargar imágenes: python scripts/download_dataset.py")
     else:
         print("⚠️  Earth Engine requiere autenticación")
         print("\n📝 Siguientes pasos:")
         print("   1. Autentica Earth Engine (ver instrucciones arriba)")
         print("   2. Ejecuta este script nuevamente")
-        print("   3. Luego: jupyter notebook descargarimagenes.ipynb")
+        print("   3. Luego: python scripts/download_dataset.py"))
     
     print("\n" + "=" * 70 + "\n")
 

@@ -38,7 +38,7 @@ El modelo predictivo implementado utiliza **Redes Neuronales Convolucionales (CN
 | **Tarea** | Clasificación binaria (Con/Sin potencial geotérmico) |
 | **Input** | Imágenes 224×224×5 (5 bandas térmicas ASTER) |
 | **Output** | Probabilidad [0, 1] de potencial geotérmico |
-| **Framework** | TensorFlow 2.15+ / Keras |
+| **Framework** | TensorFlow 2.20+ / Keras 3.x |
 | **Precisión Esperada** | > 85% (con dataset adecuado) |
 
 ### 1.3 Innovaciones Implementadas

@@ -410,7 +410,7 @@ def pagina_metricas():
         st.subheader("📸 Visualizaciones")
         cols = st.columns(min(len(imgs), 3))
         for i, img in enumerate(imgs[:6]):
-            cols[i % len(cols)].image(str(img), caption=img.stem.replace("_", " ").title(), use_container_width=True)
+            cols[i % len(cols)].image(str(img), caption=img.stem.replace("_", " ").title(), width="stretch")
 
 
 def pagina_arquitectura():

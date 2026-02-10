@@ -1,7 +1,7 @@
 # 🚀 GUÍA PARA ENTRENAR EN OTRA MÁQUINA
 
-**Fecha:** 3 de noviembre de 2025  
-**Branch:** `develop` (temporal para entrenamiento)  
+**Fecha:** 9 de febrero de 2026  
+**Branch:** `main`  
 **Propósito:** Entrenar modelo CNN en máquina con mejor hardware
 
 ---
@@ -44,9 +44,6 @@ SO: Windows 10/11, Linux, o macOS
 # Clonar el repositorio
 git clone https://github.com/crisveg24/geotermia-colombia-cnn.git
 cd geotermia-colombia-cnn
-
-# Cambiar a la rama develop
-git checkout develop
 
 # Ver el estado
 git status
@@ -140,9 +137,23 @@ python scripts/prepare_dataset.py
 - `data/processed/y_*.npy` - Etiquetas correspondientes
 - Total: ~2.5 GB
 
-### Opción B: Copiar Datos Procesados (Más Rápido)
+### Opción B: Copiar Datos desde Disco Externo (Más Rápido)
 
-Si tienes acceso a los datos ya procesados (por USB, Drive, etc.):
+Si tienes las imágenes en un disco externo (USB, SSD), puedes configurar
+el proyecto para leer directamente desde ahí sin copiar nada:
+
+```powershell
+# Windows PowerShell — indicar al proyecto dónde están los datos
+$env:GEOTERMIA_DATA_ROOT = "D:\geotermia_datos"
+
+# Verificar que detecta el disco
+python config.py
+```
+
+Todos los scripts (`download_dataset.py`, `augment_full_dataset.py`, `prepare_dataset.py`,
+`train_model.py`) respetarán esta variable y leerán/escribirán en el disco externo.
+
+Alternativamente, si prefieres copiar los datos procesados al proyecto:
 
 ```bash
 # Copiar carpeta completa data/processed/
