@@ -77,19 +77,19 @@ El proyecto analiza zonas geotérmicas de interés en Colombia:
 
 ### Zonas de Alta Actividad Geotérmica
 
-1. ** Nevado del Ruiz** (Tolima)
+1. **Nevado del Ruiz** (Tolima)
  - Coordenadas: -75.3222, 4.8951
  - Volcán activo con alta actividad geotérmica
 
-2. ** Volcán Purácé** (Cauca)
+2. **Volcán Puracé** (Cauca)
  - Coordenadas: -76.4036, 2.3206
  - Sistema hidrotermal activo
 
-3. ** Paipa-Iza** (Boyacá)
+3. **Paipa-Iza** (Boyacá)
  - Coordenadas: -73.1124, 5.7781
  - Campo geotérmico con aguas termales
 
-4. ** Volcán Galeras** (Nariño)
+4. **Volcán Galeras** (Nariño)
  - Volcán activo con manifestaciones geotérmicas
 
 ### Dataset Satelital
@@ -448,31 +448,14 @@ Todos los gráficos se generan en alta resolución (300 DPI) listos para incluir
 
 ## Metodología
 
-### Metodología Híbrida
+El proyecto sigue el proceso **CRISP-DM** (Cross-Industry Standard Process for Data Mining), adaptado para Deep Learning:
 
-El proyecto sigue una **metodología mixta** (cuantitativa + cualitativa) combinando:
-
-1. **Scrum**: Gestión ágil del proyecto
-2. **CRISP-DM**: Proceso estándar de minería de datos
- - Comprensión de datos
- - Preparación de datos
- - Modelado (CNN)
- - Evaluación
- - Despliegue
-3. **KDD**: Knowledge Discovery in Databases
-4. **Six Sigma (DMAIC)**: Control de calidad
-
-### Enfoque Cuantitativo
-
-- Análisis de grandes volúmenes de datos satelitales
-- Métricas estadísticas rigurosas
-- Evaluación objetiva del modelo
-
-### Enfoque Cualitativo
-
-- Interpretación de patrones geológicos
-- Análisis de correlaciones geotérmicas
-- Validación con conocimiento experto
+1. **Comprensión del negocio**: Identificación de la necesidad de exploración geotérmica en Colombia
+2. **Comprensión de los datos**: Análisis de imágenes ASTER y sus bandas térmicas
+3. **Preparación de datos**: Descarga, augmentación, normalización y división estratificada
+4. **Modelado**: Diseño y entrenamiento de la arquitectura CNN con bloques residuales
+5. **Evaluación**: Métricas de clasificación (Accuracy, Precision, Recall, F1, ROC-AUC)
+6. **Despliegue**: Interfaz web con Streamlit para predicción interactiva
 
 ---
 
@@ -574,15 +557,15 @@ Se concede permiso para usar, copiar, modificar y distribuir este software...
 
 ### Referencias Académicas
 
-1. Alfaro, C. (2015). *Improvement of perception of the geothermal energy as a potential source of electrical energy in Colombia*. World Geothermal Congress.
+1. Alfaro, C. (2015). *Improvement of perception of the geothermal energy as a potential source of electrical energy in Colombia*. Proceedings World Geothermal Congress 2015, Melbourne, Australia.
 
-2. González, M., Gómez, J., & Pérez, A. (2020). *Desafíos de la energía geotérmica en Colombia: Hacia la diversificación energética*. Revista de Energías Renovables, 11(3), 134-145.
+2. He, K., Zhang, X., Ren, S., & Sun, J. (2016). Deep residual learning for image recognition. *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, 770-778.
 
-3. Muñoz, Y., & Pérez, A. (2021). *Aplicación de redes neuronales para la identificación de zonas geotérmicas en Colombia*. Journal of Geothermal Energy, 23(5), 567-578.
+3. Abedi, M. M., & Norouzi, G.-H. (2012). Integration of various geophysical data with geological and geochemical data to determine additional drilling for copper exploration. *Journal of Applied Geophysics*, 83, 35-45.
 
-4. Rodríguez, S., Gómez, F., & López, C. (2022). *Uso de redes neuronales convolucionales en la identificación de zonas geotérmicas en Colombia*. Geothermal Science Review, 9(2), 45-58.
+4. Coolbaugh, M. F., Kratt, C., Fallacaro, A., Calvin, W. M., & Taranik, J. V. (2007). Detection of geothermal anomalies using Advanced Spaceborne Thermal Emission and Reflection Radiometer (ASTER) thermal infrared images at Bradys Hot Springs, Nevada, USA. *Remote Sensing of Environment*, 106(3), 350-359.
 
-5. Serrano, M. (2018). *La geotermia como alternativa para la matriz energética colombiana*. Revista de Energías Alternativas, 14(2), 112-120.
+5. Lecun, Y., Bengio, Y., & Hinton, G. (2015). Deep learning. *Nature*, 521(7553), 436-444.
 
 ### Dataset
 
@@ -626,4 +609,4 @@ Vega Sánchez, C. C., Arévalo Rubiano, D. S., Espitia Ayala, Y. K., & Rivera Ma
 
 ---
 
-** Si este proyecto te parece útil, considera darle una estrella en GitHub!**
+Si este proyecto es de utilidad para su investigación, puede citarlo usando el formato BibTeX o APA indicado arriba.

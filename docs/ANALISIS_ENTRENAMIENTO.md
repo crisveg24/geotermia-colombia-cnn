@@ -260,19 +260,19 @@ Basado en tendencia de épocas 20-30:
 
 ### Para Continuar el Entrenamiento
 
-1. ** Reanudar desde último checkpoint**
+1. **Reanudar desde último checkpoint**
  - El modelo se guardó en: `models/saved_models/geotermia_cnn_custom_best.keras`
  - Callbacks configurados para guardar mejor modelo automáticamente
 
-2. ** Monitorear validation loss**
+2. **Monitorear validation loss**
  - Revisar logs de TensorBoard: `logs/geotermia_cnn_custom_20251103-185602`
  - Confirmar que no hay overfitting
 
-3. ** Considerar early stopping**
+3. **Considerar early stopping**
  - Si val_loss deja de mejorar por 15 épocas, detenerse automáticamente
  - Callback ya configurado con patience=15
 
-4. ** Ajustar learning rate si se estanca**
+4. **Ajustar learning rate si se estanca**
  - ReduceLROnPlateau configurado (factor=0.5, patience=5)
  - Se reducirá automáticamente si necesario
 
