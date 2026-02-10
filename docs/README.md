@@ -1,8 +1,8 @@
-# 📚 Documentación del Proyecto
+# Documentación del Proyecto
 
 Esta carpeta contiene toda la documentación técnica del proyecto CNN Geotermia Colombia.
 
-## 📋 Índice de Documentos
+## Índice de Documentos
 
 | Documento | Descripción |
 |-----------|-------------|
@@ -13,7 +13,7 @@ Esta carpeta contiene toda la documentación técnica del proyecto CNN Geotermia
 | [ENTRENAMIENTO_EXTERNO.md](ENTRENAMIENTO_EXTERNO.md) | Guía para entrenar en otra máquina |
 | [REGISTRO_PROCESO.md](REGISTRO_PROCESO.md) | Historial completo del proyecto |
 
-## 🎯 Orden de Lectura Recomendado
+## Orden de Lectura Recomendado
 
 1. **RESUMEN_PROYECTO.md** - Para entender el proyecto rápidamente
 2. **MODELO_PREDICTIVO.md** - Para documentación técnica detallada
@@ -22,5 +22,5 @@ Esta carpeta contiene toda la documentación técnica del proyecto CNN Geotermia
 
 ---
 
-**Universidad de San Buenaventura - Bogotá**  
+**Universidad de San Buenaventura - Bogotá** 
 Proyecto de Grado 2025-2026

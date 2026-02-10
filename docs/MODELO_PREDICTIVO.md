@@ -1,14 +1,14 @@
-# 🧠 Modelo Predictivo de Potencial Geotérmico: Arquitectura y Funcionamiento
+# Modelo Predictivo de Potencial Geotérmico: Arquitectura y Funcionamiento
 
-**Documento Técnico**  
-**Autores**: Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano  
-**Asesor**: Prof. Yeison Eduardo Conejo Sandoval  
-**Universidad de San Buenaventura - Bogotá**  
+**Documento Técnico** 
+**Autores**: Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano 
+**Asesor**: Prof. Yeison Eduardo Conejo Sandoval 
+**Universidad de San Buenaventura - Bogotá** 
 **Fecha**: Noviembre 2025
 
 ---
 
-## 📑 Tabla de Contenidos
+## Tabla de Contenidos
 
 1. [Resumen Ejecutivo](#resumen-ejecutivo)
 2. [Fundamentos Teóricos](#fundamentos-teóricos)
@@ -43,11 +43,11 @@ El modelo predictivo implementado utiliza **Redes Neuronales Convolucionales (CN
 
 ### 1.3 Innovaciones Implementadas
 
-- ✅ **Bloques Residuales**: Mejoran el flujo de gradientes y permiten redes más profundas
-- ✅ **Batch Normalization**: Estabiliza el entrenamiento y acelera convergencia
-- ✅ **Mixed Precision Training**: Reduce uso de memoria y acelera entrenamiento en GPUs modernas
-- ✅ **Data Augmentation**: Aumenta la generalización del modelo
-- ✅ **Transfer Learning**: Opción de usar modelos pre-entrenados (EfficientNet, ResNet50)
+- **Bloques Residuales**: Mejoran el flujo de gradientes y permiten redes más profundas
+- **Batch Normalization**: Estabiliza el entrenamiento y acelera convergencia
+- **Mixed Precision Training**: Reduce uso de memoria y acelera entrenamiento en GPUs modernas
+- **Data Augmentation**: Aumenta la generalización del modelo
+- **Transfer Learning**: Opción de usar modelos pre-entrenados (EfficientNet, ResNet50)
 
 ---
 
@@ -62,10 +62,10 @@ Las **CNNs** son arquitecturas de Deep Learning especializadas en procesar datos
 **1. Convolución (Conv2D)**
 ```
 ┌─────────────┐
-│ Input Image │  →  Conv2D  →  Feature Map
-│  224×224×5  │      ↓
-└─────────────┘   Filters detect patterns
-                  (edges, textures, etc.)
+│ Input Image │ → Conv2D → Feature Map
+│ 224×224×5 │ ↓
+└─────────────┘ Filters detect patterns
+ (edges, textures, etc.)
 ```
 
 **Función matemática:**
@@ -76,11 +76,11 @@ $$
 **2. Pooling (MaxPooling2D)**
 ```
 Reduce spatial dimensions while keeping important features
-┌──┬──┬──┬──┐        ┌────┬────┐
-│2 │4 │1 │3 │        │ 4  │ 8  │
-├──┼──┼──┼──┤  →     ├────┼────┤
-│1 │6 │7 │8 │        │ 9  │ 10 │
-├──┼──┼──┼──┤        └────┴────┘
+┌──┬──┬──┬──┐ ┌────┬────┐
+│2 │4 │1 │3 │ │ 4 │ 8 │
+├──┼──┼──┼──┤ → ├────┼────┤
+│1 │6 │7 │8 │ │ 9 │ 10 │
+├──┼──┼──┼──┤ └────┴────┘
 │3 │2 │9 │5 │
 ├──┼──┼──┼──┤
 │0 │1 │4 │10│
@@ -124,79 +124,79 @@ Las CNNs **aprenden automáticamente** estos patrones, superando métodos tradic
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    INPUT LAYER                                   │
-│                  (224×224×5 pixels)                             │
-│               5 bandas térmicas ASTER                           │
+│ INPUT LAYER │
+│ (224×224×5 pixels) │
+│ 5 bandas térmicas ASTER │
 └────────────────────────┬────────────────────────────────────────┘
-                         │
-                         ▼
+ │
+ ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                  RESCALING LAYER                                 │
-│            Normalización [0, 255] → [0, 1]                      │
+│ RESCALING LAYER │
+│ Normalización [0, 255] → [0, 1] │
 └────────────────────────┬────────────────────────────────────────┘
-                         │
-                         ▼
+ │
+ ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│              INITIAL CONV BLOCK                                  │
-│   Conv2D(32, 7×7, stride=2) + BatchNorm + ReLU + Dropout       │
-│   MaxPooling2D(3×3, stride=2)                                   │
-│                 Output: 55×55×32                                │
+│ INITIAL CONV BLOCK │
+│ Conv2D(32, 7×7, stride=2) + BatchNorm + ReLU + Dropout │
+│ MaxPooling2D(3×3, stride=2) │
+│ Output: 55×55×32 │
 └────────────────────────┬────────────────────────────────────────┘
-                         │
-                         ▼
+ │
+ ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│              RESIDUAL BLOCK 1 (64 filters)                      │
-│   ┌──────────────────────────────────────────┐                 │
-│   │ Conv2D(64, 3×3) + BatchNorm + ReLU       │                 │
-│   │ Conv2D(64, 3×3) + BatchNorm              │                 │
-│   │         ↓            ↓                    │                 │
-│   │    Shortcut ─────────┴─── Add            │                 │
-│   │         ↓                                 │                 │
-│   │        ReLU                               │                 │
-│   └──────────────────────────────────────────┘                 │
-│   MaxPooling2D(2×2) → Output: 27×27×64                         │
+│ RESIDUAL BLOCK 1 (64 filters) │
+│ ┌──────────────────────────────────────────┐ │
+│ │ Conv2D(64, 3×3) + BatchNorm + ReLU │ │
+│ │ Conv2D(64, 3×3) + BatchNorm │ │
+│ │ ↓ ↓ │ │
+│ │ Shortcut ─────────┴─── Add │ │
+│ │ ↓ │ │
+│ │ ReLU │ │
+│ └──────────────────────────────────────────┘ │
+│ MaxPooling2D(2×2) → Output: 27×27×64 │
 └────────────────────────┬────────────────────────────────────────┘
-                         │
-                         ▼
+ │
+ ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│              RESIDUAL BLOCK 2 (128 filters)                     │
-│   Similar structure with 128 filters                            │
-│   MaxPooling2D(2×2) → Output: 13×13×128                        │
+│ RESIDUAL BLOCK 2 (128 filters) │
+│ Similar structure with 128 filters │
+│ MaxPooling2D(2×2) → Output: 13×13×128 │
 └────────────────────────┬────────────────────────────────────────┘
-                         │
-                         ▼
+ │
+ ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│              RESIDUAL BLOCK 3 (256 filters)                     │
-│   Similar structure with 256 filters                            │
-│   MaxPooling2D(2×2) → Output: 6×6×256                          │
+│ RESIDUAL BLOCK 3 (256 filters) │
+│ Similar structure with 256 filters │
+│ MaxPooling2D(2×2) → Output: 6×6×256 │
 └────────────────────────┬────────────────────────────────────────┘
-                         │
-                         ▼
+ │
+ ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│              RESIDUAL BLOCK 4 (512 filters)                     │
-│   Similar structure with 512 filters                            │
-│                Output: 6×6×512                                  │
+│ RESIDUAL BLOCK 4 (512 filters) │
+│ Similar structure with 512 filters │
+│ Output: 6×6×512 │
 └────────────────────────┬────────────────────────────────────────┘
-                         │
-                         ▼
+ │
+ ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│           GLOBAL AVERAGE POOLING                                 │
-│   Reduce 6×6×512 → 512 (promedio por canal)                    │
-│   Ventaja: Reduce parámetros vs Flatten                        │
+│ GLOBAL AVERAGE POOLING │
+│ Reduce 6×6×512 → 512 (promedio por canal) │
+│ Ventaja: Reduce parámetros vs Flatten │
 └────────────────────────┬────────────────────────────────────────┘
-                         │
-                         ▼
+ │
+ ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                DENSE LAYER (256 units)                          │
-│   Dense(256) + BatchNorm + ReLU + Dropout(0.5)                 │
+│ DENSE LAYER (256 units) │
+│ Dense(256) + BatchNorm + ReLU + Dropout(0.5) │
 └────────────────────────┬────────────────────────────────────────┘
-                         │
-                         ▼
+ │
+ ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                  OUTPUT LAYER                                    │
-│           Dense(1, activation='sigmoid')                        │
-│         Output: Probabilidad [0, 1]                             │
-│   0 = Sin potencial, 1 = Con potencial                         │
+│ OUTPUT LAYER │
+│ Dense(1, activation='sigmoid') │
+│ Output: Probabilidad [0, 1] │
+│ 0 = Sin potencial, 1 = Con potencial │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -209,31 +209,31 @@ Un bloque residual añade una **conexión de atajo (skip connection)** que permi
 ```python
 # Código simplificado
 def residual_block(x, filters):
-    shortcut = x  # Guardar entrada original
-    
-    # Path principal
-    x = Conv2D(filters, 3×3)(x)
-    x = BatchNormalization()(x)
-    x = ReLU()(x)
-    
-    x = Conv2D(filters, 3×3)(x)
-    x = BatchNormalization()(x)
-    
-    # Ajustar dimensiones del shortcut si es necesario
-    if shortcut.shape != x.shape:
-        shortcut = Conv2D(filters, 1×1)(shortcut)
-    
-    # Sumar shortcut (conexión residual)
-    x = Add()([x, shortcut])
-    x = ReLU()(x)
-    
-    return x
+ shortcut = x # Guardar entrada original
+ 
+ # Path principal
+ x = Conv2D(filters, 3×3)(x)
+ x = BatchNormalization()(x)
+ x = ReLU()(x)
+ 
+ x = Conv2D(filters, 3×3)(x)
+ x = BatchNormalization()(x)
+ 
+ # Ajustar dimensiones del shortcut si es necesario
+ if shortcut.shape != x.shape:
+ shortcut = Conv2D(filters, 1×1)(shortcut)
+ 
+ # Sumar shortcut (conexión residual)
+ x = Add()([x, shortcut])
+ x = ReLU()(x)
+ 
+ return x
 ```
 
 **Ventajas:**
-1. ✅ **Evita vanishing gradient**: El gradiente puede fluir directamente
-2. ✅ **Permite redes más profundas**: Sin degradación de rendimiento
-3. ✅ **Mejor optimización**: Más fácil de entrenar
+1. **Evita vanishing gradient**: El gradiente puede fluir directamente
+2. **Permite redes más profundas**: Sin degradación de rendimiento
+3. **Mejor optimización**: Más fácil de entrenar
 
 ### 3.3 Batch Normalization
 
@@ -244,9 +244,9 @@ $$
 $$
 
 **Beneficios:**
-- 🚀 **Acelera entrenamiento** (permite learning rates más altos)
-- 📊 **Estabiliza el proceso** (reduce sensibilidad a inicialización)
-- 🎯 **Actúa como regularización** (efecto similar a Dropout)
+- **Acelera entrenamiento** (permite learning rates más altos)
+- **Estabiliza el proceso** (reduce sensibilidad a inicialización)
+- **Actúa como regularización** (efecto similar a Dropout)
 
 ### 3.4 Regularización: Dropout + L2
 
@@ -256,7 +256,7 @@ Durante entrenamiento, aleatoriamente "apaga" 50% de neuronas:
 
 Capa Dense (256 neuronas):
 [●][○][●][○][●][●][○][●]...
- ↑  ↑  ↑  ↑  ↑  ↑  ↑  ↑
+ ↑ ↑ ↑ ↑ ↑ ↑ ↑ ↑
 Act Off Act Off Act Act Off Act
 ```
 - Previene co-adaptación de neuronas
@@ -278,19 +278,19 @@ $$
 **Flatten (tradicional):**
 ```
 6×6×512 = 18,432 parámetros → Dense(256)
-= 4,718,592 parámetros adicionales ❌ (propenso a overfitting)
+= 4,718,592 parámetros adicionales (propenso a overfitting)
 ```
 
 **Global Average Pooling (moderno):**
 ```
 6×6×512 → Promedio por canal → 512 valores
-512 → Dense(256) = 131,072 parámetros ✅ (más eficiente)
+512 → Dense(256) = 131,072 parámetros (más eficiente)
 ```
 
 **Beneficios:**
-- ✅ Reduce parámetros **36x**
-- ✅ Menos propenso a overfitting
-- ✅ Interpretabilidad: cada canal representa un concepto
+- Reduce parámetros **36x**
+- Menos propenso a overfitting
+- Interpretabilidad: cada canal representa un concepto
 
 ---
 
@@ -300,72 +300,72 @@ $$
 
 ```
 ┌────────────────┐
-│ Google Earth   │
-│    Engine      │  NASA ASTER AG100 V003
-└───────┬────────┘  (5 bandas térmicas)
-        │
-        │ Download (.tif files)
-        ▼
+│ Google Earth │
+│ Engine │ NASA ASTER AG100 V003
+└───────┬────────┘ (5 bandas térmicas)
+ │
+ │ Download (.tif files)
+ ▼
 ┌────────────────────────────────┐
-│   data/raw/                    │
-│   - Nevado_del_Ruiz.tif       │  Raw Satellite Images
-│   - Volcan_Purace.tif          │  (Resolution: variable)
-│   - Paipa_Iza.tif              │
+│ data/raw/ │
+│ - Nevado_del_Ruiz.tif │ Raw Satellite Images
+│ - Volcan_Purace.tif │ (Resolution: variable)
+│ - Paipa_Iza.tif │
 └───────────┬────────────────────┘
-            │
-            │ scripts/prepare_dataset.py
-            ▼
+ │
+ │ scripts/prepare_dataset.py
+ ▼
 ┌─────────────────────────────────────────────┐
-│        DATA PREPROCESSING                   │
-│  1. Load .tif (rasterio)                   │
-│  2. Resize to 224×224                      │
-│  3. Normalize (z-score per band)           │
-│  4. Create labels (labels.csv)             │
-│  5. Split: 70% train, 15% val, 15% test   │
-│  6. Save as .npy files                     │
+│ DATA PREPROCESSING │
+│ 1. Load .tif (rasterio) │
+│ 2. Resize to 224×224 │
+│ 3. Normalize (z-score per band) │
+│ 4. Create labels (labels.csv) │
+│ 5. Split: 70% train, 15% val, 15% test │
+│ 6. Save as .npy files │
 └───────────┬─────────────────────────────────┘
-            │
-            ▼
+ │
+ ▼
 ┌────────────────────────────────┐
-│   data/processed/              │
-│   - X_train.npy (70%)          │  Processed Data
-│   - X_val.npy   (15%)          │  Ready for Training
-│   - X_test.npy  (15%)          │
-│   - y_*.npy (labels)           │
+│ data/processed/ │
+│ - X_train.npy (70%) │ Processed Data
+│ - X_val.npy (15%) │ Ready for Training
+│ - X_test.npy (15%) │
+│ - y_*.npy (labels) │
 └───────────┬────────────────────┘
-            │
-            │ scripts/train_model.py
-            ▼
+ │
+ │ scripts/train_model.py
+ ▼
 ┌─────────────────────────────────────────────┐
-│         MODEL TRAINING                      │
-│  1. Create CNN architecture                │
-│  2. Apply data augmentation                │
-│  3. Train with callbacks:                  │
-│     - ModelCheckpoint                      │
-│     - EarlyStopping                        │
-│     - ReduceLROnPlateau                    │
-│     - TensorBoard                          │
-│  4. Save best model                        │
+│ MODEL TRAINING │
+│ 1. Create CNN architecture │
+│ 2. Apply data augmentation │
+│ 3. Train with callbacks: │
+│ - ModelCheckpoint │
+│ - EarlyStopping │
+│ - ReduceLROnPlateau │
+│ - TensorBoard │
+│ 4. Save best model │
 └───────────┬─────────────────────────────────┘
-            │
-            ▼
+ │
+ ▼
 ┌────────────────────────────────┐
-│   models/saved_models/         │
-│   - geotermia_cnn_best.keras   │  Trained Model
+│ models/saved_models/ │
+│ - geotermia_cnn_best.keras │ Trained Model
 └───────────┬────────────────────┘
-            │
-            ├─────────────────┬──────────────────┐
-            │                 │                  │
-            ▼                 ▼                  ▼
-    ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-    │ EVALUATION   │  │VISUALIZATION │  │ PREDICTION   │
-    │              │  │              │  │              │
-    │ Metrics:     │  │ Plots:       │  │ New Images:  │
-    │ - Accuracy   │  │ - Training   │  │ - Classify   │
-    │ - Precision  │  │ - Confusion  │  │ - Probability│
-    │ - Recall     │  │ - ROC Curve  │  │ - Location   │
-    │ - F1-Score   │  │ - Metrics    │  │ - Report     │
-    └──────────────┘  └──────────────┘  └──────────────┘
+ │
+ ├─────────────────┬──────────────────┐
+ │ │ │
+ ▼ ▼ ▼
+ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+ │ EVALUATION │ │VISUALIZATION │ │ PREDICTION │
+ │ │ │ │ │ │
+ │ Metrics: │ │ Plots: │ │ New Images: │
+ │ - Accuracy │ │ - Training │ │ - Classify │
+ │ - Precision │ │ - Confusion │ │ - Probability│
+ │ - Recall │ │ - ROC Curve │ │ - Location │
+ │ - F1-Score │ │ - Metrics │ │ - Report │
+ └──────────────┘ └──────────────┘ └──────────────┘
 ```
 
 ### 4.2 Preprocesamiento de Datos
@@ -376,12 +376,12 @@ $$
 import rasterio
 
 def load_tif_image(file_path):
-    """Carga imagen satelital ASTER."""
-    with rasterio.open(file_path) as src:
-        # Leer bandas 10-14 (emisividad térmica)
-        bands = [src.read(i) for i in range(1, src.count + 1)]
-        image = np.stack(bands, axis=-1)  # Shape: (H, W, 5)
-    return image
+ """Carga imagen satelital ASTER."""
+ with rasterio.open(file_path) as src:
+ # Leer bandas 10-14 (emisividad térmica)
+ bands = [src.read(i) for i in range(1, src.count + 1)]
+ image = np.stack(bands, axis=-1) # Shape: (H, W, 5)
+ return image
 ```
 
 **Bandas ASTER utilizadas:**
@@ -400,22 +400,22 @@ def load_tif_image(file_path):
 from skimage.transform import resize
 
 def resize_image(image, target_size=(224, 224)):
-    """Redimensiona preservando información."""
-    target_shape = (*target_size, image.shape[-1])
-    resized = resize(
-        image,
-        target_shape,
-        mode='reflect',        # Padding reflejo en bordes
-        anti_aliasing=True,    # Reduce aliasing
-        preserve_range=True    # Mantiene rango de valores
-    )
-    return resized.astype(np.float32)
+ """Redimensiona preservando información."""
+ target_shape = (*target_size, image.shape[-1])
+ resized = resize(
+ image,
+ target_shape,
+ mode='reflect', # Padding reflejo en bordes
+ anti_aliasing=True, # Reduce aliasing
+ preserve_range=True # Mantiene rango de valores
+ )
+ return resized.astype(np.float32)
 ```
 
 **¿Por qué 224×224?**
-- ✅ Tamaño estándar en Deep Learning (compatibilidad con Transfer Learning)
-- ✅ Balance entre detalle y eficiencia computacional
-- ✅ Permite procesamiento en GPUs modernas
+- Tamaño estándar en Deep Learning (compatibilidad con Transfer Learning)
+- Balance entre detalle y eficiencia computacional
+- Permite procesamiento en GPUs modernas
 
 #### 4.2.3 Normalización
 
@@ -427,26 +427,26 @@ $$
 
 ```python
 def normalize_image(image):
-    """Normaliza cada banda independientemente."""
-    normalized = np.zeros_like(image, dtype=np.float32)
-    
-    for i in range(image.shape[-1]):
-        band = image[:, :, i]
-        mean = np.mean(band)
-        std = np.std(band)
-        
-        if std > 0:
-            normalized[:, :, i] = (band - mean) / std
-        else:
-            normalized[:, :, i] = band - mean
-    
-    return normalized
+ """Normaliza cada banda independientemente."""
+ normalized = np.zeros_like(image, dtype=np.float32)
+ 
+ for i in range(image.shape[-1]):
+ band = image[:, :, i]
+ mean = np.mean(band)
+ std = np.std(band)
+ 
+ if std > 0:
+ normalized[:, :, i] = (band - mean) / std
+ else:
+ normalized[:, :, i] = band - mean
+ 
+ return normalized
 ```
 
 **Beneficios:**
-- 🎯 **Estabiliza el entrenamiento**: Valores en rango similar
-- 📊 **Mejora convergencia**: Gradientes más uniformes
-- 🔄 **Permite comparación**: Diferentes sensores/fechas
+- **Estabiliza el entrenamiento**: Valores en rango similar
+- **Mejora convergencia**: Gradientes más uniformes
+- **Permite comparación**: Diferentes sensores/fechas
 
 #### 4.2.4 Etiquetado
 
@@ -475,25 +475,25 @@ from sklearn.model_selection import train_test_split
 
 # Primera división: separar test set (15%)
 X_temp, X_test, y_temp, y_test = train_test_split(
-    X, y, 
-    test_size=0.15,
-    random_state=42,
-    stratify=y  # Mantiene proporción de clases
+ X, y, 
+ test_size=0.15,
+ random_state=42,
+ stratify=y # Mantiene proporción de clases
 )
 
 # Segunda división: train (70%) y validation (15%)
 X_train, X_val, y_train, y_val = train_test_split(
-    X_temp, y_temp,
-    test_size=0.176,  # 15% del total original
-    random_state=42,
-    stratify=y_temp
+ X_temp, y_temp,
+ test_size=0.176, # 15% del total original
+ random_state=42,
+ stratify=y_temp
 )
 ```
 
 **Proporciones finales:**
-- 🎯 **Train (70%)**: Para aprender patrones
-- 📊 **Validation (15%)**: Para ajustar hiperparámetros y early stopping
-- ✅ **Test (15%)**: Para evaluación final no sesgada
+- **Train (70%)**: Para aprender patrones
+- **Validation (15%)**: Para ajustar hiperparámetros y early stopping
+- **Test (15%)**: Para evaluación final no sesgada
 
 ---
 
@@ -509,31 +509,31 @@ Con dataset limitado, Data Augmentation **artificialmente aumenta** la variedad 
 from tensorflow.keras import layers
 
 data_augmentation = keras.Sequential([
-    layers.RandomFlip("horizontal_and_vertical"),  # Reflejo
-    layers.RandomRotation(0.2),                    # Rotación ±20%
-    layers.RandomZoom(0.2),                        # Zoom ±20%
-    layers.RandomTranslation(0.1, 0.1),           # Desplazamiento
-    layers.RandomContrast(0.2),                    # Contraste ±20%
+ layers.RandomFlip("horizontal_and_vertical"), # Reflejo
+ layers.RandomRotation(0.2), # Rotación ±20%
+ layers.RandomZoom(0.2), # Zoom ±20%
+ layers.RandomTranslation(0.1, 0.1), # Desplazamiento
+ layers.RandomContrast(0.2), # Contraste ±20%
 ], name='data_augmentation')
 ```
 
 **Visualización del efecto:**
 
 ```
-Original Image         Augmentation Results
-┌─────────┐           ┌─────────┬─────────┬─────────┐
-│         │           │ Flipped │ Rotated │  Zoomed │
-│    🌋   │    →      │   🌋    │   🌋    │   🌋    │
-│         │           │         │         │         │
-└─────────┘           └─────────┴─────────┴─────────┘
+Original Image Augmentation Results
+┌─────────┐ ┌─────────┬─────────┬─────────┐
+│ │ │ Flipped │ Rotated │ Zoomed │
+│ │ → │ │ │ │
+│ │ │ │ │ │
+└─────────┘ └─────────┴─────────┴─────────┘
 
 Resultado: 1 imagen → 5+ variaciones diferentes
 ```
 
 **Beneficios:**
-- ✅ Reduce overfitting (modelo ve más variaciones)
-- ✅ Mejora generalización (aprende invariancias)
-- ✅ Simula diferentes condiciones (ángulos, iluminación)
+- Reduce overfitting (modelo ve más variaciones)
+- Mejora generalización (aprende invariancias)
+- Simula diferentes condiciones (ángulos, iluminación)
 
 ### 5.2 Mixed Precision Training
 
@@ -553,10 +553,10 @@ mixed_precision.set_global_policy(policy)
 
 | Aspecto | FP32 (tradicional) | FP16 (mixed precision) |
 |---------|-------------------|------------------------|
-| **Memoria GPU** | 100% | ~50% ✅ |
-| **Velocidad** | 1x | ~2-3x ✅ |
-| **Precisión** | Alta | Alta (donde importa) ✅ |
-| **Batch size** | Limitado | 2x más grande ✅ |
+| **Memoria GPU** | 100% | ~50% |
+| **Velocidad** | 1x | ~2-3x |
+| **Precisión** | Alta | Alta (donde importa) |
+| **Batch size** | Limitado | 2x más grande |
 
 ### 5.3 Callbacks Avanzados
 
@@ -564,42 +564,42 @@ mixed_precision.set_global_policy(policy)
 
 ```python
 ModelCheckpoint(
-    filepath='models/saved_models/best_model.keras',
-    monitor='val_loss',        # Métrica a monitorear
-    save_best_only=True,       # Solo guarda si mejora
-    mode='min',                # Minimizar val_loss
-    verbose=1
+ filepath='models/saved_models/best_model.keras',
+ monitor='val_loss', # Métrica a monitorear
+ save_best_only=True, # Solo guarda si mejora
+ mode='min', # Minimizar val_loss
+ verbose=1
 )
 ```
 
 **Funcionalidad:**
-- 💾 Guarda automáticamente el **mejor modelo** durante entrenamiento
-- 🎯 Evita perder progreso si el entrenamiento se interrumpe
-- 📊 Permite recuperar el punto óptimo (antes de overfitting)
+- Guarda automáticamente el **mejor modelo** durante entrenamiento
+- Evita perder progreso si el entrenamiento se interrumpe
+- Permite recuperar el punto óptimo (antes de overfitting)
 
 #### 5.3.2 EarlyStopping
 
 ```python
 EarlyStopping(
-    monitor='val_loss',
-    patience=15,               # Espera 15 épocas sin mejora
-    restore_best_weights=True, # Restaura mejor modelo
-    verbose=1
+ monitor='val_loss',
+ patience=15, # Espera 15 épocas sin mejora
+ restore_best_weights=True, # Restaura mejor modelo
+ verbose=1
 )
 ```
 
 **Comportamiento:**
 
 ```
-Epoch  Train Loss  Val Loss   Status
+Epoch Train Loss Val Loss Status
 ────────────────────────────────────
-  10     0.342      0.401     ✓ Best
-  11     0.315      0.389     ✓ Better!
-  12     0.298      0.385     ✓ Better!
-  13     0.271      0.391     ✗ Worse (1/15)
-  14     0.255      0.398     ✗ Worse (2/15)
-  ...
-  28     0.121      0.452     ✗ Worse (15/15)
+ 10 0.342 0.401 Best
+ 11 0.315 0.389 Better!
+ 12 0.298 0.385 Better!
+ 13 0.271 0.391 Worse (1/15)
+ 14 0.255 0.398 Worse (2/15)
+ ...
+ 28 0.121 0.452 Worse (15/15)
 ────────────────────────────────────
 STOP! Restore weights from epoch 12
 ```
@@ -608,11 +608,11 @@ STOP! Restore weights from epoch 12
 
 ```python
 ReduceLROnPlateau(
-    monitor='val_loss',
-    factor=0.5,          # Reduce LR a la mitad
-    patience=5,          # Después de 5 épocas sin mejora
-    min_lr=1e-7,        # LR mínimo
-    verbose=1
+ monitor='val_loss',
+ factor=0.5, # Reduce LR a la mitad
+ patience=5, # Después de 5 épocas sin mejora
+ min_lr=1e-7, # LR mínimo
+ verbose=1
 )
 ```
 
@@ -620,13 +620,13 @@ ReduceLROnPlateau(
 
 ```
 Learning Rate Schedule:
-0.001  ━━━━━━━━━━━━━━━━━━━━━━━━━━  (Initial)
-         ↓ (plateau detected)
-0.0005  ━━━━━━━━━━━━━  (Reduced)
-         ↓ (plateau detected)
-0.00025 ━━━━━━━  (Reduced)
-         ↓ (plateau detected)
-0.000125 ━━━  (Reduced)
+0.001 ━━━━━━━━━━━━━━━━━━━━━━━━━━ (Initial)
+ ↓ (plateau detected)
+0.0005 ━━━━━━━━━━━━━ (Reduced)
+ ↓ (plateau detected)
+0.00025 ━━━━━━━ (Reduced)
+ ↓ (plateau detected)
+0.000125 ━━━ (Reduced)
 ```
 
 **Beneficio:** Afina el modelo cuando está cerca del óptimo
@@ -635,10 +635,10 @@ Learning Rate Schedule:
 
 ```python
 TensorBoard(
-    log_dir='logs/run_20251103_143022',
-    histogram_freq=1,     # Histogramas cada época
-    write_graph=True,     # Guarda arquitectura
-    update_freq='epoch'   # Actualiza por época
+ log_dir='logs/run_20251103_143022',
+ histogram_freq=1, # Histogramas cada época
+ write_graph=True, # Guarda arquitectura
+ update_freq='epoch' # Actualiza por época
 )
 ```
 
@@ -650,11 +650,11 @@ tensorboard --logdir=logs
 ```
 
 **Métricas disponibles:**
-- 📈 Loss curves (train vs validation)
-- 📊 Accuracy curves
-- 🎯 Histogramas de pesos
-- 📉 Distribuciones de gradientes
-- 🖼️ Visualización de arquitectura
+- Loss curves (train vs validation)
+- Accuracy curves
+- Histogramas de pesos
+- Distribuciones de gradientes
+- Visualización de arquitectura
 
 ### 5.4 Función de Pérdida: Binary Crossentropy
 
@@ -704,9 +704,9 @@ from sklearn.utils import class_weight
 
 # Calcular pesos
 class_weights = class_weight.compute_class_weight(
-    'balanced',
-    classes=np.unique(y_train),
-    y=y_train
+ 'balanced',
+ classes=np.unique(y_train),
+ y=y_train
 )
 
 # Ejemplo de resultado:
@@ -729,24 +729,24 @@ $$
 #### 6.1.1 Matriz de Confusión
 
 ```
-                 Predicted
-               Neg      Pos
-            ┌──────┬──────┐
-Actual  Neg │  TN  │  FP  │  TN: True Negative
-            ├──────┼──────┤  FP: False Positive
-        Pos │  FN  │  TP  │  FN: False Negative
-            └──────┴──────┘  TP: True Positive
+ Predicted
+ Neg Pos
+ ┌──────┬──────┐
+Actual Neg │ TN │ FP │ TN: True Negative
+ ├──────┼──────┤ FP: False Positive
+ Pos │ FN │ TP │ FN: False Negative
+ └──────┴──────┘ TP: True Positive
 ```
 
 **Ejemplo:**
 ```
-                Predicted
-            Sin Pot  Con Pot
-          ┌────────┬────────┐
-Sin Pot   │   85   │   15   │  = 100 casos
-          ├────────┼────────┤
-Con Pot   │   10   │   90   │  = 100 casos
-          └────────┴────────┘
+ Predicted
+ Sin Pot Con Pot
+ ┌────────┬────────┐
+Sin Pot │ 85 │ 15 │ = 100 casos
+ ├────────┼────────┤
+Con Pot │ 10 │ 90 │ = 100 casos
+ └────────┴────────┘
 ```
 
 #### 6.1.2 Accuracy (Exactitud)
@@ -811,24 +811,24 @@ $$
 
 ```
 TPR (Recall)
-    │
+ │
 1.0 ├──────────────┐
-    │             / │
-    │            /  │  AUC = 0.95
-    │           /   │  (Excelente)
-    │          /    │
-    │         /     │
-0.5 ├        /      │
-    │       /       │
-    │      /        │
-    │     /         │
-    │    /          │
+ │ / │
+ │ / │ AUC = 0.95
+ │ / │ (Excelente)
+ │ / │
+ │ / │
+0.5 ├ / │
+ │ / │
+ │ / │
+ │ / │
+ │ / │
 0.0 ├───┴───────────┤
-    0.0    0.5    1.0  → FPR
+ 0.0 0.5 1.0 → FPR
 ```
 
 **Interpretación:**
-- **AUC = 1.0**: Clasificador perfecto ✅
+- **AUC = 1.0**: Clasificador perfecto 
 - **AUC = 0.9-1.0**: Excelente
 - **AUC = 0.8-0.9**: Muy bueno
 - **AUC = 0.7-0.8**: Bueno
@@ -864,47 +864,47 @@ $$
 
 ```
 ┌──────────────────┐
-│  Nueva Imagen    │  Input: Zona desconocida
-│  (.tif file)     │  Size: Variable (e.g., 1000×1000×5)
+│ Nueva Imagen │ Input: Zona desconocida
+│ (.tif file) │ Size: Variable (e.g., 1000×1000×5)
 └────────┬─────────┘
-         │
-         ▼
+ │
+ ▼
 ┌────────────────────────────────┐
-│  PREPROCESAMIENTO              │
-│  1. Load with rasterio         │
-│  2. Resize to 224×224×5        │
-│  3. Normalize (z-score)        │
-│  4. Add batch dimension        │
-│     Shape: (1, 224, 224, 5)   │
+│ PREPROCESAMIENTO │
+│ 1. Load with rasterio │
+│ 2. Resize to 224×224×5 │
+│ 3. Normalize (z-score) │
+│ 4. Add batch dimension │
+│ Shape: (1, 224, 224, 5) │
 └────────┬───────────────────────┘
-         │
-         ▼
+ │
+ ▼
 ┌────────────────────────────────┐
-│  MODELO CNN                    │
-│  Forward pass through network  │
-│  - Initial conv blocks         │
-│  - Residual blocks             │
-│  - Global avg pooling          │
-│  - Dense layers                │
-│  - Sigmoid output              │
+│ MODELO CNN │
+│ Forward pass through network │
+│ - Initial conv blocks │
+│ - Residual blocks │
+│ - Global avg pooling │
+│ - Dense layers │
+│ - Sigmoid output │
 └────────┬───────────────────────┘
-         │
-         ▼
+ │
+ ▼
 ┌────────────────────────────────┐
-│  OUTPUT                        │
-│  Probability: 0.8743           │
-│  (87.43% potencial geotérmico) │
+│ OUTPUT │
+│ Probability: 0.8743 │
+│ (87.43% potencial geotérmico) │
 └────────┬───────────────────────┘
-         │
-         ▼
+ │
+ ▼
 ┌────────────────────────────────┐
-│  INTERPRETACIÓN                │
-│  IF probability > 0.5:         │
-│    Clase: "Con Potencial"      │
-│    Confianza: 87.43%           │
-│  ELSE:                         │
-│    Clase: "Sin Potencial"      │
-│    Confianza: (1-prob)*100%    │
+│ INTERPRETACIÓN │
+│ IF probability > 0.5: │
+│ Clase: "Con Potencial" │
+│ Confianza: 87.43% │
+│ ELSE: │
+│ Clase: "Sin Potencial" │
+│ Confianza: (1-prob)*100% │
 └────────────────────────────────┘
 ```
 
@@ -916,19 +916,19 @@ model = keras.models.load_model('models/saved_models/best_model.keras')
 
 # Cargar y preprocesar nueva imagen
 image = load_tif_image('nueva_zona.tif')
-processed = preprocess_image(image)  # Resize + normalize
-input_tensor = np.expand_dims(processed, axis=0)  # Add batch dim
+processed = preprocess_image(image) # Resize + normalize
+input_tensor = np.expand_dims(processed, axis=0) # Add batch dim
 
 # Predicción
 probability = model.predict(input_tensor)[0, 0]
 
 # Interpretación
 if probability > 0.5:
-    classification = "Con Potencial Geotérmico"
-    confidence = probability * 100
+ classification = "Con Potencial Geotérmico"
+ confidence = probability * 100
 else:
-    classification = "Sin Potencial Geotérmico"
-    confidence = (1 - probability) * 100
+ classification = "Sin Potencial Geotérmico"
+ confidence = (1 - probability) * 100
 
 print(f"Clasificación: {classification}")
 print(f"Probabilidad: {probability:.4f}")
@@ -939,11 +939,11 @@ print(f"Confianza: {confidence:.2f}%")
 
 | Probabilidad | Interpretación | Acción Recomendada |
 |--------------|----------------|-------------------|
-| **0.90 - 1.00** | Muy alta probabilidad de potencial | ✅ Priorizar para exploración detallada |
-| **0.70 - 0.89** | Alta probabilidad | ✅ Considerar fuertemente para exploración |
-| **0.50 - 0.69** | Probabilidad moderada | ⚠️ Requiere análisis adicional |
-| **0.30 - 0.49** | Baja probabilidad | ⚠️ Probablemente sin potencial |
-| **0.00 - 0.29** | Muy baja probabilidad | ❌ Descartar para exploración geotérmica |
+| **0.90 - 1.00** | Muy alta probabilidad de potencial | Priorizar para exploración detallada |
+| **0.70 - 0.89** | Alta probabilidad | Considerar fuertemente para exploración |
+| **0.50 - 0.69** | Probabilidad moderada | Requiere análisis adicional |
+| **0.30 - 0.49** | Baja probabilidad | Probablemente sin potencial |
+| **0.00 - 0.29** | Muy baja probabilidad | Descartar para exploración geotérmica |
 
 ### 7.4 Predicción por Lotes
 
@@ -953,17 +953,17 @@ image_folder = Path('data/nuevas_zonas/')
 results = []
 
 for tif_file in image_folder.glob('*.tif'):
-    image = load_tif_image(tif_file)
-    processed = preprocess_image(image)
-    input_tensor = np.expand_dims(processed, axis=0)
-    
-    probability = model.predict(input_tensor, verbose=0)[0, 0]
-    
-    results.append({
-        'filename': tif_file.name,
-        'probability': probability,
-        'classification': 'Con Potencial' if probability > 0.5 else 'Sin Potencial'
-    })
+ image = load_tif_image(tif_file)
+ processed = preprocess_image(image)
+ input_tensor = np.expand_dims(processed, axis=0)
+ 
+ probability = model.predict(input_tensor, verbose=0)[0, 0]
+ 
+ results.append({
+ 'filename': tif_file.name,
+ 'probability': probability,
+ 'classification': 'Con Potencial' if probability > 0.5 else 'Sin Potencial'
+ })
 
 # Guardar resultados
 pd.DataFrame(results).to_csv('predictions_batch.csv', index=False)
@@ -989,21 +989,21 @@ pd.DataFrame(results).to_csv('predictions_batch.csv', index=False)
 Estrategia Multi-Capa:
 
 1. DATA AUGMENTATION
-   ↓ Aumenta variedad de entrenamiento
-   
+ ↓ Aumenta variedad de entrenamiento
+ 
 2. DROPOUT (0.5)
-   ↓ Previene co-adaptación
-   
+ ↓ Previene co-adaptación
+ 
 3. L2 REGULARIZATION (0.0001)
-   ↓ Penaliza pesos grandes
-   
+ ↓ Penaliza pesos grandes
+ 
 4. EARLY STOPPING (patience=15)
-   ↓ Para antes de overfitting
-   
+ ↓ Para antes de overfitting
+ 
 5. BATCH NORMALIZATION
-   ↓ Efecto regularizador
-   
-RESULTADO: Modelo generaliza bien ✅
+ ↓ Efecto regularizador
+ 
+RESULTADO: Modelo generaliza bien 
 ```
 
 ### 8.3 Monitoreo de Entrenamiento
@@ -1017,19 +1017,19 @@ loss: 0.6931 - accuracy: 0.5124 - val_loss: 0.6899 - val_accuracy: 0.5235
 
 Epoch 10/100
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-loss: 0.4521 - accuracy: 0.7856 - val_loss: 0.4689 - val_accuracy: 0.7647  ✓ Good
+loss: 0.4521 - accuracy: 0.7856 - val_loss: 0.4689 - val_accuracy: 0.7647 Good
 
 Epoch 20/100
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-loss: 0.3124 - accuracy: 0.8645 - val_loss: 0.3456 - val_accuracy: 0.8412  ✓ Better
+loss: 0.3124 - accuracy: 0.8645 - val_loss: 0.3456 - val_accuracy: 0.8412 Better
 
 Epoch 30/100
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-loss: 0.2456 - accuracy: 0.9012 - val_loss: 0.3012 - val_accuracy: 0.8824  ✓ Best!
+loss: 0.2456 - accuracy: 0.9012 - val_loss: 0.3012 - val_accuracy: 0.8824 Best!
 
 Epoch 40/100
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-loss: 0.1789 - accuracy: 0.9345 - val_loss: 0.3145 - val_accuracy: 0.8706  ⚠ Overfitting!
+loss: 0.1789 - accuracy: 0.9345 - val_loss: 0.3145 - val_accuracy: 0.8706 Overfitting!
 ```
 
 **Diagnóstico:**
@@ -1045,27 +1045,27 @@ loss: 0.1789 - accuracy: 0.9345 - val_loss: 0.3145 - val_accuracy: 0.8706  ⚠ O
 
 ```python
 OPTIMAL_HYPERPARAMETERS = {
-    # Arquitectura
-    'input_shape': (224, 224, 5),
-    'filters_progression': [32, 64, 128, 256, 512],
-    'kernel_sizes': [7, 3, 3, 3, 3],
-    'dropout_rate': 0.5,
-    'l2_regularization': 0.0001,
-    
-    # Entrenamiento
-    'batch_size': 32,         # Ajustar según GPU (16/32/64)
-    'epochs': 100,
-    'initial_lr': 0.001,
-    
-    # Callbacks
-    'early_stopping_patience': 15,
-    'reduce_lr_patience': 5,
-    'reduce_lr_factor': 0.5,
-    
-    # Data Augmentation
-    'rotation_range': 0.2,    # ±36 grados
-    'zoom_range': 0.2,        # ±20%
-    'flip': 'both',           # Horizontal y vertical
+ # Arquitectura
+ 'input_shape': (224, 224, 5),
+ 'filters_progression': [32, 64, 128, 256, 512],
+ 'kernel_sizes': [7, 3, 3, 3, 3],
+ 'dropout_rate': 0.5,
+ 'l2_regularization': 0.0001,
+ 
+ # Entrenamiento
+ 'batch_size': 32, # Ajustar según GPU (16/32/64)
+ 'epochs': 100,
+ 'initial_lr': 0.001,
+ 
+ # Callbacks
+ 'early_stopping_patience': 15,
+ 'reduce_lr_patience': 5,
+ 'reduce_lr_factor': 0.5,
+ 
+ # Data Augmentation
+ 'rotation_range': 0.2, # ±36 grados
+ 'zoom_range': 0.2, # ±20%
+ 'flip': 'both', # Horizontal y vertical
 }
 ```
 
@@ -1088,9 +1088,9 @@ OPTIMAL_HYPERPARAMETERS = {
 ```
 
 **Beneficio:**
-- ✅ Reduce costos de exploración en 70-80%
-- ✅ Focaliza recursos en áreas más prometedoras
-- ✅ Análisis rápido de grandes extensiones
+- Reduce costos de exploración en 70-80%
+- Focaliza recursos en áreas más prometedoras
+- Análisis rápido de grandes extensiones
 
 ### 9.2 Validación de Zonas Conocidas
 
@@ -1123,7 +1123,7 @@ Zona: Nevado del Ruiz
 
 2020: Probabilidad = 0.82 (Alta)
 2021: Probabilidad = 0.85 (Alta)
-2022: Probabilidad = 0.91 (Muy Alta)  ⚠ Aumento detectado
+2022: Probabilidad = 0.91 (Muy Alta) Aumento detectado
 2023: Probabilidad = 0.89 (Muy Alta)
 ```
 
@@ -1136,9 +1136,9 @@ Zona: Nevado del Ruiz
 1. Análisis nacional de todas las regiones
 2. Mapa de calor de potencial geotérmico
 3. Priorización por:
-   - Probabilidad del modelo
-   - Proximidad a demanda eléctrica
-   - Accesibilidad logística
+ - Probabilidad del modelo
+ - Proximidad a demanda eléctrica
+ - Accesibilidad logística
 4. Plan de desarrollo geotérmico a 10 años
 ```
 
@@ -1180,7 +1180,7 @@ Zona: Nevado del Ruiz
 
 ---
 
-## 📝 Apéndices
+## Apéndices
 
 ### Apéndice A: Glosario de Términos
 
@@ -1235,7 +1235,7 @@ python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU')
 
 ---
 
-## 📞 Contacto y Soporte
+## Contacto y Soporte
 
 **Autores:**
 - **Cristian Camilo Vega Sánchez** - ccvegas@academia.usbbog.edu.co
@@ -1256,13 +1256,13 @@ https://github.com/crisveg24/geotermia-colombia-cnn
 ---
 
 <p align="center">
-  <strong>Universidad de San Buenaventura - Bogotá</strong><br>
-  Facultad de Ingeniería<br>
-  Programa de Ingeniería de Sistemas<br>
-  Noviembre 2025
+ <strong>Universidad de San Buenaventura - Bogotá</strong><br>
+ Facultad de Ingeniería<br>
+ Programa de Ingeniería de Sistemas<br>
+ Noviembre 2025
 </p>
 
 ---
 
-**Este documento es parte del proyecto de grado:**  
+**Este documento es parte del proyecto de grado:** 
 *"Modelo Predictivo Basado en Deep Learning y Redes Neuronales Convolucionales (CNN) para la Identificación de Zonas de Potencial Geotérmico en Colombia"*

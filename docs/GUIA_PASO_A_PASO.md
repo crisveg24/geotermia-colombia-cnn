@@ -1,16 +1,16 @@
-# 🤖 GUÍA PASO A PASO — Geotermia Colombia CNN
+# GUÍA PASO A PASO — Geotermia Colombia CNN
 
 > **Propósito**: Este documento permite que **cualquier IA o persona** reproduzca
 > el pipeline completo del proyecto: desde cero hasta un modelo entrenado y la
 > interfaz Streamlit funcionando.
 >
-> **Última actualización**: 9 de febrero de 2026  
-> **Autores**: Cristian Vega, Daniel Arévalo, Yuliet Espitia, Laura Rivera  
+> **Última actualización**: 9 de febrero de 2026 
+> **Autores**: Cristian Vega, Daniel Arévalo, Yuliet Espitia, Laura Rivera 
 > **Universidad de San Buenaventura — Bogotá**
 
 ---
 
-## 📋 ÍNDICE
+## ÍNDICE
 
 1. [Requisitos previos](#1--requisitos-previos)
 2. [Clonar el repositorio](#2--clonar-el-repositorio)
@@ -30,14 +30,14 @@
 
 ## 1 · Requisitos previos
 
-| Componente      | Versión mínima | Notas |
+| Componente | Versión mínima | Notas |
 |-----------------|----------------|-------|
-| Python          | 3.10.x         | 3.10 o 3.11. NO 3.12+ (compatibilidad TF) |
-| pip             | 23+            | `python -m pip install --upgrade pip` |
-| Git             | 2.x            | Para clonar el repo |
-| Cuenta Google   | —              | Para Google Earth Engine |
-| Espacio disco   | ~5 GB          | Dataset completo + modelo |
-| GPU (opcional)  | NVIDIA + CUDA 12 | Acelera el entrenamiento. Sin GPU funciona en CPU |
+| Python | 3.10.x | 3.10 o 3.11. NO 3.12+ (compatibilidad TF) |
+| pip | 23+ | `python -m pip install --upgrade pip` |
+| Git | 2.x | Para clonar el repo |
+| Cuenta Google | — | Para Google Earth Engine |
+| Espacio disco | ~5 GB | Dataset completo + modelo |
+| GPU (opcional) | NVIDIA + CUDA 12 | Acelera el entrenamiento. Sin GPU funciona en CPU |
 
 ---
 
@@ -72,8 +72,8 @@ source .venv/bin/activate
 
 **Verificar**:
 ```bash
-python --version        # Debe decir 3.10.x o 3.11.x
-pip --version           # Debe apuntar al .venv
+python --version # Debe decir 3.10.x o 3.11.x
+pip --version # Debe apuntar al .venv
 ```
 
 ---
@@ -95,7 +95,7 @@ python -c "import tensorflow as tf; print(tf.__version__)"
 ```bash
 python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
 # Si tienes GPU NVIDIA con CUDA → mostrará la lista de GPUs
-# Si no → mostrará []  (usará CPU, más lento pero funcional)
+# Si no → mostrará [] (usará CPU, más lento pero funcional)
 ```
 
 ---
@@ -126,11 +126,11 @@ python -c "import ee; ee.Initialize(project='alpine-air-469115-f0'); print('OK')
 No necesitas hacer nada especial. Los scripts buscarán las imágenes en:
 ```
 geotermia-colombia-cnn/
-    data/
-        raw/positive/     ← .tif geotérmicos
-        raw/negative/     ← .tif control
-        augmented/        ← .tif aumentados
-        processed/        ← .npy listos para entrenar
+ data/
+ raw/positive/ ← .tif geotérmicos
+ raw/negative/ ← .tif control
+ augmented/ ← .tif aumentados
+ processed/ ← .npy listos para entrenar
 ```
 
 ### Opción B — Datos en disco duro externo (USB, SSD, etc.)
@@ -142,23 +142,23 @@ Esto es útil cuando:
 
 **Estructura esperada en el disco externo:**
 ```
-D:\geotermia_datos\         ← (o E:\, F:\, la letra que tenga tu disco)
-    raw\
-        positive\           ← archivos .tif descargados (zonas geotérmicas)
-        negative\           ← archivos .tif descargados (zonas control)
-        labels.csv
-    augmented\
-        positive\           ← .tif con augmentación
-        negative\
-        labels.csv
-    processed\
-        X_train.npy
-        y_train.npy
-        X_val.npy
-        y_val.npy
-        X_test.npy
-        y_test.npy
-        split_info.json
+D:\geotermia_datos\ ← (o E:\, F:\, la letra que tenga tu disco)
+ raw\
+ positive\ ← archivos .tif descargados (zonas geotérmicas)
+ negative\ ← archivos .tif descargados (zonas control)
+ labels.csv
+ augmented\
+ positive\ ← .tif con augmentación
+ negative\
+ labels.csv
+ processed\
+ X_train.npy
+ y_train.npy
+ X_val.npy
+ y_val.npy
+ X_test.npy
+ y_test.npy
+ split_info.json
 ```
 
 **Configurar la ruta** (elige UNA de estas opciones):
@@ -185,7 +185,7 @@ Crea un archivo `.env` en la raíz del proyecto:
 GEOTERMIA_DATA_ROOT=D:\geotermia_datos
 ```
 
-> 💡 Los scripts leen esta variable automáticamente desde `config.py`.
+> Los scripts leen esta variable automáticamente desde `config.py`.
 
 **Verificar configuración**:
 ```bash
@@ -202,14 +202,14 @@ Ejemplo de salida:
 ============================================================
 CONFIGURACIÓN DEL PROYECTO GEOTERMIA CNN
 ============================================================
-  Fuente de datos : env $GEOTERMIA_DATA_ROOT
-  Disco externo   : SÍ
-  Data root       : D:\geotermia_datos
-  
-  ✅ raw/positive          → 45 .tif, 0 .npy
-  ✅ raw/negative          → 43 .tif, 0 .npy
-  ✅ augmented             → 2728 .tif, 0 .npy
-  ✅ processed             → 0 .tif, 6 .npy
+ Fuente de datos : env $GEOTERMIA_DATA_ROOT
+ Disco externo : SÍ
+ Data root : D:\geotermia_datos
+ 
+ raw/positive → 45 .tif, 0 .npy
+ raw/negative → 43 .tif, 0 .npy
+ augmented → 2728 .tif, 0 .npy
+ processed → 0 .tif, 6 .npy
 ============================================================
 ```
 
@@ -255,9 +255,9 @@ python scripts/download_dataset.py
 
 **Salida**:
 ```
-data/raw/positive/   ← ~45 archivos .tif
-data/raw/negative/   ← ~43 archivos .tif
-data/raw/labels.csv  ← archivo de etiquetas
+data/raw/positive/ ← ~45 archivos .tif
+data/raw/negative/ ← ~43 archivos .tif
+data/raw/labels.csv ← archivo de etiquetas
 ```
 
 > Si configuraste `GEOTERMIA_DATA_ROOT`, las imágenes se guardarán directamente 
@@ -278,8 +278,8 @@ python scripts/augment_full_dataset.py
 
 **Salida** (si ~88 originales):
 ```
-data/augmented/positive/  ← ~1,395 archivos .tif
-data/augmented/negative/  ← ~1,333 archivos .tif
+data/augmented/positive/ ← ~1,395 archivos .tif
+data/augmented/negative/ ← ~1,333 archivos .tif
 data/augmented/labels.csv
 ```
 
@@ -301,10 +301,10 @@ python scripts/prepare_dataset.py
 **Salida**:
 ```
 data/processed/
-    X_train.npy, y_train.npy    ← ~70% de las imágenes
-    X_val.npy,   y_val.npy      ← ~15%
-    X_test.npy,  y_test.npy     ← ~15%
-    split_info.json              ← metadatos del split
+ X_train.npy, y_train.npy ← ~70% de las imágenes
+ X_val.npy, y_val.npy ← ~15%
+ X_test.npy, y_test.npy ← ~15%
+ split_info.json ← metadatos del split
 ```
 
 > Los archivos .npy pueden ser **muy grandes** (~2-4 GB). Si usas disco externo,
@@ -349,11 +349,11 @@ python scripts/train_model.py
 **Salida**:
 ```
 models/saved_models/
-    geotermia_cnn_custom_best.keras   ← mejor modelo (usar este)
-    geotermia_cnn_custom_final.keras  ← modelo al final del entrenamiento
+ geotermia_cnn_custom_best.keras ← mejor modelo (usar este)
+ geotermia_cnn_custom_final.keras ← modelo al final del entrenamiento
 logs/
-    history_custom.json               ← historial de métricas
-    training_YYYYMMDD_HHMMSS/         ← logs de TensorBoard
+ history_custom.json ← historial de métricas
+ training_YYYYMMDD_HHMMSS/ ← logs de TensorBoard
 ```
 
 ### Monitorear con TensorBoard (opcional)
@@ -408,8 +408,8 @@ pip install --upgrade tensorflow
 ### Error: `CUDA_ERROR_NO_DEVICE`
 TensorFlow no detecta la GPU. Verifica:
 ```bash
-nvidia-smi            # ¿Está la GPU activa?
-nvcc --version        # ¿CUDA instalado?
+nvidia-smi # ¿Está la GPU activa?
+nvcc --version # ¿CUDA instalado?
 ```
 Si no tienes GPU, el modelo entrenará en CPU (más lento pero funcional).
 
@@ -445,7 +445,7 @@ Luego repite el paso 5.
 
 ---
 
-## 🔄 FLUJO RÁPIDO (RESUMEN)
+## FLUJO RÁPIDO (RESUMEN)
 
 ```bash
 # 1. Setup
@@ -462,12 +462,12 @@ $env:GEOTERMIA_DATA_ROOT = "D:\geotermia_datos"
 python config.py
 
 # 4. Pipeline de datos (saltar si ya tienes los .npy)
-python scripts/download_dataset.py        # ~30 min, requiere internet
-python scripts/augment_full_dataset.py    # ~15 min
-python scripts/prepare_dataset.py         # ~10 min
+python scripts/download_dataset.py # ~30 min, requiere internet
+python scripts/augment_full_dataset.py # ~15 min
+python scripts/prepare_dataset.py # ~10 min
 
 # 5. Entrenar
-python scripts/train_model.py             # 15 min (GPU) / 3 hrs (CPU)
+python scripts/train_model.py # 15 min (GPU) / 3 hrs (CPU)
 
 # 6. Interfaz
 streamlit run app.py --server.headless true
@@ -476,40 +476,40 @@ streamlit run app.py --server.headless true
 
 ---
 
-## 📦 ESTRUCTURA FINAL DEL PROYECTO
+## ESTRUCTURA FINAL DEL PROYECTO
 
 ```
 geotermia-colombia-cnn/
-├── config.py                  ← NUEVO: configuración centralizada
-├── app.py                     ← Interfaz web Streamlit
-├── requirements.txt           ← Dependencias Python
-├── setup.py                   ← Setup del proyecto
-├── README.md                  ← Documentación principal
+├── config.py ← NUEVO: configuración centralizada
+├── app.py ← Interfaz web Streamlit
+├── requirements.txt ← Dependencias Python
+├── setup.py ← Setup del proyecto
+├── README.md ← Documentación principal
 ├── LICENSE
 │
 ├── scripts/
-│   ├── download_dataset.py    ← Paso 7: descarga de imágenes
-│   ├── augment_full_dataset.py← Paso 8: augmentación
-│   ├── prepare_dataset.py     ← Paso 9: preparación .npy
-│   ├── train_model.py         ← Paso 10: entrenamiento
-│   ├── evaluate_model.py      ← Paso 11: evaluación
-│   ├── predict.py             ← Predicción individual
-│   └── visualize_results.py   ← Visualización de resultados
+│ ├── download_dataset.py ← Paso 7: descarga de imágenes
+│ ├── augment_full_dataset.py← Paso 8: augmentación
+│ ├── prepare_dataset.py ← Paso 9: preparación .npy
+│ ├── train_model.py ← Paso 10: entrenamiento
+│ ├── evaluate_model.py ← Paso 11: evaluación
+│ ├── predict.py ← Predicción individual
+│ └── visualize_results.py ← Visualización de resultados
 │
 ├── models/
-│   ├── cnn_geotermia.py       ← Arquitectura del modelo
-│   └── saved_models/          ← Modelos entrenados (.keras)
+│ ├── cnn_geotermia.py ← Arquitectura del modelo
+│ └── saved_models/ ← Modelos entrenados (.keras)
 │
-├── data/                      ← (o disco externo si GEOTERMIA_DATA_ROOT)
-│   ├── raw/
-│   │   ├── positive/          ← .tif zonas geotérmicas
-│   │   ├── negative/          ← .tif zonas control
-│   │   └── labels.csv
-│   ├── augmented/             ← .tif aumentados
-│   └── processed/             ← .npy listos para entrenar
+├── data/ ← (o disco externo si GEOTERMIA_DATA_ROOT)
+│ ├── raw/
+│ │ ├── positive/ ← .tif zonas geotérmicas
+│ │ ├── negative/ ← .tif zonas control
+│ │ └── labels.csv
+│ ├── augmented/ ← .tif aumentados
+│ └── processed/ ← .npy listos para entrenar
 │
-├── docs/                      ← Documentación del proyecto
-├── logs/                      ← TensorBoard + historial
-├── results/                   ← Métricas y gráficas
-└── notebooks/                 ← Jupyter notebooks exploratorios
+├── docs/ ← Documentación del proyecto
+├── logs/ ← TensorBoard + historial
+├── results/ ← Métricas y gráficas
+└── notebooks/ ← Jupyter notebooks exploratorios
 ```

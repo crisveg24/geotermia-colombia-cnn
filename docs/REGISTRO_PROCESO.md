@@ -1,16 +1,16 @@
-# 📋 REGISTRO DEL PROCESO DE DESARROLLO
+# REGISTRO DEL PROCESO DE DESARROLLO
 ## Sistema CNN para Identificación de Zonas Geotérmicas en Colombia
 
-**Proyecto:** Modelo Predictivo CNN - Geotermia Colombia  
-**Institución:** Universidad de San Buenaventura - Bogotá  
-**Autores:** Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano, Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martin  
-**Asesor:** Prof. Yeison Eduardo Conejo Sandoval  
-**Fecha Inicio:** Noviembre 2025  
+**Proyecto:** Modelo Predictivo CNN - Geotermia Colombia 
+**Institución:** Universidad de San Buenaventura - Bogotá 
+**Autores:** Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano, Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martin 
+**Asesor:** Prof. Yeison Eduardo Conejo Sandoval 
+**Fecha Inicio:** Noviembre 2025 
 **Repositorio:** https://github.com/crisveg24/geotermia-colombia-cnn
 
 ---
 
-## 📅 CRONOGRAMA DE ACTIVIDADES
+## CRONOGRAMA DE ACTIVIDADES
 
 ### **FASE 1: CONFIGURACIÓN Y DOCUMENTACIÓN (Completada)**
 **Fecha:** 3 de noviembre de 2025
@@ -18,26 +18,26 @@
 #### 1.1 Documentación Técnica
 - **Archivo creado:** `MODELO_PREDICTIVO.md` (2,700+ líneas)
 - **Contenido:**
-  - Resumen ejecutivo del proyecto
-  - Fundamentos teóricos de CNNs
-  - Arquitectura detallada del modelo (52 capas)
-  - Pipeline de procesamiento
-  - Estrategias de entrenamiento
-  - Métricas de evaluación con ecuaciones LaTeX
-  - Sistema de predicción
-  - Optimizaciones
-  - Casos de uso para Colombia
-  - 11 referencias académicas
+ - Resumen ejecutivo del proyecto
+ - Fundamentos teóricos de CNNs
+ - Arquitectura detallada del modelo (52 capas)
+ - Pipeline de procesamiento
+ - Estrategias de entrenamiento
+ - Métricas de evaluación con ecuaciones LaTeX
+ - Sistema de predicción
+ - Optimizaciones
+ - Casos de uso para Colombia
+ - 11 referencias académicas
 - **Commit:** `33343c8` - "docs: Agregar documento técnico completo del modelo predictivo CNN"
 
 #### 1.2 Herramientas de Visualización
 - **Archivo creado:** `scripts/visualize_architecture.py` (483 líneas)
 - **Funcionalidad:**
-  - Clase `ArchitectureVisualizer`
-  - Generación de diagramas de arquitectura (PNG 300 DPI)
-  - Tablas LaTeX para tesis
-  - Resúmenes en JSON y TXT
-  - Comparación con transfer learning
+ - Clase `ArchitectureVisualizer`
+ - Generación de diagramas de arquitectura (PNG 300 DPI)
+ - Tablas LaTeX para tesis
+ - Resúmenes en JSON y TXT
+ - Comparación con transfer learning
 - **Commit:** `71b4627` - "feat: Agregar script de visualización de arquitectura CNN"
 
 ---
@@ -49,18 +49,18 @@
 - **Python:** 3.10.11
 - **Entorno virtual:** `.venv` en `C:/Users/crsti/proyectos/`
 - **Librerías instaladas:**
-  ```
-  TensorFlow: 2.20.0 (331.7 MB)
-  Keras: 3.12.0
-  scikit-learn: 1.7.2
-  scikit-image: 0.25.2
-  opencv-python: 4.12.0
-  scipy: 1.15.3
-  numpy: 2.2.6
-  pandas: última versión
-  rasterio: para lectura de GeoTIFF
-  earthengine-api: para Google Earth Engine
-  ```
+ ```
+ TensorFlow: 2.20.0 (331.7 MB)
+ Keras: 3.12.0
+ scikit-learn: 1.7.2
+ scikit-image: 0.25.2
+ opencv-python: 4.12.0
+ scipy: 1.15.3
+ numpy: 2.2.6
+ pandas: última versión
+ rasterio: para lectura de GeoTIFF
+ earthengine-api: para Google Earth Engine
+ ```
 
 #### 2.2 Verificación del Modelo
 - **Modelo:** CNN personalizado con arquitectura ResNet-inspired
@@ -69,7 +69,7 @@
 - **Input shape:** (None, 224, 224, 5) - 5 bandas térmicas ASTER
 - **Output shape:** (None, 1) - clasificación binaria con sigmoid
 - **Características:** Batch normalization, dropout, mixed precision
-- **Estado:** ✅ Verificado y funcional
+- **Estado:** Verificado y funcional
 
 #### 2.3 Configuración Hardware
 - **CPU:** Optimizaciones oneDNN habilitadas
@@ -86,31 +86,31 @@
 - **Proyecto Google Cloud:** `alpine-air-469115-f0` (My First Project)
 - **Método:** OAuth 2.0
 - **Dataset:** NASA/ASTER_GED/AG100_003 (ASTER Global Emissivity Dataset)
-- **Estado:** ✅ Autenticado y operacional
+- **Estado:** Autenticado y operacional
 
 #### 3.2 Descarga de Imágenes Satelitales
 - **Script:** `scripts/download_dataset.py`
 - **Tiempo de ejecución:** ~4 minutos
 - **Imágenes descargadas:** 85 imágenes ASTER
-  
-  **Imágenes Positivas (45):** Zonas con actividad geotérmica
-  - Nevado del Ruiz: 5 ubicaciones (center, north, south, east, west)
-  - Volcán Puracé: 5 ubicaciones
-  - Volcán Galeras: 5 ubicaciones
-  - Paipa-Iza: 5 ubicaciones
-  - Nevado del Tolima: 5 ubicaciones
-  - Volcán Cumbal: 5 ubicaciones
-  - Volcán Sotará: 5 ubicaciones
-  - Volcán Azufral: 5 ubicaciones
-  - Zonas termales: Manizales, Coconuco, Santa Rosa de Cabal, Herveo, Villa María
-  
-  **Imágenes Negativas (40):** Zonas de control sin actividad volcánica
-  - Llanos Orientales: 10 ubicaciones (Casanare, Arauca, Meta, Vichada)
-  - Amazonas: 8 ubicaciones (Leticia, Puerto Nariño, Florencia, etc.)
-  - Costa Caribe: 8 ubicaciones (Barranquilla, Santa Marta, etc.)
-  - Zona Andina Oriental: 5 ubicaciones (Bucaramanga, Cúcuta, etc.)
-  - Valle del Cauca: 5 ubicaciones (Cali, Palmira, etc.)
-  - Chocó: 2 ubicaciones (Quibdó, Bahía Solano)
+ 
+ **Imágenes Positivas (45):** Zonas con actividad geotérmica
+ - Nevado del Ruiz: 5 ubicaciones (center, north, south, east, west)
+ - Volcán Puracé: 5 ubicaciones
+ - Volcán Galeras: 5 ubicaciones
+ - Paipa-Iza: 5 ubicaciones
+ - Nevado del Tolima: 5 ubicaciones
+ - Volcán Cumbal: 5 ubicaciones
+ - Volcán Sotará: 5 ubicaciones
+ - Volcán Azufral: 5 ubicaciones
+ - Zonas termales: Manizales, Coconuco, Santa Rosa de Cabal, Herveo, Villa María
+ 
+ **Imágenes Negativas (40):** Zonas de control sin actividad volcánica
+ - Llanos Orientales: 10 ubicaciones (Casanare, Arauca, Meta, Vichada)
+ - Amazonas: 8 ubicaciones (Leticia, Puerto Nariño, Florencia, etc.)
+ - Costa Caribe: 8 ubicaciones (Barranquilla, Santa Marta, etc.)
+ - Zona Andina Oriental: 5 ubicaciones (Bucaramanga, Cúcuta, etc.)
+ - Valle del Cauca: 5 ubicaciones (Cali, Palmira, etc.)
+ - Chocó: 2 ubicaciones (Quibdó, Bahía Solano)
 
 - **Tamaño total:** 2.49 MB
 - **Balance inicial:** 88.9% (45/85 positivas)
@@ -133,7 +133,7 @@
 - **Imágenes de prueba:** 3 imágenes originales
 - **Resultado:** 93 imágenes (31 por original)
 - **Tiempo:** 0.83 segundos
-- **Estado:** ✅ Validación exitosa
+- **Estado:** Validación exitosa
 
 #### 4.2 Augmentación Completa del Dataset
 - **Script:** `scripts/augment_full_dataset.py` (350+ líneas)
@@ -143,51 +143,51 @@
 **Técnicas de Augmentación Aplicadas (30 por imagen):**
 
 1. **Transformaciones Geométricas:**
-   - Rotación 90° (rotation_90)
-   - Rotación 180° (rotation_180)
-   - Rotación 270° (rotation_270)
-   - Rotación 45° (rotation_45)
-   - Rotación -45° (rotation_neg45)
-   - Flip horizontal (flip_horizontal)
-   - Flip vertical (flip_vertical)
+ - Rotación 90° (rotation_90)
+ - Rotación 180° (rotation_180)
+ - Rotación 270° (rotation_270)
+ - Rotación 45° (rotation_45)
+ - Rotación -45° (rotation_neg45)
+ - Flip horizontal (flip_horizontal)
+ - Flip vertical (flip_vertical)
 
 2. **Transformaciones de Intensidad:**
-   - Brillo +20% (brightness_1.2)
-   - Brillo -20% (brightness_0.8)
-   - Contraste +30% (contrast_1.3)
-   - Contraste -30% (contrast_0.7)
+ - Brillo +20% (brightness_1.2)
+ - Brillo -20% (brightness_0.8)
+ - Contraste +30% (contrast_1.3)
+ - Contraste -30% (contrast_0.7)
 
 3. **Técnicas de Ruido y Suavizado:**
-   - Ruido gaussiano pequeño (noise_small)
-   - Ruido gaussiano medio (noise_medium)
-   - Desenfoque gaussiano ligero (blur_light)
-   - Desenfoque gaussiano medio (blur_medium)
+ - Ruido gaussiano pequeño (noise_small)
+ - Ruido gaussiano medio (noise_medium)
+ - Desenfoque gaussiano ligero (blur_light)
+ - Desenfoque gaussiano medio (blur_medium)
 
 4. **Recorte:**
-   - Crop 90% (crop_0.9)
-   - Crop 85% (crop_0.85)
+ - Crop 90% (crop_0.9)
+ - Crop 85% (crop_0.85)
 
 5. **Combinaciones Complejas (13 técnicas):**
-   - rot90_flip_h: Rotación 90° + flip horizontal
-   - rot180_bright: Rotación 180° + brillo
-   - flip_v_contrast: Flip vertical + contraste
-   - rot45_noise: Rotación 45° + ruido
-   - crop_blur: Recorte + desenfoque
-   - bright_blur: Brillo + desenfoque
-   - contrast_noise: Contraste + ruido
-   - rot90_crop: Rotación 90° + recorte
-   - rot180_contrast: Rotación 180° + contraste
-   - flip_h_bright: Flip horizontal + brillo
-   - rot270_blur: Rotación 270° + desenfoque
-   - crop_contrast_noise: Recorte + contraste + ruido
-   - rot45_bright_blur: Rotación 45° + brillo + desenfoque
+ - rot90_flip_h: Rotación 90° + flip horizontal
+ - rot180_bright: Rotación 180° + brillo
+ - flip_v_contrast: Flip vertical + contraste
+ - rot45_noise: Rotación 45° + ruido
+ - crop_blur: Recorte + desenfoque
+ - bright_blur: Brillo + desenfoque
+ - contrast_noise: Contraste + ruido
+ - rot90_crop: Rotación 90° + recorte
+ - rot180_contrast: Rotación 180° + contraste
+ - flip_h_bright: Flip horizontal + brillo
+ - rot270_blur: Rotación 270° + desenfoque
+ - crop_contrast_noise: Recorte + contraste + ruido
+ - rot45_bright_blur: Rotación 45° + brillo + desenfoque
 
 **Resultados de la Augmentación:**
 - **Input:** 85 imágenes originales
 - **Output:** 5,518 imágenes totales
 - **Distribución:**
-  - Positivas: 4,278 imágenes (77.5%)
-  - Negativas: 1,240 imágenes (22.5%)
+ - Positivas: 4,278 imágenes (77.5%)
+ - Negativas: 1,240 imágenes (22.5%)
 - **Tamaño:** 1.24 GB (1,240.27 MB)
 - **Ubicación:** `data/augmented/positive/` y `data/augmented/negative/`
 
@@ -209,14 +209,14 @@
 
 **Correcciones Realizadas:**
 1. Actualización de rutas por defecto:
-   - `raw_data_path='data/augmented'` (antes: 'data/raw')
-   - `labels_path='data/augmented'` (antes: 'data/labels')
+ - `raw_data_path='data/augmented'` (antes: 'data/raw')
+ - `labels_path='data/augmented'` (antes: 'data/labels')
 
 2. Normalización de bandas espectrales:
-   - Detección automática de número de bandas
-   - Expansión a 5 bandas si < 5 (duplicación de última banda)
-   - Recorte a 5 bandas si > 5 (tomar primeras 5)
-   - Garantiza consistencia: todas las imágenes tienen exactamente 5 bandas
+ - Detección automática de número de bandas
+ - Expansión a 5 bandas si < 5 (duplicación de última banda)
+ - Recorte a 5 bandas si > 5 (tomar primeras 5)
+ - Garantiza consistencia: todas las imágenes tienen exactamente 5 bandas
 
 **Procesamiento Aplicado:**
 - Carga de imágenes GeoTIFF con rasterio
@@ -230,19 +230,19 @@
 
 **Distribución Final:**
 ```
-Training Set:   3,862 imágenes (70.0%)
-  - Clase 0 (negativo): 868 imágenes
-  - Clase 1 (positivo): 2,994 imágenes
+Training Set: 3,862 imágenes (70.0%)
+ - Clase 0 (negativo): 868 imágenes
+ - Clase 1 (positivo): 2,994 imágenes
 
 Validation Set: 828 imágenes (15.0%)
-  - Clase 0 (negativo): 186 imágenes
-  - Clase 1 (positivo): 642 imágenes
+ - Clase 0 (negativo): 186 imágenes
+ - Clase 1 (positivo): 642 imágenes
 
-Test Set:       828 imágenes (15.0%)
-  - Clase 0 (negativo): 186 imágenes
-  - Clase 1 (positivo): 642 imágenes
+Test Set: 828 imágenes (15.0%)
+ - Clase 0 (negativo): 186 imágenes
+ - Clase 1 (positivo): 642 imágenes
 
-TOTAL:          5,518 imágenes (100%)
+TOTAL: 5,518 imágenes (100%)
 ```
 
 #### 5.3 Pesos de Clase para Balanceo
@@ -263,14 +263,14 @@ Cálculo: peso_clase = n_samples / (n_classes * n_samples_clase)
 **Ubicación:** `data/processed/`
 
 ```
-X_train.npy      - Imágenes de entrenamiento:  (3862, 224, 224, 5) ~1.5 GB
-y_train.npy      - Etiquetas de entrenamiento: (3862,)
+X_train.npy - Imágenes de entrenamiento: (3862, 224, 224, 5) ~1.5 GB
+y_train.npy - Etiquetas de entrenamiento: (3862,)
 
-X_val.npy        - Imágenes de validación:     (828, 224, 224, 5)  ~320 MB
-y_val.npy        - Etiquetas de validación:    (828,)
+X_val.npy - Imágenes de validación: (828, 224, 224, 5) ~320 MB
+y_val.npy - Etiquetas de validación: (828,)
 
-X_test.npy       - Imágenes de prueba:         (828, 224, 224, 5)  ~320 MB
-y_test.npy       - Etiquetas de prueba:        (828,)
+X_test.npy - Imágenes de prueba: (828, 224, 224, 5) ~320 MB
+y_test.npy - Etiquetas de prueba: (828,)
 
 dataset_info.json - Metadata completa del dataset procesado
 ```
@@ -281,8 +281,8 @@ dataset_info.json - Metadata completa del dataset procesado
 ---
 
 ### **FASE 6: ENTRENAMIENTO DEL MODELO (En Progreso)**
-**Fecha inicio:** 3 de noviembre de 2025 - 18:55:28  
-**Estado actual:** Entrenamiento interrumpido tras 30 épocas exitosas  
+**Fecha inicio:** 3 de noviembre de 2025 - 18:55:28 
+**Estado actual:** Entrenamiento interrumpido tras 30 épocas exitosas 
 **Progreso:** 30/100 épocas (30% completado)
 
 #### 6.1 Configuración del Entrenamiento
@@ -295,38 +295,38 @@ dataset_info.json - Metadata completa del dataset procesado
 
 #### 6.2 Hiperparámetros
 ```python
-Batch size:        32
-Épocas máximas:    100
-Learning rate:     0.001
-Optimizer:         Adam
-Loss function:     Binary Crossentropy
-Métricas:          Accuracy, Precision, Recall, AUC
+Batch size: 32
+Épocas máximas: 100
+Learning rate: 0.001
+Optimizer: Adam
+Loss function: Binary Crossentropy
+Métricas: Accuracy, Precision, Recall, AUC
 ```
 
 #### 6.3 Callbacks Configurados
 1. **EarlyStopping:**
-   - Monitor: validation loss
-   - Patience: 15 épocas
-   - Restaura mejores pesos
+ - Monitor: validation loss
+ - Patience: 15 épocas
+ - Restaura mejores pesos
 
 2. **ModelCheckpoint:**
-   - Guarda mejor modelo según val_loss
-   - Formato: Keras (.keras)
-   - Ubicación: `models/best_model.keras`
+ - Guarda mejor modelo según val_loss
+ - Formato: Keras (.keras)
+ - Ubicación: `models/best_model.keras`
 
 3. **ReduceLROnPlateau:**
-   - Reduce learning rate si no mejora
-   - Factor: 0.5
-   - Patience: 5 épocas
+ - Reduce learning rate si no mejora
+ - Factor: 0.5
+ - Patience: 5 épocas
 
 4. **TensorBoard:**
-   - Logs de entrenamiento
-   - Ubicación: `logs/tensorboard/`
-   - Visualización de métricas en tiempo real
+ - Logs de entrenamiento
+ - Ubicación: `logs/tensorboard/`
+ - Visualización de métricas en tiempo real
 
 5. **CSVLogger:**
-   - Registro de métricas por época
-   - Archivo: `models/training_history.csv`
+ - Registro de métricas por época
+ - Archivo: `models/training_history.csv`
 
 #### 6.4 Data Augmentation en Tiempo Real
 **Aplicado solo durante entrenamiento:**
@@ -339,13 +339,13 @@ Métricas:          Accuracy, Precision, Recall, AUC
 #### 6.5 Salidas Esperadas
 ```
 models/
-  ├── best_model.keras           - Mejor modelo guardado
-  ├── training_history.json      - Historial completo
-  └── training_history.csv       - Métricas por época
+ ├── best_model.keras - Mejor modelo guardado
+ ├── training_history.json - Historial completo
+ └── training_history.csv - Métricas por época
 
 logs/
-  └── tensorboard/               - Logs para TensorBoard
-      └── [timestamp]/
+ └── tensorboard/ - Logs para TensorBoard
+ └── [timestamp]/
 ```
 
 #### 6.6 Resultados Parciales (Época 30/100)
@@ -364,12 +364,12 @@ logs/
 | 30 | 65.26% | 0.6252 | 0.9241 | 0.8461 | 0.6827 | 117s |
 
 **Análisis de Tendencias:**
-- ✅ **Accuracy:** Mejora constante de 65.29% → 65.26% (estable con ligera mejora)
-- ✅ **AUC:** Crecimiento sostenido de 0.4481 → 0.6252 (+39.5%)
-- ✅ **Loss:** Disminución saludable de 0.9892 → 0.9241 (-6.6%)
-- ✅ **Precision:** 84.61% (excelente para época 30)
-- ✅ **Recall:** 68.27% (bueno, espacio para mejora)
-- ✅ **Tiempo estabilizado:** ~117 seg/época después de época 5
+- **Accuracy:** Mejora constante de 65.29% → 65.26% (estable con ligera mejora)
+- **AUC:** Crecimiento sostenido de 0.4481 → 0.6252 (+39.5%)
+- **Loss:** Disminución saludable de 0.9892 → 0.9241 (-6.6%)
+- **Precision:** 84.61% (excelente para época 30)
+- **Recall:** 68.27% (bueno, espacio para mejora)
+- **Tiempo estabilizado:** ~117 seg/época después de época 5
 
 **Observaciones:**
 - No se detecta overfitting: métricas mejoran consistentemente
@@ -405,10 +405,10 @@ logs/
 #### 7.3 Archivos de Salida
 ```
 results/metrics/
-  ├── evaluation_metrics.json    - Todas las métricas
-  ├── metrics_table.csv          - Tabla para tesis
-  ├── confusion_matrix.png       - Visualización (300 DPI)
-  └── roc_curve.png              - Curva ROC (300 DPI)
+ ├── evaluation_metrics.json - Todas las métricas
+ ├── metrics_table.csv - Tabla para tesis
+ ├── confusion_matrix.png - Visualización (300 DPI)
+ └── roc_curve.png - Curva ROC (300 DPI)
 ```
 
 ---
@@ -421,38 +421,38 @@ results/metrics/
 
 **Visualizaciones a Generar:**
 1. **Training History:**
-   - Loss (train vs validation)
-   - Accuracy (train vs validation)
-   - Formato: Curvas en misma figura
+ - Loss (train vs validation)
+ - Accuracy (train vs validation)
+ - Formato: Curvas en misma figura
 
 2. **Confusion Matrix:**
-   - Heatmap con seaborn
-   - Anotaciones de valores
-   - Normalizada y sin normalizar
+ - Heatmap con seaborn
+ - Anotaciones de valores
+ - Normalizada y sin normalizar
 
 3. **ROC Curve:**
-   - Curva ROC con AUC
-   - Línea diagonal de referencia
-   - Threshold óptimo marcado
+ - Curva ROC con AUC
+ - Línea diagonal de referencia
+ - Threshold óptimo marcado
 
 4. **Predicciones de Muestra:**
-   - Grid de imágenes reales
-   - Predicciones vs etiquetas verdaderas
-   - Probabilidades de confianza
+ - Grid de imágenes reales
+ - Predicciones vs etiquetas verdaderas
+ - Probabilidades de confianza
 
 5. **Distribución de Probabilidades:**
-   - Histograma de predicciones
-   - Separación por clase real
+ - Histograma de predicciones
+ - Separación por clase real
 
 #### 8.2 Archivos de Salida
 ```
 results/figures/
-  ├── training_history.png       - Curvas de entrenamiento
-  ├── confusion_matrix.png       - Matriz de confusión
-  ├── confusion_matrix_norm.png  - Matriz normalizada
-  ├── roc_curve.png              - Curva ROC
-  ├── sample_predictions.png     - Muestras de predicciones
-  └── probability_distribution.png - Distribución de probabilidades
+ ├── training_history.png - Curvas de entrenamiento
+ ├── confusion_matrix.png - Matriz de confusión
+ ├── confusion_matrix_norm.png - Matriz normalizada
+ ├── roc_curve.png - Curva ROC
+ ├── sample_predictions.png - Muestras de predicciones
+ └── probability_distribution.png - Distribución de probabilidades
 ```
 
 ---
@@ -508,13 +508,13 @@ Para verificar que todo el pipeline funciona correctamente sin necesidad de desc
 **Archivos creados (organizados en `scripts/miniprueba/`):**
 ```
 scripts/miniprueba/
-├── download_mini_dataset.py      # Descarga 20 imágenes de prueba
-├── prepare_mini_dataset.py       # Prepara y divide el mini-dataset
-├── train_mini_model.py           # Entrena modelo de validación (6 épocas)
-├── evaluate_mini_model.py        # Evalúa métricas del mini-modelo
-├── predict_images.py             # Ejecuta predicciones sobre imágenes
-├── generar_reporte_pdf.py        # Genera reporte PDF del experimento
-└── README.md                     # Documentación del mini-experimento
+├── download_mini_dataset.py # Descarga 20 imágenes de prueba
+├── prepare_mini_dataset.py # Prepara y divide el mini-dataset
+├── train_mini_model.py # Entrena modelo de validación (6 épocas)
+├── evaluate_mini_model.py # Evalúa métricas del mini-modelo
+├── predict_images.py # Ejecuta predicciones sobre imágenes
+├── generar_reporte_pdf.py # Genera reporte PDF del experimento
+└── README.md # Documentación del mini-experimento
 ```
 
 ---
@@ -670,7 +670,7 @@ Se actualizó `docs/REGISTRO_PROCESO.md` (este documento) con el registro detall
 
 ---
 
-## 📊 ESTADÍSTICAS DEL PROYECTO
+## ESTADÍSTICAS DEL PROYECTO
 
 ### Dataset
 - **Imágenes originales descargadas:** 85
@@ -689,19 +689,19 @@ Se actualizó `docs/REGISTRO_PROCESO.md` (este documento) con el registro detall
 
 ### Distribución de Datos
 ```
-Training:    3,862 imágenes (70%)
-Validation:    828 imágenes (15%)
-Test:          828 imágenes (15%)
-Total:       5,518 imágenes (100%)
+Training: 3,862 imágenes (70%)
+Validation: 828 imágenes (15%)
+Test: 828 imágenes (15%)
+Total: 5,518 imágenes (100%)
 
 Balance de clases:
-  Positivo (geotérmico): 77.5%
-  Negativo (control):    22.5%
+ Positivo (geotérmico): 77.5%
+ Negativo (control): 22.5%
 ```
 
 ---
 
-## 🛠️ TECNOLOGÍAS UTILIZADAS
+## TECNOLOGÍAS UTILIZADAS
 
 ### Framework de Deep Learning
 - **TensorFlow:** 2.20.0
@@ -737,7 +737,7 @@ Balance de clases:
 
 ---
 
-## 📈 RESULTADOS ESPERADOS
+## RESULTADOS ESPERADOS
 
 ### Objetivos de Performance
 - **Accuracy mínima esperada:** 85%
@@ -756,18 +756,18 @@ El modelo entrenado podrá:
 
 ---
 
-## 🔄 PRÓXIMOS PASOS
+## PRÓXIMOS PASOS
 
-1. ⏳ **Completar entrenamiento del modelo en GPU** (RTX 5070 objetivo, 100 épocas)
-2. ⏳ **Evaluar performance en test set** (828 imágenes)
-3. ⏳ **Generar visualizaciones de alta calidad** (300 DPI para tesis)
-4. ⏳ **Documentar resultados finales**
-5. ⏳ **Preparar presentación para sustentación de tesis**
-6. ⏳ **Considerar dataset extendido** (50-100 GB con TFRecords en disco externo)
+1. **Completar entrenamiento del modelo en GPU** (RTX 5070 objetivo, 100 épocas)
+2. **Evaluar performance en test set** (828 imágenes)
+3. **Generar visualizaciones de alta calidad** (300 DPI para tesis)
+4. **Documentar resultados finales**
+5. **Preparar presentación para sustentación de tesis**
+6. **Considerar dataset extendido** (50-100 GB con TFRecords en disco externo)
 
 ---
 
-## 👥 EQUIPO
+## EQUIPO
 
 **Estudiantes:**
 - Cristian Camilo Vega Sánchez (Lead Developer)
@@ -785,36 +785,36 @@ El modelo entrenado podrá:
 
 ---
 
-## 📝 NOTAS TÉCNICAS
+## NOTAS TÉCNICAS
 
 ### Consideraciones Importantes
 
 1. **Balance de Clases:**
-   - Se aplicaron pesos de clase para compensar desbalance
-   - Data augmentation más agresiva en clase minoritaria
+ - Se aplicaron pesos de clase para compensar desbalance
+ - Data augmentation más agresiva en clase minoritaria
 
 2. **Validación Cruzada:**
-   - División estratificada mantiene proporción de clases
-   - Random state fijo (42) garantiza reproducibilidad
+ - División estratificada mantiene proporción de clases
+ - Random state fijo (42) garantiza reproducibilidad
 
 3. **Optimizaciones de Hardware:**
-   - CPU con instrucciones SIMD habilitadas
-   - Mixed precision para acelerar entrenamiento
-   - Batch size optimizado para memoria disponible
+ - CPU con instrucciones SIMD habilitadas
+ - Mixed precision para acelerar entrenamiento
+ - Batch size optimizado para memoria disponible
 
 4. **Prevención de Overfitting:**
-   - Dropout layers en arquitectura
-   - Early stopping con patience=15
-   - Data augmentation en tiempo real
-   - Regularización L2 en capas densas
+ - Dropout layers en arquitectura
+ - Early stopping con patience=15
+ - Data augmentation en tiempo real
+ - Regularización L2 en capas densas
 
 5. **Monitoreo:**
-   - TensorBoard para seguimiento en tiempo real
-   - CSVLogger para análisis posterior
-   - Checkpoints automáticos del mejor modelo
+ - TensorBoard para seguimiento en tiempo real
+ - CSVLogger para análisis posterior
+ - Checkpoints automáticos del mejor modelo
 
 ---
 
-**Última actualización:** 9 de febrero de 2026  
-**Estado del proyecto:** Fase 14 completada — Configuración centralizada y soporte disco externo  
+**Última actualización:** 9 de febrero de 2026 
+**Estado del proyecto:** Fase 14 completada — Configuración centralizada y soporte disco externo 
 **Próxima revisión:** Al completar entrenamiento en GPU

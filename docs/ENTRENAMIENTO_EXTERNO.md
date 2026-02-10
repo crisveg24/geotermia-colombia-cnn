@@ -1,23 +1,23 @@
-# 🚀 GUÍA PARA ENTRENAR EN OTRA MÁQUINA
+# GUÍA PARA ENTRENAR EN OTRA MÁQUINA
 
-**Fecha:** 9 de febrero de 2026  
-**Branch:** `main`  
+**Fecha:** 9 de febrero de 2026 
+**Branch:** `main` 
 **Propósito:** Entrenar modelo CNN en máquina con mejor hardware
 
 ---
 
-## 📋 RESUMEN
+## RESUMEN
 
 Esta guía te permitirá:
-1. ✅ Clonar el proyecto en otra máquina
-2. ✅ Descargar los datos desde Google Earth Engine
-3. ✅ Generar el dataset augmentado (5,518 imágenes)
-4. ✅ Entrenar el modelo CNN completo (100 épocas)
-5. ✅ Subir el modelo entrenado de vuelta al repositorio
+1. Clonar el proyecto en otra máquina
+2. Descargar los datos desde Google Earth Engine
+3. Generar el dataset augmentado (5,518 imágenes)
+4. Entrenar el modelo CNN completo (100 épocas)
+5. Subir el modelo entrenado de vuelta al repositorio
 
 ---
 
-## 🔧 PRERREQUISITOS EN LA NUEVA MÁQUINA
+## PRERREQUISITOS EN LA NUEVA MÁQUINA
 
 ### Hardware Recomendado
 ```
@@ -29,14 +29,14 @@ SO: Windows 10/11, Linux, o macOS
 
 ### Software Necesario
 ```
-✅ Python 3.10 o 3.11
-✅ Git
-✅ Cuenta de Google Cloud (para Earth Engine)
+ Python 3.10 o 3.11
+ Git
+ Cuenta de Google Cloud (para Earth Engine)
 ```
 
 ---
 
-## 📥 PASO 1: CLONAR EL REPOSITORIO
+## PASO 1: CLONAR EL REPOSITORIO
 
 ### En la nueva máquina:
 
@@ -51,7 +51,7 @@ git status
 
 ---
 
-## 🐍 PASO 2: CONFIGURAR ENTORNO PYTHON
+## PASO 2: CONFIGURAR ENTORNO PYTHON
 
 ### Crear entorno virtual:
 
@@ -81,7 +81,7 @@ pip install -r requirements.txt
 
 ---
 
-## 🌍 PASO 3: CONFIGURAR GOOGLE EARTH ENGINE
+## PASO 3: CONFIGURAR GOOGLE EARTH ENGINE
 
 ### Autenticar Earth Engine:
 
@@ -96,7 +96,7 @@ Esto abrirá el navegador para autenticación OAuth. Usa la misma cuenta de Goog
 
 ---
 
-## 📊 PASO 4: DESCARGAR Y PREPARAR DATOS
+## PASO 4: DESCARGAR Y PREPARAR DATOS
 
 ### Opción A: Descargar Imágenes Originales (Recomendado)
 
@@ -165,7 +165,7 @@ Esto te ahorra ~35 minutos de procesamiento.
 
 ---
 
-## 🚀 PASO 5: ENTRENAR EL MODELO
+## PASO 5: ENTRENAR EL MODELO
 
 ### Iniciar Entrenamiento:
 
@@ -181,20 +181,20 @@ Batch size: 32
 Learning rate: 0.001
 Optimizer: Adam
 Callbacks:
-  - EarlyStopping (patience=15)
-  - ModelCheckpoint (guarda mejor modelo)
-  - ReduceLROnPlateau (ajusta LR)
-  - TensorBoard (logs)
-  - CSVLogger (CSV con métricas)
+ - EarlyStopping (patience=15)
+ - ModelCheckpoint (guarda mejor modelo)
+ - ReduceLROnPlateau (ajusta LR)
+ - TensorBoard (logs)
+ - CSVLogger (CSV con métricas)
 ```
 
 ### Tiempo Estimado por Hardware:
 
 ```
-CPU (8 cores):        ~3-4 horas
-CPU (16+ cores):      ~2-3 horas
-GPU (NVIDIA RTX):     ~20-40 minutos
-GPU (NVIDIA Tesla):   ~10-20 minutos
+CPU (8 cores): ~3-4 horas
+CPU (16+ cores): ~2-3 horas
+GPU (NVIDIA RTX): ~20-40 minutos
+GPU (NVIDIA Tesla): ~10-20 minutos
 ```
 
 **Nota:** El tiempo real depende del EarlyStopping. Puede detenerse antes de 100 épocas.
@@ -227,26 +227,26 @@ tail -n 5 logs/geotermia_cnn_custom_*.csv
 
 ---
 
-## 📁 ARCHIVOS GENERADOS
+## ARCHIVOS GENERADOS
 
 Al finalizar el entrenamiento:
 
 ```
 models/saved_models/
-  └── geotermia_cnn_custom_best.keras  (~19 MB)
+ └── geotermia_cnn_custom_best.keras (~19 MB)
 
 logs/
-  ├── geotermia_cnn_custom_*.csv       (métricas por época)
-  └── tensorboard/                     (logs completos)
+ ├── geotermia_cnn_custom_*.csv (métricas por época)
+ └── tensorboard/ (logs completos)
 
 models/
-  ├── training_history.json            (historial completo)
-  └── training_history.csv             (backup)
+ ├── training_history.json (historial completo)
+ └── training_history.csv (backup)
 ```
 
 ---
 
-## ⬆️ PASO 6: SUBIR MODELO ENTRENADO
+## PASO 6: SUBIR MODELO ENTRENADO
 
 ### Verificar Tamaño del Modelo:
 
@@ -315,7 +315,7 @@ git push origin develop
 
 ---
 
-## 📊 PASO 7: EVALUAR MODELO
+## PASO 7: EVALUAR MODELO
 
 ```bash
 # Evaluar en test set (828 imágenes)
@@ -348,7 +348,7 @@ git push origin develop
 
 ---
 
-## 🔄 PASO 8: MERGE A MAIN (En máquina original)
+## PASO 8: MERGE A MAIN (En máquina original)
 
 Cuando el entrenamiento esté completo:
 
@@ -376,7 +376,7 @@ git push origin --delete develop
 
 ---
 
-## 🚨 SOLUCIÓN DE PROBLEMAS
+## SOLUCIÓN DE PROBLEMAS
 
 ### Error: "No module named 'tensorflow'"
 
@@ -395,7 +395,7 @@ python scripts/prepare_dataset.py
 
 Reducir batch size en `scripts/train_model.py`:
 ```python
-batch_size = 16  # en lugar de 32
+batch_size = 16 # en lugar de 32
 ```
 
 ### Error: "ModuleNotFoundError: No module named 'rasterio'"
@@ -406,7 +406,7 @@ pip install rasterio
 
 ### Entrenamiento muy lento
 
-**CPU:** Normal, espera 3-4 horas  
+**CPU:** Normal, espera 3-4 horas 
 **GPU no detectada:**
 ```bash
 python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
@@ -414,7 +414,7 @@ python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU')
 
 ---
 
-## 📝 CHECKLIST DE PASOS
+## CHECKLIST DE PASOS
 
 ```
 □ Clonar repositorio y checkout develop
@@ -435,7 +435,7 @@ python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU')
 
 ---
 
-## 📊 MÉTRICAS ESPERADAS
+## MÉTRICAS ESPERADAS
 
 Basado en entrenamiento parcial (30 épocas):
 
@@ -449,20 +449,20 @@ Basado en entrenamiento parcial (30 épocas):
 
 ---
 
-## 🎯 OBJETIVO FINAL
+## OBJETIVO FINAL
 
 Al completar todos los pasos:
 
-✅ Modelo CNN entrenado completamente (100 épocas o early stop)  
-✅ Métricas finales calculadas en test set  
-✅ Visualizaciones de alta calidad (300 DPI)  
-✅ Modelo disponible en repositorio o Drive  
-✅ Documentación completa actualizada  
-✅ Rama develop mergeada a main  
+ Modelo CNN entrenado completamente (100 épocas o early stop) 
+ Métricas finales calculadas en test set 
+ Visualizaciones de alta calidad (300 DPI) 
+ Modelo disponible en repositorio o Drive 
+ Documentación completa actualizada 
+ Rama develop mergeada a main 
 
 ---
 
-## 📞 CONTACTO
+## CONTACTO
 
 **Si tienes problemas:**
 1. Revisa la sección "Solución de Problemas"
@@ -475,6 +475,6 @@ Al completar todos los pasos:
 
 ---
 
-**Última actualización:** 3 de noviembre de 2025  
-**Estado:** Guía completa para entrenamiento en máquina externa  
+**Última actualización:** 3 de noviembre de 2025 
+**Estado:** Guía completa para entrenamiento en máquina externa 
 **Tiempo total estimado:** 4-5 horas (incluyendo setup)

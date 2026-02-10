@@ -1,9 +1,9 @@
-# 📊 RESUMEN DEL PROYECTO - CNN Geotermia Colombia
+# RESUMEN DEL PROYECTO - CNN Geotermia Colombia
 
-**Proyecto:** Sistema CNN para Identificación de Zonas Geotérmicas en Colombia  
-**Institución:** Universidad de San Buenaventura - Bogotá  
-**Fecha de inicio:** Noviembre 2025  
-**Última actualización:** 9 de febrero de 2026  
+**Proyecto:** Sistema CNN para Identificación de Zonas Geotérmicas en Colombia 
+**Institución:** Universidad de San Buenaventura - Bogotá 
+**Fecha de inicio:** Noviembre 2025 
+**Última actualización:** 9 de febrero de 2026 
 **Repositorio:** https://github.com/crisveg24/geotermia-colombia-cnn
 
 ---
@@ -66,22 +66,22 @@
 
 ```
 33343c8 - "docs: Agregar documento técnico completo del modelo predictivo CNN"
-         → MODELO_PREDICTIVO.md
+ → MODELO_PREDICTIVO.md
 
 71b4627 - "feat: Agregar script de visualización de arquitectura CNN"
-         → scripts/visualize_architecture.py
+ → scripts/visualize_architecture.py
 
 1aa8334 - "docs: Agregar documentación completa del proceso de desarrollo"
-         → REGISTRO_PROCESO.md, MONITOREO, RESUMEN, scripts corregidos
+ → REGISTRO_PROCESO.md, MONITOREO, RESUMEN, scripts corregidos
 
 f8692e0 - "docs: Actualizar documentación con análisis de 30 épocas"
-         → ANALISIS_ENTRENAMIENTO.md, actualizaciones de métricas
+ → ANALISIS_ENTRENAMIENTO.md, actualizaciones de métricas
 
 e39c698 - "feat: Agregar scripts y guía para entrenamiento externo"
-         → ENTRENAMIENTO_EXTERNO.md, 6 scripts, 3 CSVs metadata
+ → ENTRENAMIENTO_EXTERNO.md, 6 scripts, 3 CSVs metadata
 
 7660081 - "feat: Optimizaciones del modelo y nueva interfaz Streamlit"
-         → SpatialDropout2D, AdamW, Label Smoothing, app.py
+ → SpatialDropout2D, AdamW, Label Smoothing, app.py
 ```
 
 ---
@@ -218,44 +218,44 @@ Pull resultados → merge → actualizar documentación → presentación de tes
 
 ```
 geotermia-colombia-cnn/
-├── README.md                         # README principal
-├── app.py                            # Interfaz gráfica Streamlit
-├── setup.py                          # Configuración del entorno
-├── requirements.txt                  # Dependencias Python
-├── .gitignore                        # Archivos excluidos
+├── README.md # README principal
+├── app.py # Interfaz gráfica Streamlit
+├── setup.py # Configuración del entorno
+├── requirements.txt # Dependencias Python
+├── .gitignore # Archivos excluidos
 │
 ├── models/
-│   ├── cnn_geotermia.py              # Arquitectura del modelo CNN
-│   ├── __init__.py
-│   └── saved_models/                 # Modelos entrenados (se generan)
+│ ├── cnn_geotermia.py # Arquitectura del modelo CNN
+│ ├── __init__.py
+│ └── saved_models/ # Modelos entrenados (se generan)
 │
 ├── scripts/
-│   ├── download_dataset.py           # Descarga imágenes desde GEE
-│   ├── augment_full_dataset.py       # Augmentación del dataset
-│   ├── prepare_dataset.py            # Preparación para entrenamiento
-│   ├── train_model.py                # Entrenamiento del modelo
-│   ├── evaluate_model.py             # Evaluación en test set
-│   ├── predict.py                    # Predicción con coordenadas
-│   ├── visualize_results.py          # Visualizaciones de resultados
-│   ├── visualize_architecture.py     # Diagrama de arquitectura
-│   └── miniprueba/                   # Pipeline de validación (mini-dataset)
+│ ├── download_dataset.py # Descarga imágenes desde GEE
+│ ├── augment_full_dataset.py # Augmentación del dataset
+│ ├── prepare_dataset.py # Preparación para entrenamiento
+│ ├── train_model.py # Entrenamiento del modelo
+│ ├── evaluate_model.py # Evaluación en test set
+│ ├── predict.py # Predicción con coordenadas
+│ ├── visualize_results.py # Visualizaciones de resultados
+│ ├── visualize_architecture.py # Diagrama de arquitectura
+│ └── miniprueba/ # Pipeline de validación (mini-dataset)
 │
 ├── data/
-│   ├── raw/                          # Imágenes originales + CSVs de metadata
-│   ├── augmented/                    # Se genera con augment_full_dataset.py
-│   └── processed/                    # Se genera con prepare_dataset.py
+│ ├── raw/ # Imágenes originales + CSVs de metadata
+│ ├── augmented/ # Se genera con augment_full_dataset.py
+│ └── processed/ # Se genera con prepare_dataset.py
 │
-├── docs/                             # Documentación técnica
-│   ├── MODELO_PREDICTIVO.md          # Documento técnico principal
-│   ├── REGISTRO_PROCESO.md           # Bitácora cronológica
-│   ├── ANALISIS_ENTRENAMIENTO.md     # Análisis de métricas por época
-│   ├── MEJORAS_MODELO.md             # Roadmap de optimizaciones
-│   ├── ENTRENAMIENTO_EXTERNO.md      # Guía para entrenar con GPU
-│   └── RESUMEN_PROYECTO.md           # Este documento
+├── docs/ # Documentación técnica
+│ ├── MODELO_PREDICTIVO.md # Documento técnico principal
+│ ├── REGISTRO_PROCESO.md # Bitácora cronológica
+│ ├── ANALISIS_ENTRENAMIENTO.md # Análisis de métricas por época
+│ ├── MEJORAS_MODELO.md # Roadmap de optimizaciones
+│ ├── ENTRENAMIENTO_EXTERNO.md # Guía para entrenar con GPU
+│ └── RESUMEN_PROYECTO.md # Este documento
 │
-├── logs/                             # Logs de TensorBoard (se generan)
-├── results/                          # Métricas y figuras (se generan)
-└── notebooks/                        # Notebooks de exploración
+├── logs/ # Logs de TensorBoard (se generan)
+├── results/ # Métricas y figuras (se generan)
+└── notebooks/ # Notebooks de exploración
 ```
 
 ---
@@ -302,5 +302,5 @@ geotermia-colombia-cnn/
 
 ---
 
-**Última actualización:** 9 de febrero de 2026  
+**Última actualización:** 9 de febrero de 2026 
 **Documento fusionado desde:** CONFIGURACION_COMPLETA.md, RESUMEN_EJECUTIVO.md, MONITOREO_ENTRENAMIENTO.md

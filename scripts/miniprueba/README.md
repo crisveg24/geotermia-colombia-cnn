@@ -1,17 +1,17 @@
-# 🧪 Mini-Prueba: Validación del Pipeline
+# Mini-Prueba: Validación del Pipeline
 
 Esta carpeta contiene scripts de prueba para validar el pipeline completo del proyecto con un dataset reducido.
 
-## 📋 Propósito
+## Propósito
 
 Estos scripts fueron creados para:
-- ✅ Validar que la descarga de datos desde Google Earth Engine funciona
-- ✅ Probar el preprocesamiento de imágenes ASTER
-- ✅ Verificar que el modelo puede entrenar (aunque con datos insuficientes)
-- ✅ Confirmar que la evaluación genera métricas y gráficos
-- ✅ Demostrar el pipeline de predicción
+- Validar que la descarga de datos desde Google Earth Engine funciona
+- Probar el preprocesamiento de imágenes ASTER
+- Verificar que el modelo puede entrenar (aunque con datos insuficientes)
+- Confirmar que la evaluación genera métricas y gráficos
+- Demostrar el pipeline de predicción
 
-## 📁 Scripts
+## Scripts
 
 | Script | Descripción |
 |--------|-------------|
@@ -21,13 +21,13 @@ Estos scripts fueron creados para:
 | `evaluate_mini_model.py` | Genera métricas y visualizaciones |
 | `predict_images.py` | Ejecuta predicciones en imágenes |
 
-## ⚠️ Limitaciones
+## Limitaciones
 
 - **20 imágenes NO son suficientes** para entrenar un modelo real
 - El modelo tiende a predecir todo como "geotérmico" debido a la falta de datos
 - Estos scripts son **solo para validación del pipeline**
 
-## 🚀 Uso
+## Uso
 
 ```bash
 # 1. Descargar mini-dataset
@@ -46,7 +46,7 @@ python scripts/miniprueba/evaluate_mini_model.py
 python scripts/miniprueba/predict_images.py
 ```
 
-## 📊 Resultados Generados
+## Resultados Generados
 
 - `results/figures/`: Gráficos de evaluación
 - `results/metrics/`: Métricas en CSV y JSON
