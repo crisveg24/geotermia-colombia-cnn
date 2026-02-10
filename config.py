@@ -138,9 +138,9 @@ class ProjectConfig:
  "=" * 60,
  "CONFIGURACIÓN DEL PROYECTO GEOTERMIA CNN",
  "=" * 60,
- f" Fuente de datos : {v['source']}",
- f" Disco externo : {'SÍ' if v['is_external'] else 'NO'}",
- f" Data root : {v['data_root']}",
+ f"Fuente de datos : {v['source']}",
+ f"Disco externo : {'SÍ' if v['is_external'] else 'NO'}",
+ f"Data root : {v['data_root']}",
  "",
  ]
  for name, info in v["dirs"].items():

@@ -11,7 +11,7 @@ import os
 def print_header(text):
  """Imprime un encabezado formateado"""
  print("\n" + "=" * 70)
- print(f" {text}")
+ print(f"{text}")
  print("=" * 70 + "\n")
 
 def print_step(number, text):
@@ -24,7 +24,7 @@ def run_command(command, description):
  try:
  result = subprocess.run(command, shell=True, check=True, 
  capture_output=True, text=True)
- print(ff"{description} completado")
+ print(f"{description} completado")
  return True
  except subprocess.CalledProcessError as e:
  print(f"Error en {description}")

@@ -229,7 +229,7 @@ class FullDatasetAugmenter:
  count += 1
  
  except Exception as e:
- logger.warning(f" Error generando {aug_name} para {base_name}: {e}")
+ logger.warning(f"Error generando {aug_name} para {base_name}: {e}")
  
  return count
  
@@ -246,7 +246,7 @@ class FullDatasetAugmenter:
  # Procesar imágenes POSITIVAS
  if self.positive_dir_in.exists():
  positive_images = list(self.positive_dir_in.glob("*.tif"))
- logger.info(f"\n Procesando {len(positive_images)} imagenes POSITIVAS...")
+ logger.info(f"\nProcesando {len(positive_images)} imagenes POSITIVAS...")
  
  for idx, img_path in enumerate(positive_images, 1):
  logger.info(f"\n[{idx}/{len(positive_images)}] Procesando: {img_path.name}")
@@ -275,15 +275,15 @@ class FullDatasetAugmenter:
  
  total_generated += count + 1
  positive_count += count + 1
- logger.info(f" Generadas: {count + 1} imagenes")
+ logger.info(f"Generadas: {count + 1} imagenes")
  
  except Exception as e:
- logger.error(f" Error procesando {img_path.name}: {e}")
+ logger.error(f"Error procesando {img_path.name}: {e}")
  
  # Procesar imágenes NEGATIVAS
  if self.negative_dir_in.exists():
  negative_images = list(self.negative_dir_in.glob("*.tif"))
- logger.info(f"\n Procesando {len(negative_images)} imagenes NEGATIVAS...")
+ logger.info(f"\nProcesando {len(negative_images)} imagenes NEGATIVAS...")
  
  for idx, img_path in enumerate(negative_images, 1):
  logger.info(f"\n[{idx}/{len(negative_images)}] Procesando: {img_path.name}")
@@ -312,10 +312,10 @@ class FullDatasetAugmenter:
  
  total_generated += count + 1
  negative_count += count + 1
- logger.info(f" Generadas: {count + 1} imagenes")
+ logger.info(f"Generadas: {count + 1} imagenes")
  
  except Exception as e:
- logger.error(f" Error procesando {img_path.name}: {e}")
+ logger.error(f"Error procesando {img_path.name}: {e}")
  
  # Actualizar metadata
  self.metadata['augmented_images'] = total_generated - (len(list(self.positive_dir_in.glob("*.tif"))) + len(list(self.negative_dir_in.glob("*.tif"))))

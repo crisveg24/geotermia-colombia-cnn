@@ -485,4 +485,4 @@ if __name__ == '__main__':
  )
  model_transfer.summary()
  
- print("\n Arquitecturas creadas exitosamente!")
+ print("\nArquitecturas creadas exitosamente!")

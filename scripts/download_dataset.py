@@ -67,11 +67,11 @@ class GeotermalDatasetDownloader:
  # Intentar inicializar con el proyecto
  try:
  ee.Initialize(project='alpine-air-469115-f0')
- logger.info(" Google Earth Engine inicializado con proyecto: alpine-air-469115-f0")
+ logger.info("Google Earth Engine inicializado con proyecto: alpine-air-469115-f0")
  except:
  # Si falla, intentar sin especificar proyecto
  ee.Initialize()
- logger.info(" Google Earth Engine inicializado correctamente")
+ logger.info("Google Earth Engine inicializado correctamente")
  except Exception as e:
  logger.error(f"Error inicializando Earth Engine: {e}")
  logger.error("")
@@ -260,7 +260,7 @@ class GeotermalDatasetDownloader:
  # Verificar que el archivo se descargó correctamente
  if output_path.exists():
  file_size = output_path.stat().st_size / (1024 * 1024) # MB
- logger.info(f" Descargado: {name} ({file_size:.2f} MB)")
+ logger.info(f"Descargado: {name} ({file_size:.2f} MB)")
  
  # Guardar metadata
  self.metadata['image_details'].append({
@@ -276,11 +276,11 @@ class GeotermalDatasetDownloader:
  
  return True
  else:
- logger.warning(f" Archivo no encontrado después de descarga: {name}")
+ logger.warning(f"Archivo no encontrado después de descarga: {name}")
  return False
  
  except Exception as e:
- logger.error(f" Error descargando {name}: {e}")
+ logger.error(f"Error descargando {name}: {e}")
  return False
  
  def download_all_zones(
@@ -308,22 +308,22 @@ class GeotermalDatasetDownloader:
  negative_count = 0
  
  # Descargar zonas geotérmicas (positivas)
- logger.info(f"\n Descargando zonas CON potencial geotérmico (máximo {max_positive})...")
+ logger.info(f"\nDescargando zonas CON potencial geotérmico (máximo {max_positive})...")
  for name, coords in list(self.geothermal_zones.items())[:max_positive]:
  if self.download_image(name, coords, label=1):
  positive_count += 1
  time.sleep(delay) # Evitar sobrecargar la API
  
- logger.info(f"\n Zonas geotérmicas descargadas: {positive_count}/{max_positive}")
+ logger.info(f"\nZonas geotérmicas descargadas: {positive_count}/{max_positive}")
  
  # Descargar zonas de control (negativas)
- logger.info(f"\n Descargando zonas SIN potencial geotérmico (máximo {max_negative})...")
+ logger.info(f"\nDescargando zonas SIN potencial geotérmico (máximo {max_negative})...")
  for name, coords in list(self.control_zones.items())[:max_negative]:
  if self.download_image(name, coords, label=0):
  negative_count += 1
  time.sleep(delay) # Evitar sobrecargar la API
  
- logger.info(f"\n Zonas de control descargadas: {negative_count}/{max_negative}")
+ logger.info(f"\nZonas de control descargadas: {negative_count}/{max_negative}")
  
  # Actualizar metadata
  self.metadata['positive_images'] = positive_count
@@ -338,22 +338,22 @@ class GeotermalDatasetDownloader:
  json_path = self.output_dir / "dataset_metadata.json"
  with open(json_path, 'w', encoding='utf-8') as f:
  json.dump(self.metadata, f, indent=2, ensure_ascii=False)
- logger.info(f" Metadata guardada en: {json_path}")
+ logger.info(f"Metadata guardada en: {json_path}")
  
  # Guardar CSV con detalles de imágenes
  if self.metadata['image_details']:
  df = pd.DataFrame(self.metadata['image_details'])
  csv_path = self.output_dir / "dataset_images.csv"
  df.to_csv(csv_path, index=False, encoding='utf-8')
- logger.info(f" Lista de imágenes guardada en: {csv_path}")
+ logger.info(f"Lista de imágenes guardada en: {csv_path}")
  
  # Mostrar estadísticas
- logger.info("\n ESTADÍSTICAS DEL DATASET:")
- logger.info(f" Total de imágenes: {len(df)}")
- logger.info(f" Imágenes positivas (geotérmicas): {len(df[df['label']==1])}")
- logger.info(f" Imágenes negativas (control): {len(df[df['label']==0])}")
- logger.info(f" Tamaño total: {df['file_size_mb'].sum():.2f} MB")
- logger.info(f" Balance: {len(df[df['label']==1])/len(df)*100:.1f}% positivas")
+ logger.info("\nESTADÍSTICAS DEL DATASET:")
+ logger.info(f"Total de imágenes: {len(df)}")
+ logger.info(f"Imágenes positivas (geotérmicas): {len(df[df['label']==1])}")
+ logger.info(f"Imágenes negativas (control): {len(df[df['label']==0])}")
+ logger.info(f"Tamaño total: {df['file_size_mb'].sum():.2f} MB")
+ logger.info(f"Balance: {len(df[df['label']==1])/len(df)*100:.1f}% positivas")
  
  def create_labels_file(self):
  """Crear archivo de etiquetas para entrenamiento."""
@@ -371,7 +371,7 @@ class GeotermalDatasetDownloader:
  df = pd.DataFrame(labels_data)
  labels_path = self.output_dir / "labels.csv"
  df.to_csv(labels_path, index=False, encoding='utf-8')
- logger.info(f" Archivo de etiquetas guardado en: {labels_path}")
+ logger.info(f"Archivo de etiquetas guardado en: {labels_path}")
  
  return labels_path
 
@@ -389,8 +389,8 @@ def main():
  # Importar configuración centralizada (soporta disco externo)
  sys.path.insert(0, str(Path(__file__).parent.parent))
  from config import cfg
- logger.info(f" Fuente de datos: {cfg.source}")
- logger.info(f" Data root: {cfg.data_root}")
+ logger.info(f"Fuente de datos: {cfg.source}")
+ logger.info(f"Data root: {cfg.data_root}")
  cfg.ensure_dirs()
  
  # Crear descargador (usa ruta de config.py)
@@ -400,7 +400,7 @@ def main():
  MAX_POSITIVE = 50 # Zonas geotérmicas
  MAX_NEGATIVE = 50 # Zonas de control
  
- logger.info(f" Configuración:")
+ logger.info(f"Configuración:")
  logger.info(f" - Imágenes positivas objetivo: {MAX_POSITIVE}")
  logger.info(f" - Imágenes negativas objetivo: {MAX_NEGATIVE}")
  logger.info(f" - Total objetivo: {MAX_POSITIVE + MAX_NEGATIVE}")
@@ -410,7 +410,7 @@ def main():
  # Confirmar antes de iniciar
  response = input("¿Desea iniciar la descarga? (s/n): ")
  if response.lower() != 's':
- logger.info(" Descarga cancelada por el usuario")
+ logger.info("Descarga cancelada por el usuario")
  return
  
  # Descargar dataset
@@ -431,20 +431,20 @@ def main():
  logger.info("\n" + "="*80)
  logger.info("DESCARGA COMPLETADA")
  logger.info("="*80)
- logger.info(f" Imágenes positivas descargadas: {pos_count}")
- logger.info(f" Imágenes negativas descargadas: {neg_count}")
- logger.info(f" Total descargado: {pos_count + neg_count}")
- logger.info(f" Tiempo total: {total_time/60:.2f} minutos")
- logger.info(f" Ubicación: data/raw/")
+ logger.info(f"Imágenes positivas descargadas: {pos_count}")
+ logger.info(f"Imágenes negativas descargadas: {neg_count}")
+ logger.info(f"Total descargado: {pos_count + neg_count}")
+ logger.info(f"Tiempo total: {total_time/60:.2f} minutos")
+ logger.info(f"Ubicación: data/raw/")
  logger.info("="*80)
  
  # Verificar balance del dataset
  if pos_count > 0 and neg_count > 0:
  balance = min(pos_count, neg_count) / max(pos_count, neg_count) * 100
  if balance >= 80:
- logger.info(f" Dataset bien balanceado ({balance:.1f}%)")
+ logger.info(f"Dataset bien balanceado ({balance:.1f}%)")
  else:
- logger.warning(f" Dataset desbalanceado ({balance:.1f}%). Considera descargar más imágenes de la clase minoritaria.")
+ logger.warning(f"Dataset desbalanceado ({balance:.1f}%). Considera descargar más imágenes de la clase minoritaria.")
 
 
 if __name__ == "__main__":

@@ -62,7 +62,7 @@ class GeotermalPredictor:
  
  try:
  self.model = keras.models.load_model(str(self.model_path))
- logger.info(" Modelo cargado exitosamente")
+ logger.info("Modelo cargado exitosamente")
  return True
  except Exception as e:
  logger.error(f"Error cargando modelo: {e}")
@@ -257,7 +257,7 @@ class GeotermalPredictor:
  with open(output_path, 'w') as f:
  json.dump(results, f, indent=2)
  
- logger.info(f"\n Resultados guardados en: {output_path}")
+ logger.info(f"\nResultados guardados en: {output_path}")
  
  # Resumen
  logger.info("\n" + "="*70)
@@ -336,7 +336,7 @@ Ejemplos de uso:
  
  # Verificar que el modelo existe
  if not Path(args.model).exists():
- print(f"\n Error: Modelo no encontrado en {args.model}")
+ print(f"\nError: Modelo no encontrado en {args.model}")
  print("Entrena el modelo primero con: python scripts/train_model.py")
  return
  
@@ -356,7 +356,7 @@ Ejemplos de uso:
  result = predictor.predict(args.image)
  
  if result:
- print("\n Predicción completada!")
+ print("\nPredicción completada!")
  
  elif args.folder:
  # Predicción batch
@@ -366,7 +366,7 @@ Ejemplos de uso:
  )
  
  if results:
- print(f"\n Predicciones completadas! ({len(results)} imágenes procesadas)")
+ print(f"\nPredicciones completadas! ({len(results)} imágenes procesadas)")
 
 
 if __name__ == '__main__':

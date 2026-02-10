@@ -52,7 +52,7 @@ def load_model():
  if not model_path.exists():
  raise FileNotFoundError("No se encontró modelo entrenado")
  
- print(f" Cargando modelo: {model_path.name}")
+ print(f"Cargando modelo: {model_path.name}")
  return keras.models.load_model(model_path)
 
 
@@ -87,13 +87,13 @@ def plot_confusion_matrix(y_true, y_pred, save_path):
  plt.tight_layout()
  plt.savefig(save_path)
  plt.close()
- print(f" Guardado: {save_path.name}")
+ print(f"Guardado: {save_path.name}")
 
 
 def plot_roc_curve(y_true, y_prob, save_path):
  """Genera curva ROC."""
  if len(np.unique(y_true)) < 2:
- print(" No hay suficientes clases para curva ROC")
+ print("No hay suficientes clases para curva ROC")
  return
  
  fpr, tpr, _ = roc_curve(y_true, y_prob)
@@ -114,7 +114,7 @@ def plot_roc_curve(y_true, y_prob, save_path):
  plt.tight_layout()
  plt.savefig(save_path)
  plt.close()
- print(f" Guardado: {save_path.name}")
+ print(f"Guardado: {save_path.name}")
 
 
 def plot_training_history(save_path):
@@ -122,7 +122,7 @@ def plot_training_history(save_path):
  history_file = LOGS_PATH / 'history_mini.json'
  
  if not history_file.exists():
- print(" No se encontró historial de entrenamiento")
+ print("No se encontró historial de entrenamiento")
  return
  
  with open(history_file, 'r') as f:
@@ -155,7 +155,7 @@ def plot_training_history(save_path):
  plt.tight_layout()
  plt.savefig(save_path)
  plt.close()
- print(f" Guardado: {save_path.name}")
+ print(f"Guardado: {save_path.name}")
 
 
 def plot_metrics_comparison(metrics, save_path):
@@ -188,12 +188,12 @@ def plot_metrics_comparison(metrics, save_path):
  plt.tight_layout()
  plt.savefig(save_path)
  plt.close()
- print(f" Guardado: {save_path.name}")
+ print(f"Guardado: {save_path.name}")
 
 
 def main():
  print("=" * 60)
- print(" EVALUACIÓN COMPLETA DEL MODELO")
+ print("EVALUACIÓN COMPLETA DEL MODELO")
  print("=" * 60)
  
  # Crear directorios
@@ -204,24 +204,24 @@ def main():
  model = load_model()
  X_test, y_test = load_data()
  
- print(f"\n Test set: {X_test.shape}")
- print(f" Clase 0: {np.sum(y_test == 0)}")
- print(f" Clase 1: {np.sum(y_test == 1)}")
+ print(f"\nTest set: {X_test.shape}")
+ print(f"Clase 0: {np.sum(y_test == 0)}")
+ print(f"Clase 1: {np.sum(y_test == 1)}")
  
  # Predicciones
- print("\n Generando predicciones...")
+ print("\nGenerando predicciones...")
  y_prob = model.predict(X_test, verbose=0).flatten()
  y_pred = (y_prob > 0.5).astype(int)
  
  # Calcular métricas
- print("\n Calculando métricas...")
+ print("\nCalculando métricas...")
  metrics = calculate_metrics(y_test, y_pred, y_prob)
  
  print("\n" + "=" * 40)
  print("MÉTRICAS DE RENDIMIENTO")
  print("=" * 40)
  for name, value in metrics.items():
- print(f" {name.upper():12} : {value:.4f} ({value:.1%})")
+ print(f"{name.upper():12} : {value:.4f} ({value:.1%})")
  
  # Classification Report
  print("\n" + "=" * 40)
@@ -237,16 +237,16 @@ def main():
  metrics_file = METRICS_PATH / 'evaluation_metrics.json'
  with open(metrics_file, 'w') as f:
  json.dump(metrics, f, indent=2)
- print(f"\n Métricas guardadas: {metrics_file}")
+ print(f"\nMétricas guardadas: {metrics_file}")
  
  # Guardar métricas en CSV (para la tesis)
  metrics_df = pd.DataFrame([metrics])
  metrics_csv = METRICS_PATH / 'metrics_table.csv'
  metrics_df.to_csv(metrics_csv, index=False)
- print(f" Tabla CSV guardada: {metrics_csv}")
+ print(f"Tabla CSV guardada: {metrics_csv}")
  
  # Generar visualizaciones
- print("\n Generando visualizaciones...")
+ print("\nGenerando visualizaciones...")
  
  plot_confusion_matrix(y_test, y_pred, FIGURES_PATH / 'confusion_matrix.png')
  plot_roc_curve(y_test, y_prob, FIGURES_PATH / 'roc_curve.png')
@@ -256,11 +256,11 @@ def main():
  print("\n" + "=" * 60)
  print(" ¡EVALUACIÓN COMPLETADA!")
  print("=" * 60)
- print(f"\n Resultados guardados en: {RESULTS_PATH}")
- print(f" Figuras: {FIGURES_PATH}")
- print(f" Métricas: {METRICS_PATH}")
+ print(f"\nResultados guardados en: {RESULTS_PATH}")
+ print(f"Figuras: {FIGURES_PATH}")
+ print(f"Métricas: {METRICS_PATH}")
  
- print("\n Archivos para tu tesis:")
+ print("\nArchivos para tu tesis:")
  print(" - confusion_matrix.png → Matriz de confusión")
  print(" - roc_curve.png → Curva ROC")
  print(" - training_history.png → Historia de entrenamiento")

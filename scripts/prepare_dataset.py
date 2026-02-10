@@ -279,10 +279,10 @@ class GeoDataPreparator:
  y = np.array(labels, dtype=np.int32)
  
  logger.info(f"\nDataset cargado:")
- logger.info(f" Shape: {X.shape}")
- logger.info(f" Labels: {y.shape}")
- logger.info(f" Clase 0: {(y == 0).sum()} imágenes")
- logger.info(f" Clase 1: {(y == 1).sum()} imágenes")
+ logger.info(f"Shape: {X.shape}")
+ logger.info(f"Labels: {y.shape}")
+ logger.info(f"Clase 0: {(y == 0).sum()} imágenes")
+ logger.info(f"Clase 1: {(y == 1).sum()} imágenes")
  
  # 3. Dividir en train/val/test
  logger.info("\nDividiendo dataset...")
@@ -304,9 +304,9 @@ class GeoDataPreparator:
  stratify=y_temp
  )
  
- logger.info(f" Train: {X_train.shape[0]} imágenes")
- logger.info(f" Validation: {X_val.shape[0]} imágenes")
- logger.info(f" Test: {X_test.shape[0]} imágenes")
+ logger.info(f"Train: {X_train.shape[0]} imágenes")
+ logger.info(f"Validation: {X_val.shape[0]} imágenes")
+ logger.info(f"Test: {X_test.shape[0]} imágenes")
  
  # 4. Calcular pesos de clase para balanceo
  class_weights = class_weight.compute_class_weight(
@@ -317,8 +317,8 @@ class GeoDataPreparator:
  class_weights_dict = {i: weight for i, weight in enumerate(class_weights)}
  
  logger.info(f"\nPesos de clase (para balanceo):")
- logger.info(f" Clase 0: {class_weights_dict[0]:.4f}")
- logger.info(f" Clase 1: {class_weights_dict[1]:.4f}")
+ logger.info(f"Clase 0: {class_weights_dict[0]:.4f}")
+ logger.info(f"Clase 1: {class_weights_dict[1]:.4f}")
  
  # 5. Guardar datos procesados
  logger.info("\nGuardando datos procesados...")
@@ -344,7 +344,7 @@ class GeoDataPreparator:
  json.dump(split_info, f, indent=2)
  
  logger.info(f"Datos guardados en: {self.processed_data_path}")
- logger.info("\n Preparación del dataset completada!")
+ logger.info("\nPreparación del dataset completada!")
  
  return {
  'X_train': X_train,
@@ -376,10 +376,10 @@ class GeoDataPreparator:
  with open(self.processed_data_path / 'split_info.json', 'r') as f:
  split_info = json.load(f)
  
- logger.info(" Dataset cargado exitosamente")
- logger.info(f" Train: {X_train.shape}")
- logger.info(f" Validation: {X_val.shape}")
- logger.info(f" Test: {X_test.shape}")
+ logger.info("Dataset cargado exitosamente")
+ logger.info(f"Train: {X_train.shape}")
+ logger.info(f"Validation: {X_val.shape}")
+ logger.info(f"Test: {X_test.shape}")
  
  return {
  'X_train': X_train,
@@ -424,12 +424,12 @@ def main():
  
  if dataset is not None:
  print("\n" + "="*70)
- print(" Dataset preparado y guardado exitosamente!")
+ print("Dataset preparado y guardado exitosamente!")
  print("="*70)
  print(f"\nPuedes cargar los datos con:")
  print(" data = np.load('data/processed/X_train.npy')")
  else:
- print("\n Error al preparar el dataset.")
+ print("\nError al preparar el dataset.")
  print("Verifica que existan archivos .tif en data/raw/")
 
 

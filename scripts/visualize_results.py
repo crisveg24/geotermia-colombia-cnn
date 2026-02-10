@@ -113,7 +113,7 @@ class ResultsVisualizer:
  # Guardar
  output_path = self.figures_path / 'training_history.png'
  plt.savefig(output_path, dpi=self.dpi, bbox_inches='tight')
- logger.info(f" Gráfico guardado: {output_path}")
+ logger.info(f"Gráfico guardado: {output_path}")
  
  plt.close()
  
@@ -171,7 +171,7 @@ class ResultsVisualizer:
  # Guardar
  output_path = self.figures_path / 'confusion_matrix.png'
  plt.savefig(output_path, dpi=self.dpi, bbox_inches='tight')
- logger.info(f" Confusion Matrix guardada: {output_path}")
+ logger.info(f"Confusion Matrix guardada: {output_path}")
  
  plt.close()
  
@@ -236,7 +236,7 @@ class ResultsVisualizer:
  # Guardar
  output_path = self.figures_path / 'roc_curve.png'
  plt.savefig(output_path, dpi=self.dpi, bbox_inches='tight')
- logger.info(f" ROC Curve guardada: {output_path}")
+ logger.info(f"ROC Curve guardada: {output_path}")
  
  plt.close()
  
@@ -304,7 +304,7 @@ class ResultsVisualizer:
  # Guardar
  output_path = self.figures_path / 'metrics_comparison.png'
  plt.savefig(output_path, dpi=self.dpi, bbox_inches='tight')
- logger.info(f" Métricas comparadas guardadas: {output_path}")
+ logger.info(f"Métricas comparadas guardadas: {output_path}")
  
  plt.close()
  
@@ -327,7 +327,7 @@ class ResultsVisualizer:
  self.plot_metrics_comparison()
  
  logger.info("\n" + "="*70)
- logger.info(" VISUALIZACIONES COMPLETADAS")
+ logger.info("VISUALIZACIONES COMPLETADAS")
  logger.info("="*70)
  logger.info(f"\nFiguras guardadas en: {self.figures_path}")
 
@@ -350,7 +350,7 @@ def main():
  # Generar todas las visualizaciones
  visualizer.generate_all_visualizations()
  
- print("\n Visualizaciones generadas exitosamente!")
+ print("\nVisualizaciones generadas exitosamente!")
  print(f"\nFiguras disponibles:")
  print(f" - results/figures/training_history.png")
  print(f" - results/figures/confusion_matrix.png")

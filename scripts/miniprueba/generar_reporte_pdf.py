@@ -346,10 +346,10 @@ def generar_reporte():
  pdf.output(str(output_path))
  
  print(f"\n{'='*60}")
- print(" REPORTE PDF GENERADO EXITOSAMENTE")
+ print("REPORTE PDF GENERADO EXITOSAMENTE")
  print(f"{'='*60}")
- print(f" Ubicacion: {output_path}")
- print(f" Paginas: {pdf.page_no()}")
+ print(f"Ubicacion: {output_path}")
+ print(f"Paginas: {pdf.page_no()}")
  print(f"{'='*60}")
  
  return output_path

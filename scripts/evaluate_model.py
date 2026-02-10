@@ -73,7 +73,7 @@ class ModelEvaluator:
  
  try:
  self.model = keras.models.load_model(str(self.model_path))
- logger.info(" Modelo cargado exitosamente")
+ logger.info("Modelo cargado exitosamente")
  return True
  except Exception as e:
  logger.error(f"Error cargando modelo: {e}")
@@ -87,7 +87,7 @@ class ModelEvaluator:
  self.X_test = np.load(self.processed_data_path / 'X_test.npy')
  self.y_test = np.load(self.processed_data_path / 'y_test.npy')
  
- logger.info(f" Datos cargados: {self.X_test.shape}")
+ logger.info(f"Datos cargados: {self.X_test.shape}")
  return True
  except Exception as e:
  logger.error(f"Error cargando datos: {e}")
@@ -109,7 +109,7 @@ class ModelEvaluator:
  # Clasificación multiclase
  self.y_pred = np.argmax(self.y_pred_proba, axis=1)
  
- logger.info(" Predicciones completadas")
+ logger.info("Predicciones completadas")
  
  def calculate_metrics(self) -> dict:
  """
@@ -167,8 +167,8 @@ class ModelEvaluator:
  metrics['confusion_matrix'] = cm.tolist()
  
  logger.info("\nMatriz de Confusión:")
- logger.info(f" TN: {cm[0,0]} FP: {cm[0,1]}")
- logger.info(f" FN: {cm[1,0]} TP: {cm[1,1]}")
+ logger.info(f"TN: {cm[0,0]} FP: {cm[0,1]}")
+ logger.info(f"FN: {cm[1,0]} TP: {cm[1,1]}")
  
  # 8. Curva ROC
  try:
@@ -215,7 +215,7 @@ class ModelEvaluator:
  with open(output_path, 'w') as f:
  json.dump(metrics, f, indent=2)
  
- logger.info(f"\n Métricas guardadas: {output_path}")
+ logger.info(f"\nMétricas guardadas: {output_path}")
  
  def save_metrics_table(self, metrics: dict, filename: str = 'metrics_table.csv'):
  """
@@ -256,7 +256,7 @@ class ModelEvaluator:
  output_path = self.results_path / filename
  df_metrics.to_csv(output_path, index=False)
  
- logger.info(f" Tabla de métricas guardada: {output_path}")
+ logger.info(f"Tabla de métricas guardada: {output_path}")
  
  # Mostrar tabla
  print("\n" + "="*70)
@@ -290,7 +290,7 @@ class ModelEvaluator:
  self.save_metrics_table(metrics)
  
  logger.info("\n" + "="*70)
- logger.info(" EVALUACIÓN COMPLETADA")
+ logger.info("EVALUACIÓN COMPLETADA")
  logger.info("="*70)
  
  return metrics
@@ -308,7 +308,7 @@ def main():
  model_path = 'models/saved_models/geotermia_cnn_custom_best.keras'
  
  if not Path(model_path).exists():
- print(f"\n Error: Modelo no encontrado en {model_path}")
+ print(f"\nError: Modelo no encontrado en {model_path}")
  print("Entrena el modelo primero con: python scripts/train_model.py")
  return
  
@@ -323,7 +323,7 @@ def main():
  metrics = evaluator.evaluate()
  
  if metrics:
- print("\n Evaluación completada exitosamente!")
+ print("\nEvaluación completada exitosamente!")
  print(f"\nResultados guardados en:")
  print(f" - results/metrics/evaluation_metrics.json")
  print(f" - results/metrics/metrics_table.csv")

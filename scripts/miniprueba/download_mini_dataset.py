@@ -55,10 +55,10 @@ def initialize_earth_engine():
  """Inicializa Google Earth Engine."""
  try:
  ee.Initialize(project=PROJECT_ID)
- logger.info(f" Earth Engine inicializado con proyecto: {PROJECT_ID}")
+ logger.info(f"Earth Engine inicializado con proyecto: {PROJECT_ID}")
  return True
  except Exception as e:
- logger.error(f" Error: {e}")
+ logger.error(f"Error: {e}")
  return False
 
 
@@ -92,7 +92,7 @@ def download_aster_image(name: str, lon: float, lat: float, label: int, output_d
  filepath = output_dir / filename
  
  # Descargar imagen
- logger.info(f" Descargando: {name} ({lat:.4f}, {lon:.4f}) - Label: {label}")
+ logger.info(f"Descargando: {name} ({lat:.4f}, {lon:.4f}) - Label: {label}")
  
  geemap.ee_export_image(
  thermal_bands,
@@ -105,14 +105,14 @@ def download_aster_image(name: str, lon: float, lat: float, label: int, output_d
  # Verificar descarga
  if filepath.exists():
  size_mb = filepath.stat().st_size / (1024 * 1024)
- logger.info(f" Guardado: {filename} ({size_mb:.2f} MB)")
+ logger.info(f"Guardado: {filename} ({size_mb:.2f} MB)")
  return True
  else:
- logger.warning(f" Archivo no creado: {filename}")
+ logger.warning(f"Archivo no creado: {filename}")
  return False
  
  except Exception as e:
- logger.error(f" Error descargando {name}: {e}")
+ logger.error(f"Error descargando {name}: {e}")
  return False
 
 
@@ -143,14 +143,14 @@ def create_labels_csv(output_dir: Path):
  df = pd.DataFrame(data)
  labels_path = output_dir.parent / 'labels_mini.csv'
  df.to_csv(labels_path, index=False)
- logger.info(f" Labels guardados en: {labels_path}")
+ logger.info(f"Labels guardados en: {labels_path}")
  return df
 
 
 def main():
  """Función principal para descargar mini-dataset."""
  print("=" * 60)
- print(" DESCARGA MINI-DATASET GEOTÉRMICO")
+ print("DESCARGA MINI-DATASET GEOTÉRMICO")
  print("=" * 60)
  print(f"• 10 zonas geotérmicas (volcanes)")
  print(f"• 10 zonas control (llanos/amazonia)")
@@ -163,7 +163,7 @@ def main():
  
  # Crear directorio de salida
  OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
- logger.info(f" Directorio de salida: {OUTPUT_DIR}")
+ logger.info(f"Directorio de salida: {OUTPUT_DIR}")
  
  # Crear labels CSV primero
  df_labels = create_labels_csv(OUTPUT_DIR)
@@ -173,7 +173,7 @@ def main():
  failed = 0
  
  # Descargar zonas geotérmicas
- print("\n Descargando zonas GEOTÉRMICAS (label=1)...")
+ print("\nDescargando zonas GEOTÉRMICAS (label=1)...")
  for name, coords in GEOTHERMAL_ZONES.items():
  if download_aster_image(name, coords[0], coords[1], 1, OUTPUT_DIR):
  success += 1
@@ -182,7 +182,7 @@ def main():
  time.sleep(1) # Evitar rate limiting
  
  # Descargar zonas control
- print("\n Descargando zonas CONTROL (label=0)...")
+ print("\nDescargando zonas CONTROL (label=0)...")
  for name, coords in CONTROL_ZONES.items():
  if download_aster_image(name, coords[0], coords[1], 0, OUTPUT_DIR):
  success += 1
@@ -192,11 +192,11 @@ def main():
  
  # Resumen
  print("\n" + "=" * 60)
- print(" RESUMEN DE DESCARGA")
+ print("RESUMEN DE DESCARGA")
  print("=" * 60)
- print(f" Exitosas: {success}")
- print(f" Fallidas: {failed}")
- print(f" Ubicación: {OUTPUT_DIR}")
+ print(f"Exitosas: {success}")
+ print(f"Fallidas: {failed}")
+ print(f"Ubicación: {OUTPUT_DIR}")
  print("=" * 60)
  
  if success > 0:

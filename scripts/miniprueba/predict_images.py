@@ -59,7 +59,7 @@ def predict_single(model, image_path):
  image = np.expand_dims(image, axis=0) # Batch de 1
  
  prob = model.predict(image, verbose=0)[0][0]
- pred_class = " GEOTÉRMICO" if prob > 0.5 else " SIN POTENCIAL"
+ pred_class = "GEOTÉRMICO" if prob > 0.5 else "SIN POTENCIAL"
  confidence = prob if prob > 0.5 else 1 - prob
  
  return pred_class, prob, confidence
@@ -67,22 +67,22 @@ def predict_single(model, image_path):
 
 def main():
  print("=" * 60)
- print(" SISTEMA DE PREDICCIÓN GEOTÉRMICA")
+ print("SISTEMA DE PREDICCIÓN GEOTÉRMICA")
  print("=" * 60)
  
  # Cargar modelo
- print("\n Cargando modelo...")
+ print("\nCargando modelo...")
  model = load_model()
- print(" Modelo cargado")
+ print("Modelo cargado")
  
  # Obtener imágenes disponibles
  images = list(DATA_PATH.glob('*.tif'))
  
  if not images:
- print(" No hay imágenes en data/raw/images/")
+ print("No hay imágenes en data/raw/images/")
  return
  
- print(f"\n Imágenes disponibles: {len(images)}")
+ print(f"\nImágenes disponibles: {len(images)}")
  print("-" * 60)
  
  # Predecir todas las imágenes
@@ -97,18 +97,18 @@ def main():
  'confianza': confidence
  })
  
- print(f" {img_path.stem:30} → {pred_class} (conf: {confidence:.1%})")
+ print(f"{img_path.stem:30} → {pred_class} (conf: {confidence:.1%})")
  
  # Resumen
  geo_count = sum(1 for r in results if "GEOTÉRMICO" in r['prediccion'])
  no_geo_count = len(results) - geo_count
  
  print("\n" + "=" * 60)
- print(" RESUMEN DE PREDICCIONES")
+ print("RESUMEN DE PREDICCIONES")
  print("=" * 60)
- print(f" Zonas Geotérmicas: {geo_count}")
- print(f" Zonas Sin Potencial: {no_geo_count}")
- print(f" Total analizado: {len(results)}")
+ print(f"Zonas Geotérmicas: {geo_count}")
+ print(f"Zonas Sin Potencial: {no_geo_count}")
+ print(f"Total analizado: {len(results)}")
  print("=" * 60)
 
 

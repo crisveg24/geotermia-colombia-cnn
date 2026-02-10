@@ -26,7 +26,7 @@ try:
  TF_AVAILABLE = True
 except ImportError:
  TF_AVAILABLE = False
- print(" TensorFlow no está instalado. Se generará solo documentación visual.")
+ print("TensorFlow no está instalado. Se generará solo documentación visual.")
 
 
 class ArchitectureVisualizer:
@@ -68,7 +68,7 @@ class ArchitectureVisualizer:
  Diccionario con información del modelo
  """
  if not TF_AVAILABLE:
- print(" TensorFlow no disponible. Generando resumen manual.")
+ print("TensorFlow no disponible. Generando resumen manual.")
  return self._get_manual_summary(model_type)
  
  # Crear modelo
@@ -89,7 +89,7 @@ class ArchitectureVisualizer:
  f.write("=" * 80 + "\n\n")
  f.write('\n'.join(summary_lines))
  
- print(f" Resumen del modelo guardado en: {summary_path}")
+ print(f"Resumen del modelo guardado en: {summary_path}")
  
  # Extraer información de capas
  layers_info = []
@@ -131,7 +131,7 @@ class ArchitectureVisualizer:
  with open(json_path, 'w', encoding='utf-8') as f:
  json.dump(model_info, f, indent=2)
  
- print(f" Información del modelo guardada en: {json_path}")
+ print(f"Información del modelo guardada en: {json_path}")
  
  return model_info
  
@@ -343,7 +343,7 @@ class ArchitectureVisualizer:
  output_path = self.output_dir / f'architecture_diagram_{model_type}.png'
  plt.tight_layout()
  plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
- print(f" Diagrama de arquitectura guardado en: {output_path}")
+ print(f"Diagrama de arquitectura guardado en: {output_path}")
  plt.close()
  
  def create_latex_table(self, model_info: dict):
@@ -381,7 +381,7 @@ class ArchitectureVisualizer:
  f.write("\\end{tabular}\n")
  f.write("\\end{table}\n")
  
- print(f" Tabla LaTeX guardada en: {latex_path}")
+ print(f"Tabla LaTeX guardada en: {latex_path}")
  
  def create_comparison_table(self):
  """Crea tabla comparativa entre arquitecturas custom y transfer learning."""
@@ -433,7 +433,7 @@ class ArchitectureVisualizer:
  
  output_path = self.output_dir / 'architecture_comparison.png'
  plt.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
- print(f" Tabla comparativa guardada en: {output_path}")
+ print(f"Tabla comparativa guardada en: {output_path}")
  plt.close()
 
 
@@ -448,36 +448,36 @@ def main():
  
  try:
  # 1. Generar resúmenes de modelos
- print(" Generando resúmenes de modelos...")
+ print("Generando resúmenes de modelos...")
  custom_info = visualizer.generate_model_summary('custom')
  transfer_info = visualizer.generate_model_summary('transfer_learning')
  
  # 2. Generar diagramas visuales
- print("\n Generando diagramas de arquitectura...")
+ print("\nGenerando diagramas de arquitectura...")
  visualizer.visualize_architecture_diagram('custom')
  visualizer.visualize_architecture_diagram('transfer_learning')
  
  # 3. Generar tablas LaTeX
- print("\n Generando tablas LaTeX para tesis...")
+ print("\nGenerando tablas LaTeX para tesis...")
  visualizer.create_latex_table(custom_info)
  visualizer.create_latex_table(transfer_info)
  
  # 4. Generar tabla comparativa
- print("\n Generando tabla comparativa...")
+ print("\nGenerando tabla comparativa...")
  visualizer.create_comparison_table()
  
  print("\n" + "=" * 80)
- print(" Visualización completada exitosamente!")
- print(f" Archivos guardados en: {visualizer.output_dir}")
+ print("Visualización completada exitosamente!")
+ print(f"Archivos guardados en: {visualizer.output_dir}")
  print("=" * 80)
  
  # Resumen de lo generado
- print("\n Archivos generados:")
+ print("\nArchivos generados:")
  for file_path in sorted(visualizer.output_dir.glob('*')):
  print(f" - {file_path.name}")
  
  except Exception as e:
- print(f"\n Error durante la visualización: {str(e)}")
+ print(f"\nError durante la visualización: {str(e)}")
  import traceback
  traceback.print_exc()
  return 1

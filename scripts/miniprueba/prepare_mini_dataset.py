@@ -84,7 +84,7 @@ def normalize_image(image: np.ndarray) -> np.ndarray:
 def main():
  """Prepara el dataset para entrenamiento."""
  print("=" * 60)
- print(" PREPARANDO MINI-DATASET")
+ print("PREPARANDO MINI-DATASET")
  print("=" * 60)
  
  # Crear directorio de salida
@@ -97,7 +97,7 @@ def main():
  return
  
  df = pd.read_csv(LABELS_PATH)
- logger.info(f" Etiquetas cargadas: {len(df)} registros")
+ logger.info(f"Etiquetas cargadas: {len(df)} registros")
  logger.info(f" - Geotérmicas (label=1): {len(df[df['label']==1])}")
  logger.info(f" - Control (label=0): {len(df[df['label']==0])}")
  
@@ -106,12 +106,12 @@ def main():
  y = []
  filenames = []
  
- print("\n Procesando imágenes...")
+ print("\nProcesando imágenes...")
  for idx, row in df.iterrows():
  filepath = RAW_IMAGES_PATH / row['filename']
  
  if not filepath.exists():
- logger.warning(f" No encontrada: {row['filename']}")
+ logger.warning(f"No encontrada: {row['filename']}")
  continue
  
  # Cargar imagen
@@ -129,13 +129,13 @@ def main():
  y.append(row['label'])
  filenames.append(row['filename'])
  
- logger.info(f" {row['filename']} - Shape: {image.shape} - Label: {row['label']}")
+ logger.info(f"{row['filename']} - Shape: {image.shape} - Label: {row['label']}")
  
  # Convertir a numpy arrays
  X = np.array(X)
  y = np.array(y)
  
- print(f"\n Dataset total: {X.shape}")
+ print(f"\nDataset total: {X.shape}")
  print(f" - Clase 0 (control): {np.sum(y == 0)}")
  print(f" - Clase 1 (geotérmico): {np.sum(y == 1)}")
  
@@ -149,13 +149,13 @@ def main():
  X_temp, y_temp, test_size=0.176, random_state=42, stratify=y_temp # 0.176 ≈ 15/85
  )
  
- print(f"\n Splits creados:")
+ print(f"\nSplits creados:")
  print(f" - Train: {X_train.shape} (label 0: {np.sum(y_train==0)}, label 1: {np.sum(y_train==1)})")
  print(f" - Val: {X_val.shape} (label 0: {np.sum(y_val==0)}, label 1: {np.sum(y_val==1)})")
  print(f" - Test: {X_test.shape} (label 0: {np.sum(y_test==0)}, label 1: {np.sum(y_test==1)})")
  
  # Guardar arrays
- print("\n Guardando archivos...")
+ print("\nGuardando archivos...")
  np.save(OUTPUT_PATH / 'X_train.npy', X_train)
  np.save(OUTPUT_PATH / 'y_train.npy', y_train)
  np.save(OUTPUT_PATH / 'X_val.npy', X_val)
@@ -181,7 +181,7 @@ def main():
  with open(OUTPUT_PATH / 'split_info.json', 'w') as f:
  json.dump(split_info, f, indent=2)
  
- print(f"\n Archivos guardados en: {OUTPUT_PATH}")
+ print(f"\nArchivos guardados en: {OUTPUT_PATH}")
  print(" - X_train.npy, y_train.npy")
  print(" - X_val.npy, y_val.npy")
  print(" - X_test.npy, y_test.npy")

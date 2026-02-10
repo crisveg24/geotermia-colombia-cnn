@@ -141,10 +141,10 @@ class GeotermiaCNNTrainer:
  with open(self.processed_data_path / 'split_info.json', 'r') as f:
  split_info = json.load(f)
  
- logger.info(f" Datos cargados:")
- logger.info(f" Train: {X_train.shape}")
- logger.info(f" Validation: {X_val.shape}")
- logger.info(f" Test: {X_test.shape}")
+ logger.info(f"Datos cargados:")
+ logger.info(f"Train: {X_train.shape}")
+ logger.info(f"Validation: {X_val.shape}")
+ logger.info(f"Test: {X_test.shape}")
  
  return {
  'X_train': X_train,
@@ -276,9 +276,9 @@ class GeotermiaCNNTrainer:
  append=False
  ))
  
- logger.info(f" ModelCheckpoint: {checkpoint_path}")
- logger.info(f" TensorBoard: {tensorboard_path}")
- logger.info(f" CSVLogger: {csv_path}")
+ logger.info(f"ModelCheckpoint: {checkpoint_path}")
+ logger.info(f"TensorBoard: {tensorboard_path}")
+ logger.info(f"CSVLogger: {csv_path}")
  
  return callbacks
  
@@ -357,7 +357,7 @@ class GeotermiaCNNTrainer:
  # 6. Guardar modelo final
  final_model_path = self.model_save_path / f'geotermia_cnn_{model_type}_final.keras'
  model.save(str(final_model_path))
- logger.info(f"\n Modelo final guardado: {final_model_path}")
+ logger.info(f"\nModelo final guardado: {final_model_path}")
  
  # 7. Guardar historial
  history_path = self.logs_path / f'history_{model_type}.json'
@@ -368,7 +368,7 @@ class GeotermiaCNNTrainer:
  logger.info(f"Historial guardado: {history_path}")
  
  logger.info("\n" + "="*70)
- logger.info(" ENTRENAMIENTO COMPLETADO")
+ logger.info("ENTRENAMIENTO COMPLETADO")
  logger.info("="*70)
  
  return model
@@ -400,12 +400,12 @@ def main():
  )
  
  # Entrenar modelo custom
- print("\n Entrenando modelo CNN custom...")
+ print("\nEntrenando modelo CNN custom...")
  model = trainer.train(model_type='custom')
  
  if model is not None:
  print("\n" + "="*70)
- print(" Entrenamiento completado exitosamente!")
+ print("Entrenamiento completado exitosamente!")
  print("="*70)
  print("\nArchivos generados:")
  print(" - models/saved_models/geotermia_cnn_custom_best.keras")
@@ -414,7 +414,7 @@ def main():
  print("\nPara visualizar con TensorBoard:")
  print(" tensorboard --logdir=logs")
  else:
- print("\n Error durante el entrenamiento")
+ print("\nError durante el entrenamiento")
 
 
 if __name__ == '__main__':

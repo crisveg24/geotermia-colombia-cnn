@@ -38,7 +38,7 @@ LEARNING_RATE = 0.001
 
 def load_data():
  """Carga los datos procesados."""
- logger.info(" Cargando datos...")
+ logger.info("Cargando datos...")
  
  X_train = np.load(DATA_PATH / 'X_train.npy')
  y_train = np.load(DATA_PATH / 'y_train.npy')
@@ -47,9 +47,9 @@ def load_data():
  X_test = np.load(DATA_PATH / 'X_test.npy')
  y_test = np.load(DATA_PATH / 'y_test.npy')
  
- logger.info(f" Train: {X_train.shape}, labels: {y_train.shape}")
- logger.info(f" Val: {X_val.shape}, labels: {y_val.shape}")
- logger.info(f" Test: {X_test.shape}, labels: {y_test.shape}")
+ logger.info(f"Train: {X_train.shape}, labels: {y_train.shape}")
+ logger.info(f"Val: {X_val.shape}, labels: {y_val.shape}")
+ logger.info(f"Test: {X_test.shape}, labels: {y_test.shape}")
  
  return X_train, y_train, X_val, y_val, X_test, y_test
 
@@ -65,15 +65,15 @@ def create_data_augmentation():
 
 def main():
  print("=" * 60)
- print(" ENTRENAMIENTO MINI-MODELO CNN")
+ print("ENTRENAMIENTO MINI-MODELO CNN")
  print("=" * 60)
  
  # Verificar dispositivo
  gpus = tf.config.list_physical_devices('GPU')
  if gpus:
- print(f" GPU detectada: {gpus[0].name}")
+ print(f"GPU detectada: {gpus[0].name}")
  else:
- print(" Usando CPU (entrenamiento será más lento)")
+ print("Usando CPU (entrenamiento será más lento)")
  
  # Crear directorios
  MODELS_PATH.mkdir(parents=True, exist_ok=True)
@@ -84,11 +84,11 @@ def main():
  
  # Verificar forma de entrada
  input_shape = X_train.shape[1:] # (224, 224, 5)
- print(f"\n Input shape: {input_shape}")
- print(f" Clases: 2 (binario)")
+ print(f"\nInput shape: {input_shape}")
+ print(f"Clases: 2 (binario)")
  
  # Crear modelo
- print("\n Construyendo modelo CNN...")
+ print("\nConstruyendo modelo CNN...")
  model = create_geotermia_model(
  input_shape=input_shape,
  num_classes=2,
@@ -99,7 +99,7 @@ def main():
  
  # Resumen del modelo
  total_params = model.count_params()
- print(f" Parámetros totales: {total_params:,}")
+ print(f"Parámetros totales: {total_params:,}")
  
  # Callbacks
  callbacks = [
@@ -118,10 +118,10 @@ def main():
  ]
  
  # Entrenar
- print(f"\n Iniciando entrenamiento...")
- print(f" Epochs: {EPOCHS}")
- print(f" Batch size: {BATCH_SIZE}")
- print(f" Learning rate: {LEARNING_RATE}")
+ print(f"\nIniciando entrenamiento...")
+ print(f"Epochs: {EPOCHS}")
+ print(f"Batch size: {BATCH_SIZE}")
+ print(f"Learning rate: {LEARNING_RATE}")
  print("-" * 60)
  
  history = model.fit(
@@ -135,7 +135,7 @@ def main():
  
  # Guardar modelo final
  model.save(MODELS_PATH / 'mini_model_final.keras')
- print(f"\n Modelos guardados en: {MODELS_PATH}")
+ print(f"\nModelos guardados en: {MODELS_PATH}")
  
  # Guardar historial
  history_dict = {key: [float(v) for v in values] for key, values in history.history.items()}
@@ -143,23 +143,23 @@ def main():
  json.dump(history_dict, f, indent=2)
  
  # Evaluar en test
- print("\n Evaluación en conjunto de test:")
+ print("\nEvaluación en conjunto de test:")
  print("-" * 60)
  results = model.evaluate(X_test, y_test, verbose=0)
  
  metrics_names = model.metrics_names
  for name, value in zip(metrics_names, results):
- print(f" {name}: {value:.4f}")
+ print(f"{name}: {value:.4f}")
  
  # Predicciones de ejemplo
- print("\n Predicciones de ejemplo:")
+ print("\nPredicciones de ejemplo:")
  predictions = model.predict(X_test, verbose=0)
  for i, (pred, true) in enumerate(zip(predictions, y_test)):
  pred_class = "Geotérmico" if pred[0] > 0.5 else "Control"
  true_class = "Geotérmico" if true == 1 else "Control"
  confidence = pred[0] if pred[0] > 0.5 else 1 - pred[0]
- status = "" if (pred[0] > 0.5) == true else ""
- print(f" Test {i+1}: Pred={pred_class} ({confidence:.1%}) | Real={true_class} {status}")
+ status = "OK" if (pred[0] > 0.5) == true else "FALLO"
+ print(f"Test {i+1}: Pred={pred_class} ({confidence:.1%}) | Real={true_class} [{status}]")
  
  print("\n" + "=" * 60)
  print(" ¡Entrenamiento completado!")
@@ -168,15 +168,15 @@ def main():
  # Resumen final
  final_acc = history.history['accuracy'][-1]
  final_val_acc = history.history['val_accuracy'][-1]
- print(f"\n Accuracy final: {final_acc:.1%}")
- print(f" Val Accuracy: {final_val_acc:.1%}")
+ print(f"\nAccuracy final: {final_acc:.1%}")
+ print(f"Val Accuracy: {final_val_acc:.1%}")
  
  if final_val_acc > 0.6:
- print("\n El modelo está aprendiendo patrones básicos.")
- print(" Con más datos debería mejorar significativamente.")
+ print("\nEl modelo está aprendiendo patrones básicos.")
+ print("Con más datos debería mejorar significativamente.")
  else:
- print("\n El modelo necesita más datos o ajustes.")
- print(" Esto es esperado con solo 20 imágenes.")
+ print("\nEl modelo necesita más datos o ajustes.")
+ print("Esto es esperado con solo 20 imágenes.")
 
 
 if __name__ == "__main__":
