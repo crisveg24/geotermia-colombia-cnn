@@ -250,7 +250,7 @@ python scripts/download_dataset.py
 - Descarga 85 imágenes ASTER GED (5 bandas térmicas de emisividad)
 - 45 zonas geotérmicas (volcanes: Ruiz, Puracé, Galeras, Paipa-Iza, etc.)
 - 40 zonas de control (Llanos, Amazonía, Costa Caribe, etc.)
-- Resolución: 90 m/pixel, radio 5 km por zona
+- Resolución: 100 m/pixel (ASTER GED AG100), radio 5 km por zona
 - Tiempo estimado: 15-30 minutos
 - Requiere conexión a internet y auth de Earth Engine
 

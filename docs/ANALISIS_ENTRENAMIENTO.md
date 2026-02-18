@@ -36,7 +36,7 @@ El entrenamiento del modelo CNN se completó exitosamente el 18 de febrero de 20
  Split:           1,843 train / 396 val / 396 test
  Batch size:      32
  Épocas máximas:  100 (detenido en 23 por EarlyStopping)
- Optimizer:       Adam con ReduceLROnPlateau
+ Optimizer:       AdamW (weight_decay=1e-4) con ReduceLROnPlateau
  Hardware:        CPU Intel i5-10300H (sin GPU disponible)
  Tiempo/época:    ~90 segundos
  Tiempo total:    ~35 minutos

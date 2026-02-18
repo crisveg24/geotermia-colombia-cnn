@@ -20,6 +20,8 @@
 
 Implementación de un **modelo de Deep Learning basado en Redes Neuronales Convolucionales (CNN)** para la identificación automatizada de zonas con alto potencial geotérmico en Colombia mediante el análisis de imágenes satelitales térmicas del sensor **NASA ASTER** (Advanced Spaceborne Thermal Emission and Reflection Radiometer).
 
+> **Herramienta de screening (Fase 1 de exploración geotérmica):** Este modelo actúa como un filtro automatizado que analiza datos ASTER y produce una probabilidad (0–100%) de potencial geotérmico para cualquier punto de Colombia. Su objetivo es priorizar zonas para inversión en exploración detallada, no confirmar la existencia de recursos explotables. Ver [docs/CONTEXTO_GEOTERMICO.md](docs/CONTEXTO_GEOTERMICO.md) para fundamentos teóricos.
+
 ### Características Principales
 
 - **Arquitectura CNN moderna** con bloques residuales (ResNet-inspired)
@@ -43,7 +45,7 @@ Implementación de un **modelo de Deep Learning basado en Redes Neuronales Convo
 | **Desarrollador** | Cristian Camilo Vega Sánchez | ccvegas@academia.usbbog.edu.co | [@crisveg24](https://github.com/crisveg24) |
 | **Co-autor** | Daniel Santiago Arévalo Rubiano | dsarevalor@academia.usbbog.edu.co | - |
 | **Co-autora** | Yuliet Katerin Espitia Ayala | ykespitiaa@academia.usbbog.edu.co | - |
-| **Co-autora** | Laura Sophie Rivera Martin | lsriveram@academia.usbbog.edu.co | - |
+| **Co-autora** | Laura Sophie Rivera Martín | lsriveram@academia.usbbog.edu.co | - |
 | **Asesor Académico** | Prof. Yeison Eduardo Conejo Sandoval | yconejo@usbbog.edu.co | - |
 
 **Institución**: Universidad de San Buenaventura - Sede Bogotá 
@@ -165,7 +167,7 @@ geotermia-colombia-cnn/
 ### 1. Requisitos Previos
 
 - **Python 3.10 o superior**
-- **CUDA 11.8+** (opcional, para GPU)
+- **CUDA 12+** (opcional, para GPU — requerido por TensorFlow 2.20+)
 - **Cuenta de Google Earth Engine** ([registrarse aquí](https://earthengine.google.com/signup/))
 - **Git**
 
@@ -519,7 +521,7 @@ Aunque este es un proyecto de grado, se aceptan sugerencias y mejoras:
 **Yuliet Katerin Espitia Ayala**
 - Email: [ykespitiaa@academia.usbbog.edu.co](mailto:ykespitiaa@academia.usbbog.edu.co)
 
-**Laura Sophie Rivera Martin**
+**Laura Sophie Rivera Martín**
 - Email: [lsriveram@academia.usbbog.edu.co](mailto:lsriveram@academia.usbbog.edu.co)
 
 ### Asesor Académico
@@ -536,7 +538,7 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para
 MIT License
 
 Copyright (c) 2025-2026 Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano,
-Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martin
+Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martín
 
 Se concede permiso para usar, copiar, modificar y distribuir este software...
 ```
@@ -579,7 +581,7 @@ Se concede permiso para usar, copiar, modificar y distribuir este software...
 
 ```bibtex
 @misc{vega2026geotermia,
- author = {Vega Sánchez, Cristian Camilo and Arévalo Rubiano, Daniel Santiago and Espitia Ayala, Yuliet Katerin and Rivera Martin, Laura Sophie},
+ author = {Vega Sánchez, Cristian Camilo and Arévalo Rubiano, Daniel Santiago and Espitia Ayala, Yuliet Katerin and Rivera Martín, Laura Sophie},
  title = {Modelo Predictivo Basado en Deep Learning y Redes Neuronales Convolucionales (CNN) para la Identificación de Zonas de Potencial Geotérmico en Colombia},
  year = {2026},
  publisher = {Universidad de San Buenaventura Bogotá},
@@ -590,7 +592,7 @@ Se concede permiso para usar, copiar, modificar y distribuir este software...
 
 ### APA 7th Edition
 
-Vega Sánchez, C. C., Arévalo Rubiano, D. S., Espitia Ayala, Y. K., & Rivera Martin, L. S. (2026). *Modelo Predictivo Basado en Deep Learning y Redes Neuronales Convolucionales (CNN) para la Identificación de Zonas de Potencial Geotérmico en Colombia* [Proyecto de Grado, Universidad de San Buenaventura Bogotá]. GitHub. https://github.com/crisveg24/geotermia-colombia-cnn
+Vega Sánchez, C. C., Arévalo Rubiano, D. S., Espitia Ayala, Y. K., & Rivera Martín, L. S. (2026). *Modelo Predictivo Basado en Deep Learning y Redes Neuronales Convolucionales (CNN) para la Identificación de Zonas de Potencial Geotérmico en Colombia* [Proyecto de Grado, Universidad de San Buenaventura Bogotá]. GitHub. https://github.com/crisveg24/geotermia-colombia-cnn
 
 ---
 

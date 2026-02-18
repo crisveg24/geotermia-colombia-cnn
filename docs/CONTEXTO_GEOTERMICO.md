@@ -77,7 +77,7 @@ Las características que indican un posible recurso geotérmico, y que pueden de
 | Indicador | Detectable por satélite | Banda ASTER relevante |
 |-----------|:-----------------------:|----------------------|
 | Anomalías térmicas superficiales | ✅ | TIR (bandas 10–14) |
-| Alteración hidrotermal de minerite | ✅ | SWIR (bandas 4–9), VNIR (1–3) |
+| Alteración hidrotermal de minerales | ✅ | SWIR (bandas 4–9), VNIR (1–3) |
 | Composición mineralógica (arcillas, sílice, óxidos) | ✅ | SWIR, TIR |
 | Gradiente geotérmico elevado | ❌ (indirecto) | — |
 | Presencia de vulcanismo reciente | ✅ | VNIR, TIR |
@@ -214,8 +214,8 @@ ENERGÍA GEOTÉRMICA
        │     └── Composición mineral (SWIR + TIR)
        │
        ├── ¿Qué hace nuestra CNN?
-       │     ├── Analiza imágenes ASTER (14 bandas)
-       │     ├── Identifica patrones de potencial geotérmico
+       │     ├── Analiza imágenes ASTER (5 bandas TIR de emisividad)
+       │     ├── Identifica patrones térmicos de potencial geotérmico
        │     └── Produce probabilidad (0–100%) por zona
        │
        └── ¿Para qué sirve?

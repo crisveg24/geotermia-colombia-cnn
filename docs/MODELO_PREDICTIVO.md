@@ -451,7 +451,7 @@ def normalize_image(image):
 
 #### 4.2.4 Etiquetado
 
-**Archivo: `data/labels/labels.csv`**
+**Archivo: `data/augmented/labels.csv`** (también `data/raw/labels.csv` para originales)
 
 ```csv
 filename,label,zone_name

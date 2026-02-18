@@ -289,9 +289,9 @@ dataset_info.json - Metadata completa del dataset procesado
 Batch size: 32
 Épocas máximas: 100
 Learning rate: 0.001
-Optimizer: Adam
-Loss function: Binary Crossentropy
-Métricas: Accuracy, Precision, Recall, AUC
+Optimizer: AdamW (weight_decay=1e-4)
+Loss function: Binary Crossentropy (label_smoothing=0.1)
+Métricas: Accuracy, Precision, Recall, AUC, F1Score
 ```
 
 #### 6.3 Callbacks Configurados
@@ -576,7 +576,7 @@ Tres documentos con alto solapamiento informativo fueron fusionados en uno solo:
 
 **Referencias actualizadas:**
 - `docs/README.md` — Índice de documentos actualizado con el nuevo archivo.
-- `docs/ENTRENAMIENTO_EXTERNO.md` — Referencia de contacto actualizada.
+- ~~`docs/ENTRENAMIENTO_EXTERNO.md`~~ — Fusionado en `GUIA_PASO_A_PASO.md` (sección 13).
 
 #### 13.4 Archivos Reorganizados
 
@@ -629,7 +629,7 @@ Se actualizó `docs/REGISTRO_PROCESO.md` (este documento) con el registro detall
 - `setup.py`: Actualizado check de Python ≥3.10, siguiente paso apunta a `config.py`.
 - `README.md`: Árbol de estructura actualizado con `config.py` y todos los scripts.
 - `MODELO_PREDICTIVO.md`: TF 2.20+ / Keras 3.x.
-- `ENTRENAMIENTO_EXTERNO.md`: Branch corregido a `main`, agregada opción de disco externo.
+- ~~`ENTRENAMIENTO_EXTERNO.md`~~: Fusionado en `GUIA_PASO_A_PASO.md` (sección 13). Branch corregido a `main`, agregada opción de disco externo.
 - `app.py`: Corregido `use_container_width` deprecado en `st.image()` → `width="stretch"`.
 
 ---

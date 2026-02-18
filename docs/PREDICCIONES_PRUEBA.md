@@ -142,7 +142,7 @@ del modelo entrenadas con mas datos y en mejor hardware. El objetivo para v2 es:
 
 ---
 
-*Autores: Cristian Camilo Vega Sanchez, Daniel Santiago Arevalo Rubiano,
-Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martin*
+*Autores: Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano,
+Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martín*
 *Asesor: Prof. Yeison Eduardo Conejo Sandoval*
-*Universidad de San Buenaventura — Bogota — 2025-2026*
+*Universidad de San Buenaventura — Bogotá — 2025-2026*

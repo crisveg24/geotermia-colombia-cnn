@@ -12,7 +12,7 @@
 
 | Componente | Progreso | Notas |
 |-----------|----------|-------|
-| Documentación técnica | 100% | `MODELO_PREDICTIVO.md` (1,272 líneas) |
+| Documentación técnica | 100% | `MODELO_PREDICTIVO.md` (~1,294 líneas) |
 | Scripts de pipeline | 100% | Descarga, augmentación, preparación, entrenamiento, evaluación |
 | Dataset original | 100% | 85 imágenes ASTER descargadas desde GEE |
 | Dataset augmentado | 100% | 2,635 imágenes (~31x factor de aumento) |
