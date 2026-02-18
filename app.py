@@ -522,21 +522,23 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
     Descarga imagen ASTER de Google Earth Engine y la pasa por el modelo.
 
     Returns:
-        (probabilidad, exito) - probabilidad [0-1] y si fue exitoso
+        dict con probabilidad, metadata de la imagen, y si fue exitoso
     """
     import tempfile
+    import time
     try:
         import ee
         import geemap
         import rasterio
         from skimage.transform import resize
     except ImportError:
-        return 0.0, False
+        return {"prob": 0.0, "ok": False}
 
     # Inicializar Earth Engine
     if not _inicializar_earth_engine():
-        return 0.0, False
+        return {"prob": 0.0, "ok": False}
 
+    t0 = time.time()
     try:
         # Descargar imagen ASTER
         point = ee.Geometry.Point([lon, lat])
@@ -555,12 +557,17 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
         )
 
         if not tmp_path.exists():
-            return 0.0, False
+            return {"prob": 0.0, "ok": False}
+
+        t_download = time.time() - t0
+        file_size_kb = tmp_path.stat().st_size / 1024
 
         # Cargar y preprocesar
         with rasterio.open(str(tmp_path)) as src:
             img = src.read()
             img = np.transpose(img, (1, 2, 0)).astype(np.float32)
+            crs = str(src.crs) if src.crs else "N/A"
+            img_shape_orig = img.shape
 
         # Asegurar 5 bandas
         if img.shape[2] < 5:
@@ -568,6 +575,17 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
             img = np.concatenate([img, pad], axis=2)
         elif img.shape[2] > 5:
             img = img[:, :, :5]
+
+        # Estadisticas por banda (antes de normalizar)
+        band_stats = []
+        for i in range(5):
+            b = img[:, :, i]
+            band_stats.append({
+                "min": float(np.min(b)),
+                "max": float(np.max(b)),
+                "mean": float(np.mean(b)),
+                "std": float(np.std(b)),
+            })
 
         # Resize a 224x224
         img_resized = resize(img, (224, 224, 5), preserve_range=True, anti_aliasing=True).astype(np.float32)
@@ -582,9 +600,13 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
                 img_resized[:, :, i] = band - mean
 
         # Prediccion
+        t_pred = time.time()
         input_tensor = np.expand_dims(img_resized, axis=0)
         prediction = modelo.predict(input_tensor, verbose=0)
         probability = float(prediction[0, 0])
+        t_pred = time.time() - t_pred
+
+        t_total = time.time() - t0
 
         # Limpiar archivo temporal
         try:
@@ -592,10 +614,24 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
         except Exception:
             pass
 
-        return np.clip(probability, 0.01, 0.99), True
+        return {
+            "prob": np.clip(probability, 0.01, 0.99),
+            "ok": True,
+            "img_shape": img_shape_orig,
+            "img_size_kb": file_size_kb,
+            "crs": crs,
+            "band_stats": band_stats,
+            "t_download": t_download,
+            "t_pred": t_pred,
+            "t_total": t_total,
+            "buffer_m": 5000,
+            "scale_m": 90,
+            "n_bands": 5,
+            "dataset": "NASA/ASTER_GED/AG100_003",
+        }
 
     except Exception:
-        return 0.0, False
+        return {"prob": 0.0, "ok": False}
 
 
 def crear_mapa(zonas, usuario=None, pred_valor=None):
@@ -814,15 +850,40 @@ def pagina_prediccion():
         if usa_cnn:
             # === PREDICCION CON MODELO CNN REAL ===
             with st.spinner("Descargando imagen ASTER y analizando con CNN..."):
-                prob_cnn, exito_cnn = predecir_con_modelo_cnn(latitud, longitud, modelo)
+                resultado_cnn = predecir_con_modelo_cnn(latitud, longitud, modelo)
 
-            if exito_cnn:
+            if resultado_cnn["ok"]:
                 # Tambien calcular proximidad para contexto
                 _, zona_c, dist = predecir_por_proximidad(latitud, longitud, zonas)
+                # Calcular distancias a TODAS las zonas
+                todas_dist = []
+                for z in zonas:
+                    d = float(np.sqrt((latitud - z["lat"])**2 + (longitud - z["lon"])**2))
+                    d_km = d * 111.0  # aprox grados a km
+                    todas_dist.append({
+                        "Zona": z["nombre"], "Tipo": z["tipo"],
+                        "Potencial": z["potencial"],
+                        "Distancia (km)": round(d_km, 1),
+                    })
+                todas_dist.sort(key=lambda x: x["Distancia (km)"])
+
                 st.session_state["pred"] = {
-                    "lat": latitud, "lon": longitud, "valor": prob_cnn,
+                    "lat": latitud, "lon": longitud,
+                    "valor": resultado_cnn["prob"],
                     "zona": zona_c["nombre"], "tipo": zona_c["tipo"], "dist": dist,
                     "metodo": "CNN",
+                    "img_shape": resultado_cnn.get("img_shape"),
+                    "img_size_kb": resultado_cnn.get("img_size_kb"),
+                    "crs": resultado_cnn.get("crs"),
+                    "band_stats": resultado_cnn.get("band_stats"),
+                    "t_download": resultado_cnn.get("t_download"),
+                    "t_pred": resultado_cnn.get("t_pred"),
+                    "t_total": resultado_cnn.get("t_total"),
+                    "buffer_m": resultado_cnn.get("buffer_m"),
+                    "scale_m": resultado_cnn.get("scale_m"),
+                    "n_bands": resultado_cnn.get("n_bands"),
+                    "dataset": resultado_cnn.get("dataset"),
+                    "todas_dist": todas_dist,
                 }
             else:
                 # Fallback a proximidad si falla la descarga
@@ -844,7 +905,8 @@ def pagina_prediccion():
     with col_out:
         if "pred" in st.session_state:
             p = st.session_state["pred"]
-            pos = p["valor"] >= 0.5
+            valor = p["valor"]
+            pos = valor >= 0.5
             cls = "result-pos" if pos else "result-neg"
             titulo = "ZONA CON POTENCIAL GEOTERMICO" if pos else "BAJO POTENCIAL GEOTERMICO"
             icono = "🌋" if pos else "🏔️"
@@ -855,20 +917,182 @@ def pagina_prediccion():
             else:
                 subtitulo = f"Estimacion por {metodo_txt}"
 
+            # ---------- Clasificacion de confianza ----------
+            if valor >= 0.80:
+                nivel, nivel_color, nivel_desc = "ALTA", "#2e7d32", "Alta certeza de presencia geotermica"
+            elif valor >= 0.60:
+                nivel, nivel_color, nivel_desc = "MEDIA-ALTA", "#558b2f", "Indicadores favorables detectados"
+            elif valor >= 0.50:
+                nivel, nivel_color, nivel_desc = "MEDIA", "#f9a825", "Indicadores moderados, requiere validacion"
+            elif valor >= 0.35:
+                nivel, nivel_color, nivel_desc = "MEDIA-BAJA", "#ef6c00", "Pocos indicadores termicos detectados"
+            elif valor >= 0.20:
+                nivel, nivel_color, nivel_desc = "BAJA", "#d84315", "Baja presencia de anomalias termicas"
+            else:
+                nivel, nivel_color, nivel_desc = "MUY BAJA", "#b71c1c", "Sin indicadores termicos significativos"
+
+            # ---------- Tarjeta principal de resultado ----------
             st.markdown(
                 f'<div class="result-card {cls}">'
                 f'<h2>{titulo}</h2>'
-                f'<div class="big">{icono} {p["valor"]:.1%}</div>'
-                f'<p>{subtitulo}</p></div>',
+                f'<div class="big">{icono} {valor:.1%}</div>'
+                f'<p>{subtitulo}</p>'
+                f'<div style="margin-top:8px;display:inline-block;background:rgba(255,255,255,0.2);'
+                f'border:1px solid rgba(255,255,255,0.4);border-radius:20px;padding:4px 16px;'
+                f'font-size:0.85rem;font-weight:600;letter-spacing:0.5px;">'
+                f'Confianza {nivel}</div>'
+                f'</div>',
                 unsafe_allow_html=True,
             )
+
+            # ---------- Barra de probabilidad visual ----------
+            bar_color = "#2e7d32" if pos else "#d84315"
+            st.markdown(
+                f'<div style="margin:12px 0 4px 0;font-size:0.8rem;color:#666;">'
+                f'Probabilidad geotermica</div>'
+                f'<div style="background:#e0e0e0;border-radius:8px;height:14px;overflow:hidden;">'
+                f'<div style="width:{valor*100:.1f}%;height:100%;background:linear-gradient(90deg,{bar_color},{"#43a047" if pos else "#ef6c00"});'
+                f'border-radius:8px;transition:width 0.5s;"></div></div>'
+                f'<div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#999;margin-top:2px;">'
+                f'<span>0%</span><span>50%</span><span>100%</span></div>',
+                unsafe_allow_html=True,
+            )
+
             st.write("")
 
+            # ---------- Coordenadas y zona cercana ----------
             m1, m2, m3, m4 = st.columns(4)
             m1.metric("Latitud", f'{p["lat"]:.4f}')
             m2.metric("Longitud", f'{p["lon"]:.4f}')
             m3.metric("Zona mas cercana", p["zona"])
-            m4.metric("Distancia", f'{p["dist"]:.2f}°')
+            dist_km = p["dist"] * 111.0
+            m4.metric("Distancia", f'{dist_km:.1f} km')
+
+            # ---------- Interpretacion del resultado ----------
+            st.markdown(
+                f'<div style="background:#f8f9fa;border-left:4px solid {nivel_color};'
+                f'border-radius:0 8px 8px 0;padding:12px 16px;margin:12px 0;">'
+                f'<div style="font-weight:600;color:{nivel_color};margin-bottom:4px;">'
+                f'{nivel_desc}</div>'
+                f'<div style="font-size:0.88rem;color:#555;line-height:1.5;">'
+                f'La coordenada analizada ({p["lat"]:.4f}, {p["lon"]:.4f}) se encuentra '
+                f'a <b>{dist_km:.1f} km</b> de la zona geotermica mas cercana '
+                f'(<b>{p["zona"]}</b> · {p["tipo"]}). '
+                f'{"El modelo CNN detecta patrones termicos consistentes con actividad geotermica en las bandas de emisividad ASTER." if pos else "El modelo CNN no detecta patrones termicos significativos de actividad geotermica en esta ubicacion."}'
+                f'</div></div>',
+                unsafe_allow_html=True,
+            )
+
+            # ---------- Secciones detalladas (solo CNN) ----------
+            if metodo_txt == "CNN" and p.get("band_stats"):
+
+                st.write("")
+                st.markdown("#### Datos tecnicos del analisis")
+
+                # Informacion de la imagen ASTER
+                tc1, tc2 = st.columns(2)
+                with tc1:
+                    st.markdown(
+                        '<div style="background:#f0f4f8;border-radius:10px;padding:14px 16px;">'
+                        '<div style="font-weight:600;color:#1a1a2e;margin-bottom:8px;">'
+                        '🛰️ Imagen satelital</div>',
+                        unsafe_allow_html=True,
+                    )
+                    img_shape = p.get("img_shape", (0, 0, 0))
+                    st.markdown(
+                        f'<table style="width:100%;font-size:0.85rem;color:#444;">'
+                        f'<tr><td style="padding:3px 0;"><b>Dataset</b></td>'
+                        f'<td style="text-align:right;">ASTER GED v003</td></tr>'
+                        f'<tr><td style="padding:3px 0;"><b>Fuente</b></td>'
+                        f'<td style="text-align:right;">NASA/USGS</td></tr>'
+                        f'<tr><td style="padding:3px 0;"><b>Bandas</b></td>'
+                        f'<td style="text-align:right;">{p.get("n_bands", 5)} termicas (TIR)</td></tr>'
+                        f'<tr><td style="padding:3px 0;"><b>Resolucion</b></td>'
+                        f'<td style="text-align:right;">{p.get("scale_m", 90)} m/pixel</td></tr>'
+                        f'<tr><td style="padding:3px 0;"><b>Area de analisis</b></td>'
+                        f'<td style="text-align:right;">{p.get("buffer_m", 5000)/1000:.0f} km de radio</td></tr>'
+                        f'<tr><td style="padding:3px 0;"><b>Imagen original</b></td>'
+                        f'<td style="text-align:right;">{img_shape[0]}x{img_shape[1]} px</td></tr>'
+                        f'<tr><td style="padding:3px 0;"><b>Entrada al modelo</b></td>'
+                        f'<td style="text-align:right;">224x224x5</td></tr>'
+                        f'<tr><td style="padding:3px 0;"><b>Tamano archivo</b></td>'
+                        f'<td style="text-align:right;">{p.get("img_size_kb", 0):.1f} KB</td></tr>'
+                        f'</table></div>',
+                        unsafe_allow_html=True,
+                    )
+
+                with tc2:
+                    st.markdown(
+                        '<div style="background:#f0f4f8;border-radius:10px;padding:14px 16px;">'
+                        '<div style="font-weight:600;color:#1a1a2e;margin-bottom:8px;">'
+                        '⚙️ Modelo CNN</div>',
+                        unsafe_allow_html=True,
+                    )
+                    st.markdown(
+                        '<table style="width:100%;font-size:0.85rem;color:#444;">'
+                        '<tr><td style="padding:3px 0;"><b>Arquitectura</b></td>'
+                        '<td style="text-align:right;">CNN personalizada</td></tr>'
+                        '<tr><td style="padding:3px 0;"><b>Entrenamiento</b></td>'
+                        '<td style="text-align:right;">2,635 imagenes</td></tr>'
+                        '<tr><td style="padding:3px 0;"><b>Mejor epoca</b></td>'
+                        '<td style="text-align:right;">8 de 23</td></tr>'
+                        '<tr><td style="padding:3px 0;"><b>Accuracy</b></td>'
+                        '<td style="text-align:right;">68.43%</td></tr>'
+                        '<tr><td style="padding:3px 0;"><b>Precision</b></td>'
+                        '<td style="text-align:right;">86.32%</td></tr>'
+                        '<tr><td style="padding:3px 0;"><b>ROC AUC</b></td>'
+                        '<td style="text-align:right;">0.8198</td></tr>'
+                        '<tr><td style="padding:3px 0;"><b>F1-Score</b></td>'
+                        '<td style="text-align:right;">61.77%</td></tr>'
+                        '<tr><td style="padding:3px 0;"><b>Normalizacion</b></td>'
+                        '<td style="text-align:right;">Z-score por banda</td></tr>'
+                        '</table></div>',
+                        unsafe_allow_html=True,
+                    )
+
+                # Estadisticas de bandas ASTER
+                st.write("")
+                band_names = ["B10 (8.3 um)", "B11 (8.6 um)", "B12 (9.1 um)", "B13 (10.6 um)", "B14 (11.3 um)"]
+                band_data = []
+                for i, bs in enumerate(p["band_stats"]):
+                    band_data.append({
+                        "Banda": band_names[i] if i < len(band_names) else f"B{i+10}",
+                        "Min": f'{bs["min"]:.4f}',
+                        "Max": f'{bs["max"]:.4f}',
+                        "Media": f'{bs["mean"]:.4f}',
+                        "Desv. Est.": f'{bs["std"]:.4f}',
+                    })
+                with st.expander("📊 Estadisticas de bandas termicas ASTER", expanded=False):
+                    st.markdown(
+                        '<div style="font-size:0.85rem;color:#666;margin-bottom:8px;">'
+                        'Valores de emisividad termica por banda antes de la normalizacion. '
+                        'Estas bandas TIR (Thermal Infrared) capturan la radiacion termica '
+                        'emitida por la superficie terrestre.</div>',
+                        unsafe_allow_html=True,
+                    )
+                    st.dataframe(
+                        pd.DataFrame(band_data).set_index("Banda"),
+                        use_container_width=True,
+                    )
+
+                # Tiempos de procesamiento
+                with st.expander("⏱️ Tiempos de procesamiento", expanded=False):
+                    t1, t2, t3 = st.columns(3)
+                    t1.metric("Descarga GEE", f'{p.get("t_download", 0):.1f}s')
+                    t2.metric("Prediccion CNN", f'{p.get("t_pred", 0):.3f}s')
+                    t3.metric("Total", f'{p.get("t_total", 0):.1f}s')
+
+                # Zonas geotermicas cercanas
+                if p.get("todas_dist"):
+                    with st.expander("📍 Distancia a zonas geotermicas conocidas", expanded=False):
+                        st.markdown(
+                            '<div style="font-size:0.85rem;color:#666;margin-bottom:8px;">'
+                            'Distancia desde la coordenada analizada a las 10 zonas '
+                            'geotermicas conocidas en Colombia.</div>',
+                            unsafe_allow_html=True,
+                        )
+                        df_zonas = pd.DataFrame(p["todas_dist"])
+                        st.dataframe(df_zonas.set_index("Zona"), use_container_width=True)
 
             st.write("")
             st.markdown("#### Ubicacion en el mapa")
