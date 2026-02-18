@@ -493,6 +493,7 @@ def predecir_por_proximidad(lat: float, lon: float, zonas: list):
     """
     Prediccion deterministica basada en proximidad a zonas geotermicas.
     Usa sigmoide invertida sobre la distancia a la zona mas cercana.
+    Solo se usa como FALLBACK si el modelo CNN o Earth Engine no estan disponibles.
     """
     dists = [np.sqrt((lat - z["lat"])**2 + (lon - z["lon"])**2) for z in zonas]
     idx = int(np.argmin(dists))
@@ -502,6 +503,99 @@ def predecir_por_proximidad(lat: float, lon: float, zonas: list):
     if z["potencial"] == "Alto" and d < 0.3:
         pred = min(pred * 1.1, 0.99)
     return np.clip(pred, 0.01, 0.99), z, d
+
+
+@st.cache_resource(show_spinner=False)
+def _inicializar_earth_engine():
+    """Inicializa Earth Engine una sola vez (cacheado)."""
+    try:
+        import ee
+        ee.Initialize(project='alpine-air-469115-f0')
+        return True
+    except Exception:
+        return False
+
+
+def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
+    """
+    Prediccion REAL usando el modelo CNN entrenado.
+    Descarga imagen ASTER de Google Earth Engine y la pasa por el modelo.
+
+    Returns:
+        (probabilidad, exito) - probabilidad [0-1] y si fue exitoso
+    """
+    import tempfile
+    try:
+        import ee
+        import geemap
+        import rasterio
+        from skimage.transform import resize
+    except ImportError:
+        return 0.0, False
+
+    # Inicializar Earth Engine
+    if not _inicializar_earth_engine():
+        return 0.0, False
+
+    try:
+        # Descargar imagen ASTER
+        point = ee.Geometry.Point([lon, lat])
+        roi = point.buffer(5000)
+        thermal_bands = [
+            'emissivity_band10', 'emissivity_band11',
+            'emissivity_band12', 'emissivity_band13',
+            'emissivity_band14'
+        ]
+        image = ee.Image('NASA/ASTER_GED/AG100_003').select(thermal_bands).clip(roi)
+
+        tmp_path = Path(tempfile.gettempdir()) / f'pred_{lat:.4f}_{lon:.4f}.tif'
+        geemap.ee_export_image(
+            image, filename=str(tmp_path), scale=90,
+            region=roi, file_per_band=False
+        )
+
+        if not tmp_path.exists():
+            return 0.0, False
+
+        # Cargar y preprocesar
+        with rasterio.open(str(tmp_path)) as src:
+            img = src.read()
+            img = np.transpose(img, (1, 2, 0)).astype(np.float32)
+
+        # Asegurar 5 bandas
+        if img.shape[2] < 5:
+            pad = np.zeros((img.shape[0], img.shape[1], 5 - img.shape[2]), dtype=np.float32)
+            img = np.concatenate([img, pad], axis=2)
+        elif img.shape[2] > 5:
+            img = img[:, :, :5]
+
+        # Resize a 224x224
+        img_resized = resize(img, (224, 224, 5), preserve_range=True, anti_aliasing=True).astype(np.float32)
+
+        # Normalizar por banda (z-score)
+        for i in range(5):
+            band = img_resized[:, :, i]
+            mean, std = band.mean(), band.std()
+            if std > 0:
+                img_resized[:, :, i] = (band - mean) / std
+            else:
+                img_resized[:, :, i] = band - mean
+
+        # Prediccion
+        input_tensor = np.expand_dims(img_resized, axis=0)
+        prediction = modelo.predict(input_tensor, verbose=0)
+        probability = float(prediction[0, 0])
+
+        # Limpiar archivo temporal
+        try:
+            tmp_path.unlink()
+        except Exception:
+            pass
+
+        return np.clip(probability, 0.01, 0.99), True
+
+    except Exception:
+        return 0.0, False
 
 
 def crear_mapa(zonas, usuario=None, pred_valor=None):
@@ -672,14 +766,28 @@ def pagina_prediccion():
         '</div>',
         unsafe_allow_html=True,
     )
-    st.markdown(
-        '<div class="info-box">'
-        'Ingresa coordenadas de una ubicacion en Colombia. El sistema evalua la proximidad '
-        'a zonas geotermicas conocidas y calcula una probabilidad de potencial. '
-        'Cuando el modelo CNN este entrenado con el dataset completo, se usara '
-        'directamente para predicciones con datos ASTER reales.</div>',
-        unsafe_allow_html=True,
-    )
+
+    # Verificar si el modelo CNN esta disponible
+    modelo = cargar_modelo()
+    usa_cnn = modelo is not None
+
+    if usa_cnn:
+        st.markdown(
+            '<div class="info-box">'
+            'Ingresa coordenadas de una ubicacion en Colombia. El sistema descarga '
+            'datos satelitales ASTER de NASA (5 bandas termicas de emisividad) y los '
+            'analiza con el modelo CNN entrenado para predecir el potencial geotermico. '
+            '<b>Tiempo estimado: 10-15 segundos por consulta.</b></div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            '<div class="info-box">'
+            '⚠️ Modelo CNN no disponible. Se usara estimacion por proximidad a zonas '
+            'geotermicas conocidas (menos preciso). Entrena el modelo para obtener '
+            'predicciones basadas en datos ASTER reales.</div>',
+            unsafe_allow_html=True,
+        )
 
     col_in, col_out = st.columns([1, 2], gap="large")
 
@@ -702,11 +810,36 @@ def pagina_prediccion():
 
     if analizar:
         zonas = zonas_geotermicas()
-        pred, zona_c, dist = predecir_por_proximidad(latitud, longitud, zonas)
-        st.session_state["pred"] = {
-            "lat": latitud, "lon": longitud, "valor": pred,
-            "zona": zona_c["nombre"], "tipo": zona_c["tipo"], "dist": dist,
-        }
+
+        if usa_cnn:
+            # === PREDICCION CON MODELO CNN REAL ===
+            with st.spinner("Descargando imagen ASTER y analizando con CNN..."):
+                prob_cnn, exito_cnn = predecir_con_modelo_cnn(latitud, longitud, modelo)
+
+            if exito_cnn:
+                # Tambien calcular proximidad para contexto
+                _, zona_c, dist = predecir_por_proximidad(latitud, longitud, zonas)
+                st.session_state["pred"] = {
+                    "lat": latitud, "lon": longitud, "valor": prob_cnn,
+                    "zona": zona_c["nombre"], "tipo": zona_c["tipo"], "dist": dist,
+                    "metodo": "CNN",
+                }
+            else:
+                # Fallback a proximidad si falla la descarga
+                pred, zona_c, dist = predecir_por_proximidad(latitud, longitud, zonas)
+                st.session_state["pred"] = {
+                    "lat": latitud, "lon": longitud, "valor": pred,
+                    "zona": zona_c["nombre"], "tipo": zona_c["tipo"], "dist": dist,
+                    "metodo": "proximidad (CNN fallo)",
+                }
+        else:
+            # === FALLBACK: PROXIMIDAD ===
+            pred, zona_c, dist = predecir_por_proximidad(latitud, longitud, zonas)
+            st.session_state["pred"] = {
+                "lat": latitud, "lon": longitud, "valor": pred,
+                "zona": zona_c["nombre"], "tipo": zona_c["tipo"], "dist": dist,
+                "metodo": "proximidad",
+            }
 
     with col_out:
         if "pred" in st.session_state:
@@ -715,12 +848,18 @@ def pagina_prediccion():
             cls = "result-pos" if pos else "result-neg"
             titulo = "ZONA CON POTENCIAL GEOTERMICO" if pos else "BAJO POTENCIAL GEOTERMICO"
             icono = "🌋" if pos else "🏔️"
+            metodo_txt = p.get("metodo", "proximidad")
+
+            if metodo_txt == "CNN":
+                subtitulo = "Prediccion del modelo CNN con datos ASTER reales"
+            else:
+                subtitulo = f"Estimacion por {metodo_txt}"
 
             st.markdown(
                 f'<div class="result-card {cls}">'
                 f'<h2>{titulo}</h2>'
                 f'<div class="big">{icono} {p["valor"]:.1%}</div>'
-                f'<p>Probabilidad estimada por proximidad</p></div>',
+                f'<p>{subtitulo}</p></div>',
                 unsafe_allow_html=True,
             )
             st.write("")
