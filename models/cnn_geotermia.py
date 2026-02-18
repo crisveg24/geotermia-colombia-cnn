@@ -198,8 +198,10 @@ class GeotermiaCNN:
         
         inputs = layers.Input(shape=self.input_shape, name='input_layer')
         
-        # Normalización de entrada
-        x = layers.Rescaling(1./255, name='rescaling')(inputs)
+        # v2: Rescaling(1./255) eliminado — los datos ASTER de emisividad NO son
+        # imágenes RGB [0,255]. La normalización z-score se aplica en el
+        # preprocesamiento (prepare_dataset.py / app.py) antes de alimentar al modelo.
+        x = inputs
         
         # Bloque convolucional inicial
         x = self._conv_block(x, filters=32, kernel_size=7, strides=2, name='initial_conv')

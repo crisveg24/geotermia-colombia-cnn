@@ -582,12 +582,27 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
         band_stats = []
         for i in range(5):
             b = img[:, :, i]
-            band_stats.append({
-                "min": float(np.min(b)),
-                "max": float(np.max(b)),
-                "mean": float(np.mean(b)),
-                "std": float(np.std(b)),
-            })
+            # v2: Filtrar NoData (-9999) de estadísticas y normalización
+            valid = b[b > -9999]
+            if len(valid) > 0:
+                band_stats.append({
+                    "min": float(np.min(valid)),
+                    "max": float(np.max(valid)),
+                    "mean": float(np.mean(valid)),
+                    "std": float(np.std(valid)),
+                    "nodata_pct": float((b <= -9999).mean() * 100),
+                })
+            else:
+                band_stats.append({"min": 0, "max": 0, "mean": 0, "std": 0, "nodata_pct": 100.0})
+
+        # v2: Reemplazar NoData con mediana por banda antes de resize
+        for i in range(5):
+            band = img[:, :, i]
+            valid = band[band > -9999]
+            if len(valid) > 0:
+                band[band <= -9999] = np.median(valid)
+            else:
+                band[band <= -9999] = 0
 
         # Resize a 224x224
         img_resized = resize(img, (224, 224, 5), preserve_range=True, anti_aliasing=True).astype(np.float32)

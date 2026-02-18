@@ -109,6 +109,25 @@ class GeoDataPreparator:
                 # Stack de bandas
                 image = np.stack(bands, axis=-1)
 
+                # v2: Filtrar valores NoData (-9999)
+                # ASTER GED usa -9999 como NoData; estos valores corrompen
+                # la normalización z-score si no se eliminan.
+                nodata_mask = image <= -9999
+                nodata_pct = nodata_mask.any(axis=-1).mean() * 100
+                if nodata_pct > 50:
+                    logger.warning(f"Imagen con {nodata_pct:.1f}% NoData, descartando: {file_path.name}")
+                    return None
+                if nodata_mask.any():
+                    # Reemplazar NoData con la mediana de valores válidos por banda
+                    for b in range(image.shape[-1]):
+                        band = image[:, :, b]
+                        valid = band[band > -9999]
+                        if len(valid) > 0:
+                            band[band <= -9999] = np.median(valid)
+                        else:
+                            band[band <= -9999] = 0
+                    logger.debug(f"NoData interpolado ({nodata_pct:.1f}% píxeles): {file_path.name}")
+
                 # Asegurar que siempre haya 5 bandas
                 if image.shape[-1] < 5:
                     # Si tiene menos de 5 bandas, duplicar la última banda hasta llegar a 5

@@ -90,6 +90,19 @@ class GeotermalPredictor:
                 # Stack de bandas
                 image = np.stack(bands, axis=-1)
 
+            # v2: Filtrar valores NoData (-9999)
+            nodata_mask = image <= -9999
+            if nodata_mask.any():
+                nodata_pct = nodata_mask.any(axis=-1).mean() * 100
+                logger.info(f"NoData detectado: {nodata_pct:.1f}% píxeles, interpolando con mediana")
+                for b in range(image.shape[-1]):
+                    band = image[:, :, b]
+                    valid = band[band > -9999]
+                    if len(valid) > 0:
+                        band[band <= -9999] = np.median(valid)
+                    else:
+                        band[band <= -9999] = 0
+
             logger.info(f"Imagen cargada: {image.shape}")
             return image
         except Exception as e:

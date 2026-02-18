@@ -80,13 +80,28 @@ class FullDatasetAugmenter:
         }
 
     def load_image(self, image_path: Path) -> Tuple[np.ndarray, dict]:
-        """Cargar imagen GeoTIFF."""
+        """Cargar imagen GeoTIFF con filtrado de NoData."""
         with rasterio.open(image_path) as src:
             image = src.read()
             metadata = src.meta.copy()
 
         if image.ndim == 3:
             image = np.transpose(image, (1, 2, 0))
+
+        # v2: Filtrar valores NoData (-9999) antes de augmentación
+        # Sin esto, augment_brightness/contrast usan min/max que incluyen -9999
+        nodata_mask = image <= -9999
+        if nodata_mask.any():
+            for b in range(image.shape[-1] if image.ndim == 3 else 1):
+                if image.ndim == 3:
+                    band = image[:, :, b]
+                else:
+                    band = image
+                valid = band[band > -9999]
+                if len(valid) > 0:
+                    band[band <= -9999] = np.median(valid)
+                else:
+                    band[band <= -9999] = 0
 
         return image, metadata
 
