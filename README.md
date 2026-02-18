@@ -122,7 +122,7 @@ geotermia-colombia-cnn/
 │ ├── REGISTRO_PROCESO.md # Bitácora cronológica del proyecto
 │ ├── ANALISIS_ENTRENAMIENTO.md # Análisis de métricas por época
 │ ├── MEJORAS_MODELO.md # Roadmap de optimizaciones
-│ └── ENTRENAMIENTO_EXTERNO.md # Guía para entrenar con GPU
+│ └── GUIA_PASO_A_PASO.md # Guía completa paso a paso
 │
 ├── models/ # Modelos de Deep Learning
 │ ├── __init__.py
@@ -484,7 +484,7 @@ Este proyecto contribuye a la **exploración geotérmica en Colombia** mediante:
 - **[docs/RESUMEN_PROYECTO.md](docs/RESUMEN_PROYECTO.md)**: Vista general del proyecto y guía de monitoreo
 - **[docs/MODELO_PREDICTIVO.md](docs/MODELO_PREDICTIVO.md)**: Documentación técnica completa del modelo CNN
 - **[docs/REGISTRO_PROCESO.md](docs/REGISTRO_PROCESO.md)**: Bitácora cronológica de todas las fases
-- **[docs/ENTRENAMIENTO_EXTERNO.md](docs/ENTRENAMIENTO_EXTERNO.md)**: Guía paso a paso para entrenar en GPU
+- **[docs/GUIA_PASO_A_PASO.md](docs/GUIA_PASO_A_PASO.md)**: Guía completa paso a paso (incluye entrenamiento externo con GPU)
 - **[docs/MEJORAS_MODELO.md](docs/MEJORAS_MODELO.md)**: Roadmap de optimizaciones aplicadas y futuras
 - **[docs/ANALISIS_ENTRENAMIENTO.md](docs/ANALISIS_ENTRENAMIENTO.md)**: Análisis detallado por época
 - **[models/README.md](models/README.md)**: Documentación de modelos

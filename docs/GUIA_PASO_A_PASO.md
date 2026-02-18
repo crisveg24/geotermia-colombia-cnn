@@ -4,7 +4,7 @@
 > el pipeline completo del proyecto: desde cero hasta un modelo entrenado y la
 > interfaz Streamlit funcionando.
 >
-> **Última actualización**: 9 de febrero de 2026 
+> **Última actualización**: 18 de febrero de 2026 
 > **Autores**: Cristian Vega, Daniel Arévalo, Yuliet Espitia, Laura Rivera 
 > **Universidad de San Buenaventura — Bogotá**
 
@@ -24,7 +24,8 @@
 10. [Entrenar el modelo CNN](#10--entrenar-el-modelo-cnn)
 11. [Evaluar el modelo](#11--evaluar-el-modelo)
 12. [Ejecutar la interfaz Streamlit](#12--ejecutar-la-interfaz-streamlit)
-13. [Solución de problemas](#13--solución-de-problemas)
+13. [Subir modelo y resultados al repositorio](#13--subir-modelo-y-resultados-al-repositorio)
+14. [Solución de problemas](#14--solución-de-problemas)
 
 ---
 
@@ -207,8 +208,8 @@ CONFIGURACIÓN DEL PROYECTO GEOTERMIA CNN
  Data root : D:\geotermia_datos
  
  raw/positive → 45 .tif, 0 .npy
- raw/negative → 43 .tif, 0 .npy
- augmented → 2728 .tif, 0 .npy
+ raw/negative → 40 .tif, 0 .npy
+ augmented → 2635 .tif, 0 .npy
  processed → 0 .tif, 6 .npy
 ============================================================
 ```
@@ -333,11 +334,11 @@ python scripts/train_model.py
 
 ### Tiempo estimado
 
-| Hardware | Tiempo por época | Total (~30-50 épocas) |
+| Hardware | Tiempo por época | Total (~20-30 épocas con EarlyStopping) |
 |----------|-----------------|----------------------|
-| CPU (i5/i7) | 3-5 min | 2-4 horas |
-| GPU GTX 1060+ | 15-30 seg | 15-30 min |
-| GPU RTX 3060+ | 5-15 seg | 5-15 min |
+| CPU (i5/i7) | ~90 seg | 30-45 min |
+| GPU GTX 1060+ | 15-30 seg | 8-15 min |
+| GPU RTX 3060+ | 5-15 seg | 3-8 min |
 
 ### Callbacks automáticos
 
@@ -393,7 +394,55 @@ streamlit run app.py --server.headless true
 
 ---
 
-## 13 · Solución de problemas
+## 13 · Subir modelo y resultados al repositorio
+
+Después de entrenar y evaluar, sube los artefactos al repositorio.
+
+### Verificar tamaño del modelo
+
+```powershell
+# Windows
+Get-ChildItem models\saved_models\*.keras | Select-Object Name, @{N='MB';E={[math]::Round($_.Length/1MB,1)}}
+```
+
+### Si el modelo es < 100 MB (caso normal, ~57 MB)
+
+```bash
+git add models/saved_models/geotermia_cnn_custom_best.keras
+git add logs/*.csv logs/history_custom.json
+git add results/
+git commit -m "feat: Modelo CNN entrenado - Accuracy XX.XX%, ROC AUC X.XXXX"
+git push origin main
+```
+
+### Si el modelo es > 100 MB (usar Git LFS)
+
+```bash
+# Instalar Git LFS (una vez)
+git lfs install
+git lfs track "*.keras"
+git add .gitattributes
+
+# Commit y push normal
+git add models/saved_models/*.keras
+git commit -m "feat: Modelo CNN entrenado con Git LFS"
+git push origin main
+```
+
+### Alternativa: Solo métricas (sin modelo)
+
+```bash
+# Subir solo resultados y logs, transferir modelo por otro medio
+git add logs/ results/
+git commit -m "feat: Resultados de entrenamiento completo"
+git push origin main
+```
+
+> **Nota:** El modelo actual (~57 MB) cabe sin problemas en GitHub sin LFS.
+
+---
+
+## 14 · Solución de problemas
 
 ### Error: `No module named streamlit`
 ```bash
@@ -468,7 +517,7 @@ python scripts/augment_full_dataset.py # ~15 min
 python scripts/prepare_dataset.py # ~10 min
 
 # 5. Entrenar
-python scripts/train_model.py # 15 min (GPU) / 3 hrs (CPU)
+python scripts/train_model.py # 15 min (GPU) / 35 min (CPU)
 
 # 6. Interfaz
 streamlit run app.py --server.headless true

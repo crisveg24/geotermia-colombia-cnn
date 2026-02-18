@@ -29,9 +29,9 @@
 ### 2.1 Documentación Técnica
 - **`MODELO_PREDICTIVO.md`** — Fundamentos teóricos de CNNs, arquitectura detallada (52 capas), pipeline de procesamiento, métricas con ecuaciones LaTeX, 11 referencias académicas.
 - **`REGISTRO_PROCESO.md`** — Cronograma de 9 fases con estadísticas completas.
-- **`ANALISIS_ENTRENAMIENTO.md`** — Tabla época-por-época (30 épocas), análisis de tendencias, proyecciones.
+- **`ANALISIS_ENTRENAMIENTO.md`** — Tabla época-por-época (23 épocas), análisis de overfitting, recomendaciones.
 - **`MEJORAS_MODELO.md`** — Roadmap de optimizaciones aplicadas y futuras.
-- **`ENTRENAMIENTO_EXTERNO.md`** — Guía paso a paso para máquina con GPU.
+- **`GUIA_PASO_A_PASO.md`** — Guía completa para reproducir el pipeline (incluye sección para máquinas con GPU).
 
 ### 2.2 Adquisición y Procesamiento de Datos
 - **85 imágenes ASTER** descargadas desde Google Earth Engine (NASA/ASTER_GED/AG100_003).
@@ -92,33 +92,33 @@ e39c698 - "feat: Agregar scripts y guía para entrenamiento externo"
 
 **Terminal (salida directa):**
 ```
-Epoch 1/100
-120/120 [==============================] - 85s - loss: 0.6543 - accuracy: 0.7234 - val_loss: 0.5432 - val_accuracy: 0.7823
+Epoch 1/23
+58/58 [==============================] - 90s - loss: 0.8912 - accuracy: 0.6534 - val_loss: 0.8210 - val_accuracy: 0.6515
 ```
 
 **TensorBoard (recomendado):**
 ```bash
-python -m tensorboard --logdir=logs/tensorboard
+tensorboard --logdir=logs
 # Abrir navegador en: http://localhost:6006
 ```
 
 **CSV de historial:**
 ```python
 import pandas as pd
-df = pd.read_csv('models/training_history.csv')
+df = pd.read_csv('logs/geotermia_cnn_custom_20260218-120941.csv')
 print(df.tail())
 ```
 
 **PowerShell (verificación rápida):**
 ```powershell
 # Últimas líneas del CSV
-Get-Content models/training_history.csv -Tail 5
+Get-Content logs\geotermia_cnn_custom_*.csv -Tail 5
 
 # Verificar que el proceso esté corriendo
 Get-Process python
 
 # Tamaño del modelo guardado
-Get-ChildItem models/best_model.keras | Select-Object Name, Length, LastWriteTime
+Get-ChildItem models\saved_models\*.keras | Select-Object Name, Length, LastWriteTime
 ```
 
 ### 5.2 Callbacks Configurados
@@ -126,7 +126,7 @@ Get-ChildItem models/best_model.keras | Select-Object Name, Length, LastWriteTim
 | Callback | Configuración | Función |
 |----------|--------------|---------|
 | **EarlyStopping** | patience=15, monitor=val_loss, restore_best_weights=True | Detiene si no mejora por 15 épocas; restaura mejores pesos |
-| **ModelCheckpoint** | save_best_only=True, monitor=val_loss | Guarda solo el mejor modelo en `models/best_model.keras` |
+| **ModelCheckpoint** | save_best_only=True, monitor=val_loss | Guarda solo el mejor modelo en `models/saved_models/geotermia_cnn_custom_best.keras` |
 | **ReduceLROnPlateau** | factor=0.5, patience=5, min_lr=1e-5 | Reduce LR a la mitad si val_loss no mejora en 5 épocas |
 | **TensorBoard** | update_freq='epoch' | Registra métricas para visualización en tiempo real |
 | **CSVLogger** | append=False | Guarda métricas por época en CSV |
@@ -252,7 +252,7 @@ geotermia-colombia-cnn/
 │ ├── REGISTRO_PROCESO.md # Bitácora cronológica
 │ ├── ANALISIS_ENTRENAMIENTO.md # Análisis de métricas por época
 │ ├── MEJORAS_MODELO.md # Roadmap de optimizaciones
-│ ├── ENTRENAMIENTO_EXTERNO.md # Guía para entrenar con GPU
+│ ├── GUIA_PASO_A_PASO.md # Guía completa paso a paso
 │ └── RESUMEN_PROYECTO.md # Este documento
 │
 ├── logs/ # Logs de TensorBoard (se generan)

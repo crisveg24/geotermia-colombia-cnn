@@ -339,37 +339,30 @@ logs/
  └── [timestamp]/
 ```
 
-#### 6.6 Resultados Parciales (Época 30/100)
-**Tiempo transcurrido:** ~59 minutos (30 épocas × 117 seg/época)
+#### 6.6 Resultados del Entrenamiento (23 Épocas, EarlyStopping)
+**Tiempo total:** ~35 minutos (23 épocas × ~90 seg/época)
 
-**Progreso de Métricas:**
+**Progreso de Métricas (épocas clave):**
 
-| Época | Accuracy | AUC | Loss | Precision | Recall | Tiempo/Época |
-|-------|----------|-----|------|-----------|--------|--------------|
-| 1 | 65.62% | 0.4481 | 0.9892 | - | - | 136s |
-| 5 | 65.29% | 0.5265 | 0.9215 | - | - | 117s |
-| 10 | 64.15% | 0.5634 | 0.9523 | - | - | 117s |
-| 15 | 64.32% | 0.5819 | 0.9498 | - | - | 117s |
-| 20 | 64.55% | 0.5944 | 0.9447 | - | - | 117s |
-| 25 | 64.91% | 0.6104 | 0.9335 | - | - | 117s |
-| 30 | 65.26% | 0.6252 | 0.9241 | 0.8461 | 0.6827 | 117s |
+| Época | Train Acc | Val Acc | Train Loss | Val Loss | Tiempo/Época |
+|-------|-----------|---------|------------|----------|--------------|
+| 1 | 52.69% | 60.10% | 1.0803 | 0.8283 | ~90s |
+| 5 | 71.89% | 63.38% | 0.7217 | 0.8605 | ~90s |
+| 8 ★ | 83.40% | 70.96% | 0.6268 | 0.7710 | ~90s |
+| 10 | 89.31% | 56.31% | 0.4821 | 1.0534 | ~90s |
+| 15 | 87.90% | 62.37% | 0.4218 | 1.0889 | ~90s |
+| 20 | 90.83% | 55.30% | 0.3467 | 1.4122 | ~90s |
+| 23 | 91.75% | 44.70% | 0.2962 | 1.5654 | ~90s |
+
+★ Mejor época según val_loss (seleccionada por EarlyStopping)
 
 **Análisis de Tendencias:**
-- **Accuracy:** Mejora constante de 65.29% → 65.26% (estable con ligera mejora)
-- **AUC:** Crecimiento sostenido de 0.4481 → 0.6252 (+39.5%)
-- **Loss:** Disminución saludable de 0.9892 → 0.9241 (-6.6%)
-- **Precision:** 84.61% (excelente para época 30)
-- **Recall:** 68.27% (bueno, espacio para mejora)
-- **Tiempo estabilizado:** ~117 seg/época después de época 5
+- **Overfitting severo** a partir de la época 9: train accuracy sube de 83% → 92%, pero val accuracy cae de 71% → 45%
+- **Val loss** sube continuamente después de la época 8 (0.77 → 1.57)
+- **EarlyStopping** (patience=15) detuvo el entrenamiento en época 23 y restauró pesos de época 8
+- **Causa probable:** Dataset pequeño (2,635 imágenes) con alta augmentación
 
-**Observaciones:**
-- No se detecta overfitting: métricas mejoran consistentemente
-- AUC muestra mejor progreso que accuracy (mejor discriminación)
-- Precision alta indica pocas falsas alarmas
-- Recall moderado indica oportunidad de capturar más positivos
-- Tiempo por época muy consistente (variación < 1 segundo)
-
-**Estado:** Entrenamiento interrumpido pero funcionando correctamente. Se puede reanudar.
+**Estado:** Entrenamiento completado. Mejor modelo guardado (época 8).
 
 ---
 
