@@ -19,10 +19,12 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import folium
+from folium.plugins import HeatMap
 from streamlit_folium import st_folium
 import sys
 from pathlib import Path
 import json
+import io
 from datetime import datetime
 
 # Ruta raiz del proyecto (app.py esta en la raiz)
@@ -632,6 +634,173 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
 
     except Exception:
         return {"prob": 0.0, "ok": False}
+
+
+def generar_reporte_texto(p: dict) -> str:
+    """Genera reporte de prediccion en formato texto para descarga."""
+    valor = p["valor"]
+    pos = valor >= 0.5
+    dist_km = p["dist"] * 111.0
+
+    if valor >= 0.80:
+        nivel = "ALTA"
+    elif valor >= 0.60:
+        nivel = "MEDIA-ALTA"
+    elif valor >= 0.50:
+        nivel = "MEDIA"
+    elif valor >= 0.35:
+        nivel = "MEDIA-BAJA"
+    elif valor >= 0.20:
+        nivel = "BAJA"
+    else:
+        nivel = "MUY BAJA"
+
+    lines = [
+        "=" * 60,
+        "   REPORTE DE PREDICCION GEOTERMICA",
+        "   CNN Geotermia Colombia — Universidad de San Buenaventura",
+        "=" * 60,
+        "",
+        f"Fecha:            {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}",
+        f"Metodo:           {p.get('metodo', 'N/A')}",
+        "",
+        "--- RESULTADO ---",
+        f"Prediccion:       {'CON POTENCIAL GEOTERMICO' if pos else 'BAJO POTENCIAL GEOTERMICO'}",
+        f"Probabilidad:     {valor:.1%}",
+        f"Confianza:        {nivel}",
+        "",
+        "--- UBICACION ---",
+        f"Latitud:          {p['lat']:.4f}",
+        f"Longitud:         {p['lon']:.4f}",
+        f"Zona mas cercana: {p['zona']} ({p['tipo']})",
+        f"Distancia:        {dist_km:.1f} km",
+    ]
+
+    if p.get("band_stats"):
+        lines += [
+            "",
+            "--- IMAGEN SATELITAL ---",
+            f"Dataset:          {p.get('dataset', 'ASTER GED v003')}",
+            f"Bandas:           {p.get('n_bands', 5)} TIR (emisividad)",
+            f"Resolucion:       {p.get('scale_m', 90)} m/pixel",
+            f"Area analizada:   {p.get('buffer_m', 5000)/1000:.0f} km de radio",
+            f"Imagen original:  {p.get('img_shape', (0,0,0))[0]}x{p.get('img_shape', (0,0,0))[1]} px",
+            f"Entrada modelo:   224x224x5",
+            f"Tamano archivo:   {p.get('img_size_kb', 0):.1f} KB",
+            "",
+            "--- ESTADISTICAS DE BANDAS ---",
+            f"{'Banda':<16} {'Min':>10} {'Max':>10} {'Media':>10} {'Desv.Est':>10}",
+        ]
+        band_names = ["B10 (8.3um)", "B11 (8.6um)", "B12 (9.1um)", "B13 (10.6um)", "B14 (11.3um)"]
+        for i, bs in enumerate(p["band_stats"]):
+            bn = band_names[i] if i < len(band_names) else f"B{i+10}"
+            lines.append(
+                f"{bn:<16} {bs['min']:>10.4f} {bs['max']:>10.4f} {bs['mean']:>10.4f} {bs['std']:>10.4f}"
+            )
+
+        lines += [
+            "",
+            "--- TIEMPOS ---",
+            f"Descarga GEE:     {p.get('t_download', 0):.1f}s",
+            f"Prediccion CNN:   {p.get('t_pred', 0):.3f}s",
+            f"Total:            {p.get('t_total', 0):.1f}s",
+        ]
+
+    if p.get("todas_dist"):
+        lines += ["", "--- DISTANCIA A ZONAS CONOCIDAS ---"]
+        lines.append(f"{'Zona':<25} {'Tipo':<18} {'Potencial':<10} {'Dist(km)':>10}")
+        for zd in p["todas_dist"]:
+            lines.append(
+                f"{zd['Zona']:<25} {zd['Tipo']:<18} {zd['Potencial']:<10} {zd['Distancia (km)']:>10.1f}"
+            )
+
+    lines += [
+        "",
+        "--- MODELO ---",
+        "Arquitectura:     CNN personalizada",
+        "Dataset:          2,635 imagenes (85 orig + augmentation)",
+        "Mejor epoca:      8 / 23",
+        "Accuracy:         68.43%",
+        "Precision:        86.32%",
+        "ROC AUC:          0.8198",
+        "F1-Score:         61.77%",
+        "Normalizacion:    Z-score por banda",
+        "",
+        "=" * 60,
+        "Autores: C.Vega, D.Arevalo, Y.Espitia, L.Rivera",
+        "Asesor: Prof. Yeison Eduardo Conejo Sandoval",
+        "Universidad de San Buenaventura — Bogota — 2025-2026",
+        "=" * 60,
+    ]
+    return "\n".join(lines)
+
+
+def crear_mapa_heatmap(zonas, predicciones_hist=None):
+    """Mapa con capa de calor basada en predicciones realizadas."""
+    m = folium.Map(location=[4.57, -74.30], zoom_start=6, tiles="CartoDB positron")
+
+    colores = {"Alto": "red", "Medio": "orange"}
+    for z in zonas:
+        c = colores.get(z["potencial"], "blue")
+        folium.CircleMarker(
+            [z["lat"], z["lon"]], radius=10,
+            popup=folium.Popup(
+                f"<div style='font-family:Inter,sans-serif;min-width:140px'>"
+                f"<b style='font-size:13px'>{z['nombre']}</b><br>"
+                f"<span style='color:#666;font-size:11px'>{z['tipo']}</span><br>"
+                f"<span style='font-size:12px;font-weight:600;color:{'#d32f2f' if z['potencial']=='Alto' else '#ff8f00'}'>"
+                f"Potencial {z['potencial']}</span></div>",
+                max_width=200,
+            ),
+            tooltip=z["nombre"], color=c, fill=True, fillColor=c, fillOpacity=0.7,
+            weight=2,
+        ).add_to(m)
+
+    # Capa de calor con predicciones
+    if predicciones_hist:
+        heat_data = []
+        for h in predicciones_hist:
+            heat_data.append([h["lat"], h["lon"], h["valor"]])
+            # Marcador por cada prediccion
+            es_pos = h["valor"] >= 0.5
+            folium.CircleMarker(
+                [h["lat"], h["lon"]], radius=6,
+                color="#2e7d32" if es_pos else "#1565c0",
+                fill=True,
+                fillColor="#4caf50" if es_pos else "#42a5f5",
+                fillOpacity=0.8, weight=1.5,
+                tooltip=f'{h["valor"]:.1%} — {h.get("zona", "")}',
+                popup=folium.Popup(
+                    f"<div style='font-family:Inter,sans-serif;min-width:120px'>"
+                    f"<b>{h['valor']:.1%}</b><br>"
+                    f"<span style='font-size:11px'>({h['lat']:.4f}, {h['lon']:.4f})</span><br>"
+                    f"<span style='font-size:11px;color:#666'>{h.get('zona', '')}</span></div>",
+                    max_width=180,
+                ),
+            ).add_to(m)
+
+        if len(heat_data) >= 2:
+            HeatMap(
+                heat_data,
+                min_opacity=0.3, max_val=1.0,
+                radius=30, blur=25,
+                gradient={0.2: '#1565c0', 0.4: '#42a5f5', 0.6: '#ffca28', 0.8: '#ff6d00', 1.0: '#d32f2f'},
+            ).add_to(m)
+
+    legend = (
+        '<div style="position:fixed;bottom:30px;left:30px;z-index:9999;'
+        'background:#fff;padding:12px 16px;border-radius:10px;'
+        'box-shadow:0 2px 12px rgba(0,0,0,.15);font-size:12px;'
+        'font-family:Inter,sans-serif;line-height:1.8;">'
+        '<b style="font-size:13px">Leyenda</b><br>'
+        '<span style="color:red;font-size:16px">&#9679;</span> Potencial Alto (conocido)<br>'
+        '<span style="color:orange;font-size:16px">&#9679;</span> Potencial Medio (conocido)<br>'
+        '<span style="color:#4caf50;font-size:14px">&#9679;</span> Prediccion positiva<br>'
+        '<span style="color:#42a5f5;font-size:14px">&#9679;</span> Prediccion negativa<br>'
+        '🔥 Mapa de calor (intensidad de prediccion)</div>'
+    )
+    m.get_root().html.add_child(folium.Element(legend))
+    return m
 
 
 def crear_mapa(zonas, usuario=None, pred_valor=None):
@@ -1256,6 +1425,139 @@ def pagina_prediccion():
                         "Zona cercana": h.get("zona", "-"),
                     })
                 st.dataframe(pd.DataFrame(hist_data), use_container_width=True, hide_index=True)
+
+        # ---- Exportar reporte ----
+        st.write("")
+        exp1, exp2, _ = st.columns([1, 1, 2])
+        with exp1:
+            reporte_txt = generar_reporte_texto(p)
+            st.download_button(
+                "📄 Descargar reporte (.txt)",
+                data=reporte_txt,
+                file_name=f"reporte_geotermico_{p['lat']:.4f}_{p['lon']:.4f}.txt",
+                mime="text/plain",
+                use_container_width=True,
+            )
+        with exp2:
+            if st.session_state.get("pred_historial"):
+                csv_rows = []
+                for h in st.session_state["pred_historial"]:
+                    csv_rows.append({
+                        "timestamp": h.get("timestamp", ""),
+                        "latitud": h["lat"],
+                        "longitud": h["lon"],
+                        "probabilidad": round(h["valor"], 4),
+                        "resultado": "positivo" if h["valor"] >= 0.5 else "negativo",
+                        "confianza": (
+                            "alta" if h["valor"] >= 0.8 else
+                            "media-alta" if h["valor"] >= 0.6 else
+                            "media" if h["valor"] >= 0.5 else
+                            "media-baja" if h["valor"] >= 0.35 else
+                            "baja" if h["valor"] >= 0.2 else "muy_baja"
+                        ),
+                        "zona_cercana": h.get("zona", ""),
+                        "distancia_km": round(h.get("dist", 0) * 111.0, 1),
+                        "metodo": h.get("metodo", ""),
+                    })
+                csv_df = pd.DataFrame(csv_rows)
+                st.download_button(
+                    "📊 Descargar historial (.csv)",
+                    data=csv_df.to_csv(index=False),
+                    file_name="historial_predicciones.csv",
+                    mime="text/csv",
+                    use_container_width=True,
+                )
+
+        # ---- Mapa de calor (heatmap) ----
+        if st.session_state.get("pred_historial") and len(st.session_state["pred_historial"]) >= 2:
+            st.write("")
+            with st.expander("🔥 Mapa de calor de predicciones realizadas"):
+                st.markdown(
+                    '<div style="font-size:0.85rem;color:#666;margin-bottom:8px;">'
+                    'Mapa de calor generado a partir de todas las predicciones realizadas '
+                    'en esta sesion. La intensidad del color representa la probabilidad '
+                    'geotermica predicha por el modelo CNN.</div>',
+                    unsafe_allow_html=True,
+                )
+                mapa_heat = crear_mapa_heatmap(zonas, st.session_state["pred_historial"])
+                st_folium(mapa_heat, width=None, height=450, returned_objects=[])
+
+        # ---- Modo comparacion ----
+        st.write("")
+        with st.expander("⚖️ Comparar dos ubicaciones"):
+            st.markdown(
+                '<div style="font-size:0.85rem;color:#666;margin-bottom:12px;">'
+                'Ingresa dos pares de coordenadas para comparar las predicciones '
+                'del modelo CNN lado a lado.</div>',
+                unsafe_allow_html=True,
+            )
+            cmp_c1, cmp_c2 = st.columns(2, gap="medium")
+
+            with cmp_c1:
+                st.markdown("**Ubicacion A**")
+                cmp_lat_a = st.number_input("Latitud A:", -4.0, 12.0, 4.8951, 0.0001, format="%.4f", key="cmp_lat_a")
+                cmp_lon_a = st.number_input("Longitud A:", -82.0, -66.0, -75.3222, 0.0001, format="%.4f", key="cmp_lon_a")
+
+            with cmp_c2:
+                st.markdown("**Ubicacion B**")
+                cmp_lat_b = st.number_input("Latitud B:", -4.0, 12.0, 5.7781, 0.0001, format="%.4f", key="cmp_lat_b")
+                cmp_lon_b = st.number_input("Longitud B:", -82.0, -66.0, -73.1124, 0.0001, format="%.4f", key="cmp_lon_b")
+
+            cmp_btn = st.button("🔬 Comparar ambas ubicaciones", type="primary", use_container_width=True, key="btn_cmp")
+
+            if cmp_btn and usa_cnn and modelo is not None:
+                cmp_r1, cmp_r2 = st.columns(2, gap="medium")
+
+                with st.spinner("Analizando ubicacion A..."):
+                    res_a = predecir_con_modelo_cnn(cmp_lat_a, cmp_lon_a, modelo)
+                with st.spinner("Analizando ubicacion B..."):
+                    res_b = predecir_con_modelo_cnn(cmp_lat_b, cmp_lon_b, modelo)
+
+                for col_cmp, res, lat, lon, label in [
+                    (cmp_r1, res_a, cmp_lat_a, cmp_lon_a, "A"),
+                    (cmp_r2, res_b, cmp_lat_b, cmp_lon_b, "B"),
+                ]:
+                    with col_cmp:
+                        if res["ok"]:
+                            v = res["prob"]
+                            es_pos = v >= 0.5
+                            _, zc, dd = predecir_por_proximidad(lat, lon, zonas)
+                            cls_c = "result-pos" if es_pos else "result-neg"
+                            st.markdown(
+                                f'<div class="result-card {cls_c}" style="padding:1.2rem 1rem;">'
+                                f'<h2 style="font-size:0.85rem;">UBICACION {label}</h2>'
+                                f'<div class="big" style="font-size:2.2rem;">{"🌋" if es_pos else "🏔️"} {v:.1%}</div>'
+                                f'<p style="font-size:0.8rem;">{lat:.4f}, {lon:.4f}</p>'
+                                f'<p style="font-size:0.75rem;margin-top:4px;">Zona: {zc["nombre"]} · {dd*111:.1f} km</p>'
+                                f'</div>',
+                                unsafe_allow_html=True,
+                            )
+
+                            # Guardar en historial
+                            if "pred_historial" not in st.session_state:
+                                st.session_state["pred_historial"] = []
+                            st.session_state["pred_historial"].insert(0, {
+                                "lat": lat, "lon": lon, "valor": v,
+                                "zona": zc["nombre"], "tipo": zc["tipo"], "dist": dd,
+                                "metodo": "CNN", "timestamp": datetime.now().strftime("%H:%M:%S"),
+                            })
+                        else:
+                            st.error(f"No se pudo analizar la ubicacion {label}")
+
+                if res_a["ok"] and res_b["ok"]:
+                    diff = abs(res_a["prob"] - res_b["prob"])
+                    mejor = "A" if res_a["prob"] > res_b["prob"] else "B"
+                    st.markdown(
+                        f'<div style="background:#f8f9fa;border-radius:10px;padding:14px;'
+                        f'text-align:center;margin-top:12px;">'
+                        f'<span style="font-size:0.9rem;color:#555;">'
+                        f'Diferencia: <b>{diff:.1%}</b> · '
+                        f'Mayor potencial: <b>Ubicacion {mejor}</b></span></div>',
+                        unsafe_allow_html=True,
+                    )
+
+            elif cmp_btn and not usa_cnn:
+                st.warning("El modo comparacion requiere el modelo CNN cargado.")
 
     else:
         # Estado vacio — mostrar mapa de zonas como referencia

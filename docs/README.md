@@ -12,6 +12,7 @@ Esta carpeta contiene toda la documentación técnica del proyecto CNN Geotermia
 | [MEJORAS_MODELO.md](MEJORAS_MODELO.md) | Roadmap de optimizaciones (implementadas y pendientes) |
 | [GUIA_PASO_A_PASO.md](GUIA_PASO_A_PASO.md) | Guía completa para reproducir el pipeline (incluye entrenamiento externo con GPU) |
 | [REGISTRO_PROCESO.md](REGISTRO_PROCESO.md) | Historial cronológico completo del proyecto |
+| [PREDICCIONES_PRUEBA.md](PREDICCIONES_PRUEBA.md) | Resultados de predicciones de prueba (baseline v1) |
 
 ## Orden de Lectura Recomendado
 
@@ -19,7 +20,8 @@ Esta carpeta contiene toda la documentación técnica del proyecto CNN Geotermia
 2. **MODELO_PREDICTIVO.md** - Para documentación técnica detallada
 3. **ANALISIS_ENTRENAMIENTO.md** - Para entender los resultados del entrenamiento
 4. **GUIA_PASO_A_PASO.md** - Si vas a reproducir el pipeline o entrenar en otra máquina
-5. **MEJORAS_MODELO.md** - Para ver mejoras implementadas y futuras
+5. **PREDICCIONES_PRUEBA.md** - Resultados de pruebas y baseline para comparar con modelos futuros
+6. **MEJORAS_MODELO.md** - Para ver mejoras implementadas y futuras
 
 ---
 
