@@ -246,17 +246,17 @@ xcopy /E data\processed D:\geotermia_datos\processed\
 python scripts/download_dataset.py
 ```
 
-- Descarga ~88 imágenes ASTER GED (5 bandas térmicas de emisividad)
+- Descarga 85 imágenes ASTER GED (5 bandas térmicas de emisividad)
 - 45 zonas geotérmicas (volcanes: Ruiz, Puracé, Galeras, Paipa-Iza, etc.)
-- 43 zonas de control (Llanos, Amazonía, Costa Caribe, etc.)
+- 40 zonas de control (Llanos, Amazonía, Costa Caribe, etc.)
 - Resolución: 90 m/pixel, radio 5 km por zona
 - Tiempo estimado: 15-30 minutos
 - Requiere conexión a internet y auth de Earth Engine
 
 **Salida**:
 ```
-data/raw/positive/ ← ~45 archivos .tif
-data/raw/negative/ ← ~43 archivos .tif
+data/raw/positive/ ← 45 archivos .tif
+data/raw/negative/ ← 40 archivos .tif
 data/raw/labels.csv ← archivo de etiquetas
 ```
 
@@ -276,11 +276,12 @@ python scripts/augment_full_dataset.py
 - Técnicas: rotación, flip, brillo, contraste, ruido, blur, crop, combinaciones
 - Tiempo estimado: 10-20 minutos
 
-**Salida** (si ~88 originales):
+**Salida** (con 85 originales):
 ```
-data/augmented/positive/ ← ~1,395 archivos .tif
-data/augmented/negative/ ← ~1,333 archivos .tif
+data/augmented/positive/ ← imágenes positivas augmentadas
+data/augmented/negative/ ← imágenes negativas augmentadas
 data/augmented/labels.csv
+Total: ~2,635 imágenes
 ```
 
 ---
@@ -307,7 +308,7 @@ data/processed/
  split_info.json ← metadatos del split
 ```
 
-> Los archivos .npy pueden ser **muy grandes** (~2-4 GB). Si usas disco externo,
+> Los archivos .npy pueden ser grandes. Si usas disco externo,
 > estos también se guardarán ahí.
 
 ---

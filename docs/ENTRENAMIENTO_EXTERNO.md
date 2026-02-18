@@ -114,14 +114,14 @@ python scripts/download_dataset.py
 ### Generar Dataset Augmentado:
 
 ```bash
-# Augmentar a 5,518 imágenes (~30 segundos)
+# Augmentar a ~2,635 imágenes (~10-20 minutos)
 python scripts/augment_full_dataset.py
 ```
 
 **Output:**
-- `data/augmented/positive/` - 4,278 imágenes
-- `data/augmented/negative/` - 1,240 imágenes
-- Total: ~1.24 GB
+- `data/augmented/positive/` - imágenes positivas augmentadas
+- `data/augmented/negative/` - imágenes negativas augmentadas
+- Total: ~2,635 imágenes
 
 ### Preparar para Entrenamiento:
 
@@ -131,11 +131,10 @@ python scripts/prepare_dataset.py
 ```
 
 **Output:**
-- `data/processed/X_train.npy` - 3,862 imágenes training
-- `data/processed/X_val.npy` - 828 imágenes validation
-- `data/processed/X_test.npy` - 828 imágenes test
+- `data/processed/X_train.npy` - 1,843 imágenes training
+- `data/processed/X_val.npy` - 396 imágenes validation
+- `data/processed/X_test.npy` - 396 imágenes test
 - `data/processed/y_*.npy` - Etiquetas correspondientes
-- Total: ~2.5 GB
 
 ### Opción B: Copiar Datos desde Disco Externo (Más Rápido)
 
@@ -233,7 +232,7 @@ Al finalizar el entrenamiento:
 
 ```
 models/saved_models/
- └── geotermia_cnn_custom_best.keras (~19 MB)
+ └── geotermia_cnn_custom_best.keras (~57 MB)
 
 logs/
  ├── geotermia_cnn_custom_*.csv (métricas por época)
@@ -318,7 +317,7 @@ git push origin develop
 ## PASO 7: EVALUAR MODELO
 
 ```bash
-# Evaluar en test set (828 imágenes)
+# Evaluar en test set (396 imágenes)
 python scripts/evaluate_model.py
 ```
 
@@ -435,17 +434,19 @@ python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU')
 
 ---
 
-## MÉTRICAS ESPERADAS
+## MÉTRICAS OBTENIDAS
 
-Basado en entrenamiento parcial (30 épocas):
+Resultados del entrenamiento completado (18 de febrero de 2026, 23 épocas en CPU):
 
-| Métrica | Época 30 | Proyección Final |
-|---------|----------|------------------|
-| **Accuracy** | 65.26% | 70-78% |
-| **AUC** | 0.6252 | 0.80-0.90 |
-| **Precision** | 84.61% | 85-90% |
-| **Recall** | 68.27% | 75-85% |
-| **F1-Score** | 75.54% | 80-87% |
+| Métrica | Resultado |
+|---------|----------|
+| **Accuracy** | 68.43% |
+| **ROC AUC** | 0.8198 |
+| **Precision** | 86.32% |
+| **Recall** | 48.10% |
+| **F1-Score** | 61.77% |
+
+**Nota:** Se detectó overfitting. EarlyStopping seleccionó la época 8 como mejor modelo. Para más detalles, ver `ANALISIS_ENTRENAMIENTO.md`.
 
 ---
 
@@ -469,12 +470,15 @@ Al completar todos los pasos:
 2. Consulta `RESUMEN_PROYECTO.md` (sección Guía de Monitoreo)
 3. Revisa `ANALISIS_ENTRENAMIENTO.md`
 
-**Desarrollador:**
+**Autores:**
 - Cristian Camilo Vega Sánchez
+- Daniel Santiago Arévalo Rubiano
+- Yuliet Katerin Espitia Ayala
+- Laura Sophie Rivera Martín
 - GitHub: @crisveg24
 
 ---
 
-**Última actualización:** 3 de noviembre de 2025 
+**Última actualización:** 18 de febrero de 2026 
 **Estado:** Guía completa para entrenamiento en máquina externa 
-**Tiempo total estimado:** 4-5 horas (incluyendo setup)
+**Tiempo total estimado:** 1-2 horas con GPU, 3-4 horas con CPU

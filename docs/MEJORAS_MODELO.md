@@ -1,16 +1,28 @@
 # Mejoras Sugeridas para el Modelo CNN
 
-## Estado Actual del Código
+**Autores:** Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano,
+Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martín  
+**Última actualización:** 18 de febrero de 2026
 
-El código del modelo `cnn_geotermia.py` está **bien estructurado** y sigue buenas prácticas:
-- Arquitectura modular con bloques residuales
-- Batch Normalization y Dropout
-- Regularización L2
-- Global Average Pooling
-- Documentación completa
-- Soporte para Transfer Learning
+## Estado Actual del Modelo (Post-Entrenamiento)
 
-## Mejoras Recomendadas
+El modelo fue entrenado el 18 de febrero de 2026 (23 épocas, CPU). Resultados en test:
+- **Accuracy:** 68.43% | **Precision:** 86.32% | **Recall:** 48.10% | **F1:** 61.77% | **ROC AUC:** 0.8198
+- **Problema principal:** Overfitting severo (train 91.75% vs val 44.70% en época 23)
+
+### Mejoras Ya Implementadas (Fase 11)
+
+| Mejora | Estado | Impacto Observado |
+|--------|--------|-------------------|
+| SpatialDropout2D | ✅ Implementada | Reemplazó Dropout estándar — ayuda pero insuficiente |
+| AdamW (weight_decay=1e-4) | ✅ Implementada | Mejor regularización del optimizer |
+| Label Smoothing (0.1) | ✅ Implementada | Reduce sobreconfianza |
+| PR-AUC como métrica | ✅ Implementada | Mejor monitoreo en datos desbalanceados |
+| F1Score nativo | ✅ Implementada | Monitoreo directo precision-recall |
+| Cosine LR Decay | ✅ Disponible (función auxiliar) | No utilizada en el entrenamiento final |
+| Class Weights | ✅ Implementada | Compensa desbalance de clases |
+
+## Mejoras Pendientes (Recomendadas)
 
 ### 1. Mejoras en la Arquitectura
 
@@ -144,24 +156,44 @@ def make_gradcam_heatmap(model, img_array, last_conv_layer_name):
  return heatmap.numpy()
 ```
 
-## Prioridad de Implementación
+## Prioridad de Implementación (Actualizada Post-Entrenamiento)
 
-| Mejora | Impacto | Dificultad | Prioridad |
-|--------|---------|------------|-----------|
-| Data Augmentation mejorado | Alto | Baja | Alta |
-| Manejo desbalanceo | Alto | Baja | Alta |
-| Learning Rate Scheduling | Medio | Baja | Media |
-| Attention Mechanism | Alto | Media | Media |
-| Mixup/CutMix | Medio | Media | Baja |
-| Grad-CAM | Bajo | Media | Baja |
+| Mejora | Impacto Esperado | Dificultad | Estado | Prioridad |
+|--------|-----------------|------------|--------|-----------|
+| SpatialDropout2D | Alto | Baja | ✅ Hecha | — |
+| Class Weights | Alto | Baja | ✅ Hecha | — |
+| Label Smoothing | Medio | Baja | ✅ Hecha | — |
+| LR Scheduling | Medio | Baja | ✅ Hecha | — |
+| F1Score/PR-AUC | Medio | Baja | ✅ Hecha | — |
+| **Más datos originales** | **Muy Alto** | Media | ❌ Pendiente | **Crítica** |
+| **Reducir capacidad modelo** | **Alto** | Baja | ❌ Pendiente | **Alta** |
+| **Threshold < 0.5** | **Alto** | Baja | ❌ Pendiente | **Alta** |
+| Mixup/CutMix | Alto | Media | ❌ Pendiente | Media |
+| Attention Mechanism | Alto | Media | ❌ Pendiente | Media |
+| Focal Loss | Medio | Baja | ❌ Pendiente | Media |
+| Grad-CAM | Bajo | Media | ❌ Pendiente | Baja |
+| Transfer Learning | Alto | Media | ❌ Pendiente | Baja |
 
-## Próximos Pasos
+## Próximos Pasos (Post-Entrenamiento)
 
-1. **Inmediato:** Aplicar class weights y mejor data augmentation
-2. **Corto plazo:** Implementar learning rate scheduling mejorado
-3. **Medio plazo:** Agregar attention mechanism
-4. **Largo plazo:** Implementar Grad-CAM para interpretabilidad
+1. **Crítico — Combatir Overfitting:**
+   - Conseguir más imágenes originales (>200 idealmente)
+   - Reducir capacidad del modelo (menos filtros: 32→256 en vez de 32→512)
+   - Aumentar dropout rates
+   - Agregar L2 regularization más agresiva
+
+2. **Alta — Mejorar Recall (actualmente 48.10%):**
+   - Bajar threshold de clasificación de 0.5 a ~0.3
+   - Usar Focal Loss en vez de Binary Crossentropy
+   - Ajustar class weights más agresivamente
+
+3. **Media — Data Augmentation avanzada:**
+   - Implementar Mixup y CutMix
+   - Augmentación online en tiempo de entrenamiento
+
+4. **Baja — Interpretabilidad:**
+   - Implementar Grad-CAM para visualizar zonas de activación
 
 ---
 
-**Nota:** Estas mejoras son opcionales. El modelo actual ya tiene una buena base y puede lograr buenos resultados con suficientes datos de entrenamiento.
+**Nota:** La prioridad más alta es **conseguir más datos originales**. Con solo 85 imágenes originales, el overfitting es inevitable independientemente de las técnicas de regularización.

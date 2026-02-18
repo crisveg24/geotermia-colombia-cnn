@@ -3,7 +3,7 @@
 
 **Proyecto:** Modelo Predictivo CNN - Geotermia Colombia 
 **Institución:** Universidad de San Buenaventura - Bogotá 
-**Autores:** Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano, Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martin 
+**Autores:** Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano, Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martín 
 **Asesor:** Prof. Yeison Eduardo Conejo Sandoval 
 **Fecha Inicio:** Noviembre 2025 
 **Repositorio:** https://github.com/crisveg24/geotermia-colombia-cnn
@@ -184,17 +184,14 @@
 
 **Resultados de la Augmentación:**
 - **Input:** 85 imágenes originales
-- **Output:** 5,518 imágenes totales
-- **Distribución:**
- - Positivas: 4,278 imágenes (77.5%)
- - Negativas: 1,240 imágenes (22.5%)
-- **Tamaño:** 1.24 GB (1,240.27 MB)
+- **Output:** 2,635 imágenes totales
+- **Factor de aumento:** ~31x (30 augmentaciones + 1 original)
 - **Ubicación:** `data/augmented/positive/` y `data/augmented/negative/`
 
 #### 4.3 Corrección de Metadata
 - **Problema detectado:** Labels.csv sin subdirectorios en rutas
 - **Script corrector:** `scripts/fix_labels.py`
-- **Acción:** Actualización de 5,518 rutas con prefijos `positive/` o `negative/`
+- **Acción:** Actualización de rutas con prefijos `positive/` o `negative/`
 - **Resultado:** Labels.csv corregido para lectura correcta
 
 ---
@@ -205,7 +202,7 @@
 #### 5.1 Procesamiento de Imágenes
 - **Script:** `scripts/prepare_dataset.py` (418 líneas)
 - **Clase:** `GeoDataPreparator`
-- **Tiempo de procesamiento:** ~2 minutos (5,518 imágenes)
+- **Tiempo de procesamiento:** ~2 minutos (2,635 imágenes)
 
 **Correcciones Realizadas:**
 1. Actualización de rutas por defecto:
@@ -230,19 +227,13 @@
 
 **Distribución Final:**
 ```
-Training Set: 3,862 imágenes (70.0%)
- - Clase 0 (negativo): 868 imágenes
- - Clase 1 (positivo): 2,994 imágenes
+Training Set: 1,843 imágenes (70.0%)
 
-Validation Set: 828 imágenes (15.0%)
- - Clase 0 (negativo): 186 imágenes
- - Clase 1 (positivo): 642 imágenes
+Validation Set: 396 imágenes (15.0%)
 
-Test Set: 828 imágenes (15.0%)
- - Clase 0 (negativo): 186 imágenes
- - Clase 1 (positivo): 642 imágenes
+Test Set: 396 imágenes (15.0%)
 
-TOTAL: 5,518 imágenes (100%)
+TOTAL: 2,635 imágenes (100%)
 ```
 
 #### 5.3 Pesos de Clase para Balanceo
@@ -263,14 +254,14 @@ Cálculo: peso_clase = n_samples / (n_classes * n_samples_clase)
 **Ubicación:** `data/processed/`
 
 ```
-X_train.npy - Imágenes de entrenamiento: (3862, 224, 224, 5) ~1.5 GB
-y_train.npy - Etiquetas de entrenamiento: (3862,)
+X_train.npy - Imágenes de entrenamiento: (1843, 224, 224, 5)
+y_train.npy - Etiquetas de entrenamiento: (1843,)
 
-X_val.npy - Imágenes de validación: (828, 224, 224, 5) ~320 MB
-y_val.npy - Etiquetas de validación: (828,)
+X_val.npy - Imágenes de validación: (396, 224, 224, 5)
+y_val.npy - Etiquetas de validación: (396,)
 
-X_test.npy - Imágenes de prueba: (828, 224, 224, 5) ~320 MB
-y_test.npy - Etiquetas de prueba: (828,)
+X_test.npy - Imágenes de prueba: (396, 224, 224, 5)
+y_test.npy - Etiquetas de prueba: (396,)
 
 dataset_info.json - Metadata completa del dataset procesado
 ```
@@ -280,18 +271,18 @@ dataset_info.json - Metadata completa del dataset procesado
 
 ---
 
-### **FASE 6: ENTRENAMIENTO DEL MODELO (En Progreso)**
-**Fecha inicio:** 3 de noviembre de 2025 - 18:55:28 
-**Estado actual:** Entrenamiento interrumpido tras 30 épocas exitosas 
-**Progreso:** 30/100 épocas (30% completado)
+### **FASE 6: ENTRENAMIENTO DEL MODELO (Completada)**
+**Fecha inicio:** 3 de noviembre de 2025 (parcial, 30 épocas) 
+**Fecha completo:** 18 de febrero de 2026 (23 épocas, EarlyStopping) 
+**Estado:** Completado — Mejor modelo guardado (mejor época 8)
 
 #### 6.1 Configuración del Entrenamiento
 - **Script:** `scripts/train_model.py`
 - **Modelo:** CNN personalizado (52 capas, 5,025,409 parámetros)
-- **Hardware:** CPU con optimizaciones oneDNN (SSE3, SSE4.1, SSE4.2, AVX, AVX2, FMA)
-- **Precision:** Mixed precision (float16/float32) - fallback a Eigen para DT_HALF
-- **Tiempo real por época:** ~117 segundos (1.95 minutos)
-- **Tiempo total estimado:** 3.8 horas para 100 épocas
+- **Hardware:** CPU Intel i5-10300H (TF 2.20.0 sin soporte CUDA en Windows)
+- **Precision:** float32 (mixed precision deshabilitada por ausencia de GPU)
+- **Tiempo real por época:** ~90 segundos
+- **Tiempo total:** ~35 minutos para 23 épocas
 
 #### 6.2 Hiperparámetros
 ```python
@@ -382,104 +373,84 @@ logs/
 
 ---
 
-### **FASE 7: EVALUACIÓN DEL MODELO (Pendiente — Requiere Entrenamiento Completo)**
+### **FASE 7: EVALUACIÓN DEL MODELO (Completada)**
+**Fecha:** 18 de febrero de 2026
 
-#### 7.1 Métricas a Calcular
+#### 7.1 Métricas Calculadas
 - **Script:** `scripts/evaluate_model.py`
-- **Dataset:** Test set (828 imágenes)
+- **Dataset:** Test set (396 imágenes)
 
-**Métricas Principales:**
-1. **Accuracy:** Precisión general del modelo
-2. **Precision:** TP / (TP + FP)
-3. **Recall (Sensibilidad):** TP / (TP + FN)
-4. **F1-Score:** Media armónica de precision y recall
-5. **ROC AUC:** Área bajo la curva ROC
-6. **R² Score:** Coeficiente de determinación
-7. **Confusion Matrix:** Matriz de confusión 2x2
+**Resultados en Test Set:**
 
-#### 7.2 Análisis por Clase
-- Precision, Recall, F1 para cada clase
-- Support (número de muestras)
-- Análisis de falsos positivos y negativos
+| Métrica | Valor |
+|---------|-------|
+| Accuracy | 68.43% |
+| Precision | 86.32% |
+| Recall | 48.10% |
+| F1-Score | 61.77% |
+| ROC AUC | 0.8198 |
+| R² Score | -0.2673 |
 
-#### 7.3 Archivos de Salida
+**Matriz de Confusión:**
+```
+              Predicho Neg  Predicho Pos
+Real Neg         170          16
+Real Pos         109         101
+```
+
+#### 7.2 Archivos Generados
 ```
 results/metrics/
- ├── evaluation_metrics.json - Todas las métricas
- ├── metrics_table.csv - Tabla para tesis
- ├── confusion_matrix.png - Visualización (300 DPI)
- └── roc_curve.png - Curva ROC (300 DPI)
+ ├── evaluation_metrics.json - Todas las métricas + curva ROC
+ └── metrics_table.csv - Tabla para tesis
 ```
 
 ---
 
-### **FASE 8: VISUALIZACIÓN DE RESULTADOS (Pendiente — Requiere Entrenamiento Completo)**
+### **FASE 8: VISUALIZACIÓN DE RESULTADOS (Completada)**
+**Fecha:** 18 de febrero de 2026
 
-#### 8.1 Gráficos de Entrenamiento
+#### 8.1 Gráficos Generados
 - **Script:** `scripts/visualize_results.py`
 - **Resolución:** 300 DPI (calidad publicación)
 
-**Visualizaciones a Generar:**
-1. **Training History:**
- - Loss (train vs validation)
- - Accuracy (train vs validation)
- - Formato: Curvas en misma figura
+**Visualizaciones:**
+1. **Training History** (`training_history.png`): Curvas de loss y accuracy (train vs val) por época
+2. **Confusion Matrix** (`confusion_matrix.png`): Heatmap de la matriz de confusión
+3. **ROC Curve** (`roc_curve.png`): Curva ROC con AUC = 0.8198
+4. **Metrics Comparison** (`metrics_comparison.png`): Comparativa de barras de métricas
 
-2. **Confusion Matrix:**
- - Heatmap con seaborn
- - Anotaciones de valores
- - Normalizada y sin normalizar
+#### 8.2 Reporte PDF
+- **Script:** `scripts/generar_reporte_completo.py`
+- **Salida:** `results/reporte_entrenamiento_completo.pdf` (12 páginas, 769.6 KB)
+- **Contenido:** Portada, configuración, métricas, visualizaciones, conclusiones
 
-3. **ROC Curve:**
- - Curva ROC con AUC
- - Línea diagonal de referencia
- - Threshold óptimo marcado
-
-4. **Predicciones de Muestra:**
- - Grid de imágenes reales
- - Predicciones vs etiquetas verdaderas
- - Probabilidades de confianza
-
-5. **Distribución de Probabilidades:**
- - Histograma de predicciones
- - Separación por clase real
-
-#### 8.2 Archivos de Salida
+#### 8.3 Archivos de Salida
 ```
 results/figures/
- ├── training_history.png - Curvas de entrenamiento
- ├── confusion_matrix.png - Matriz de confusión
- ├── confusion_matrix_norm.png - Matriz normalizada
- ├── roc_curve.png - Curva ROC
- ├── sample_predictions.png - Muestras de predicciones
- └── probability_distribution.png - Distribución de probabilidades
+ ├── training_history.png
+ ├── confusion_matrix.png
+ ├── roc_curve.png
+ └── metrics_comparison.png
+
+results/
+ └── reporte_entrenamiento_completo.pdf
 ```
 
 ---
 
-### **FASE 9: DOCUMENTACIÓN FINAL (Pendiente — Requiere Entrenamiento Completo)**
+### **FASE 9: DOCUMENTACIÓN FINAL (En Progreso)**
 
-#### 9.1 Actualización de README
-- Resultados finales del entrenamiento
-- Métricas de performance
-- Instrucciones de uso del modelo
-- Ejemplos de predicción
+#### 9.1 Actualización de Documentación
+- Resultados reales del entrenamiento incorporados en todos los docs
+- Métricas de performance actualizadas
+- Análisis de overfitting documentado
+- 4 nombres de autores corregidos en todos los archivos
 
-#### 9.2 Documento de Resultados
-- Análisis de métricas
-- Comparación con objetivos
-- Limitaciones del modelo
-- Recomendaciones para mejoras
-
-#### 9.3 Commit Final
-```bash
-git add models/best_model.keras
-git add results/
-git add README.md
-git add REGISTRO_PROCESO.md
-git commit -m "feat: Modelo CNN entrenado con métricas completas"
-git push origin main
-```
+#### 9.2 Pendiente
+- Instrucciones de uso del modelo en README principal
+- Presentación para sustentación de tesis
+- Commit y push final a GitHub
 
 ---
 
@@ -674,9 +645,8 @@ Se actualizó `docs/REGISTRO_PROCESO.md` (este documento) con el registro detall
 
 ### Dataset
 - **Imágenes originales descargadas:** 85
-- **Imágenes después de augmentación:** 5,518
-- **Factor de aumento:** 64.9x
-- **Tamaño total procesado:** ~2.5 GB
+- **Imágenes después de augmentación:** 2,635
+- **Factor de aumento:** ~31x
 - **Bandas espectrales por imagen:** 5 (ASTER térmico)
 - **Resolución final:** 224x224 píxeles
 
@@ -689,14 +659,10 @@ Se actualizó `docs/REGISTRO_PROCESO.md` (este documento) con el registro detall
 
 ### Distribución de Datos
 ```
-Training: 3,862 imágenes (70%)
-Validation: 828 imágenes (15%)
-Test: 828 imágenes (15%)
-Total: 5,518 imágenes (100%)
-
-Balance de clases:
- Positivo (geotérmico): 77.5%
- Negativo (control): 22.5%
+Training: 1,843 imágenes (70%)
+Validation: 396 imágenes (15%)
+Test: 396 imágenes (15%)
+Total: 2,635 imágenes (100%)
 ```
 
 ---
@@ -737,33 +703,39 @@ Balance de clases:
 
 ---
 
-## RESULTADOS ESPERADOS
+## RESULTADOS DEL ENTRENAMIENTO
 
-### Objetivos de Performance
-- **Accuracy mínima esperada:** 85%
-- **Precision objetivo:** >80% para ambas clases
-- **Recall objetivo:** >80% para ambas clases
-- **F1-Score objetivo:** >0.80
-- **AUC objetivo:** >0.90
+### Evaluación en Test Set (396 imágenes)
+| Métrica | Valor |
+|---------|-------|
+| Accuracy | 68.43% |
+| Precision | 86.32% |
+| Recall | 48.10% |
+| F1-Score | 61.77% |
+| ROC AUC | 0.8198 |
 
-### Aplicación Práctica
-El modelo entrenado podrá:
-1. Identificar zonas con potencial geotérmico en Colombia
-2. Diferenciar entre zonas volcánicas activas y zonas de control
-3. Procesar imágenes satelitales ASTER de 5 bandas térmicas
-4. Proporcionar probabilidades de confianza en las predicciones
-5. Servir como herramienta de apoyo para exploración geotérmica
+### Comparativo con Objetivos
+| Métrica | Objetivo Mínimo | Resultado | Estado |
+|---------|----------------|-----------|--------|
+| Accuracy | >85% | 68.43% | No alcanzado |
+| Precision | >80% | 86.32% | **Logrado** ✓ |
+| Recall | >80% | 48.10% | No alcanzado |
+| F1-Score | >0.80 | 61.77% | No alcanzado |
+| AUC | >0.90 | 0.8198 | Parcial |
+
+### Hallazgo Principal: Overfitting
+Se detectó overfitting severo a partir de la época 9 (train acc 91.75% vs val acc 44.70% en época 23). EarlyStopping seleccionó correctamente la época 8 como mejor modelo.
 
 ---
 
 ## PRÓXIMOS PASOS
 
-1. **Completar entrenamiento del modelo en GPU** (RTX 5070 objetivo, 100 épocas)
-2. **Evaluar performance en test set** (828 imágenes)
-3. **Generar visualizaciones de alta calidad** (300 DPI para tesis)
-4. **Documentar resultados finales**
+1. **Combatir overfitting** (más regularización, más datos, reducir capacidad del modelo)
+2. **Mejorar recall** (ajustar threshold, class weights, focal loss)
+3. **Considerar transfer learning** (EfficientNet-B0, ResNet50)
+4. **Entrenar con GPU** si es posible (Google Colab, Kaggle, o máquina con GPU)
 5. **Preparar presentación para sustentación de tesis**
-6. **Considerar dataset extendido** (50-100 GB con TFRecords en disco externo)
+6. **Commit y push final a GitHub**
 
 ---
 
@@ -773,7 +745,7 @@ El modelo entrenado podrá:
 - Cristian Camilo Vega Sánchez (Lead Developer)
 - Daniel Santiago Arévalo Rubiano
 - Yuliet Katerin Espitia Ayala
-- Laura Sophie Rivera Martin
+- Laura Sophie Rivera Martín
 
 **Asesor Académico:**
 - Prof. Yeison Eduardo Conejo Sandoval
@@ -815,6 +787,6 @@ El modelo entrenado podrá:
 
 ---
 
-**Última actualización:** 9 de febrero de 2026 
-**Estado del proyecto:** Fase 14 completada — Configuración centralizada y soporte disco externo 
-**Próxima revisión:** Al completar entrenamiento en GPU
+**Última actualización:** 18 de febrero de 2026 
+**Estado del proyecto:** Fase 15 — Entrenamiento completado, evaluación y visualizaciones finalizadas 
+**Próxima revisión:** Al implementar mejoras para combatir overfitting

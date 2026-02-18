@@ -1,10 +1,11 @@
 # Modelo Predictivo de Potencial Geotérmico: Arquitectura y Funcionamiento
 
 **Documento Técnico** 
-**Autores**: Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano 
+**Autores**: Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano,
+Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martín 
 **Asesor**: Prof. Yeison Eduardo Conejo Sandoval 
 **Universidad de San Buenaventura - Bogotá** 
-**Fecha**: Noviembre 2025
+**Fecha**: Noviembre 2025 – Febrero 2026
 
 ---
 
@@ -856,6 +857,28 @@ $$
 | **ROC AUC** | > 0.90 | Capacidad discriminativa |
 | **R²** | > 0.70 | Explicación de varianza |
 
+### 6.3 Resultados Reales del Entrenamiento (18 de febrero de 2026)
+
+El modelo fue entrenado con 2,635 imágenes (85 originales augmentadas), divididas en 1,843 train / 396 val / 396 test. Entrenamiento de 23 épocas en CPU (Intel i5-10300H), con EarlyStopping seleccionando la época 8 como mejor modelo.
+
+| Métrica | Objetivo | Resultado | Estado |
+|---------|----------|-----------|--------|
+| **Accuracy** | > 85% | 68.43% | No alcanzado |
+| **Precision** | > 80% | 86.32% | **Logrado** ✓ |
+| **Recall** | > 80% | 48.10% | No alcanzado |
+| **F1-Score** | > 80% | 61.77% | No alcanzado |
+| **ROC AUC** | > 0.90 | 0.8198 | Parcial (~91%) |
+| **R²** | > 0.70 | -0.2673 | No alcanzado |
+
+**Matriz de Confusión (Test: 396 imágenes):**
+```
+              Predicho Neg  Predicho Pos
+Real Neg         170          16
+Real Pos         109         101
+```
+
+**Análisis:** Se detectó overfitting severo a partir de la época 9 (train accuracy 91.75% vs val accuracy 44.70% en época 23). La Precision es la única métrica que superó el objetivo. El bajo recall (48.10%) indica que el modelo deja de detectar más del 50% de las zonas geotérmicas reales. Ver `ANALISIS_ENTRENAMIENTO.md` para detalles completos.
+
 ---
 
 ## 7. Sistema de Predicción
@@ -1240,6 +1263,8 @@ python -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU')
 **Autores:**
 - **Cristian Camilo Vega Sánchez** - ccvegas@academia.usbbog.edu.co
 - **Daniel Santiago Arévalo Rubiano** - dsarevalor@academia.usbbog.edu.co
+- **Yuliet Katerin Espitia Ayala** - ykespitiaa@academia.usbbog.edu.co
+- **Laura Sophie Rivera Martín** - lsriveram@academia.usbbog.edu.co
 
 **Asesor:**
 - **Prof. Yeison Eduardo Conejo Sandoval** - yconejo@usbbog.edu.co
@@ -1259,7 +1284,7 @@ https://github.com/crisveg24/geotermia-colombia-cnn
  <strong>Universidad de San Buenaventura - Bogotá</strong><br>
  Facultad de Ingeniería<br>
  Programa de Ingeniería de Sistemas<br>
- Noviembre 2025
+ Noviembre 2025 – Febrero 2026
 </p>
 
 ---

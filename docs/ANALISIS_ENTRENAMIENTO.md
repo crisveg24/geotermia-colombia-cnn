@@ -1,31 +1,45 @@
-# ANÁLISIS DEL ENTRENAMIENTO - CNN Geotermia
+# ANÁLISIS DEL ENTRENAMIENTO - CNN Geotermia Colombia
 
-**Fecha:** 3 de noviembre de 2025 
-**Modelo:** GeotermiaCNN (Custom ResNet-inspired) 
-**Estado:** Entrenamiento interrumpido tras 30 épocas exitosas
+**Fecha del entrenamiento:** 18 de febrero de 2026  
+**Autores:** Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano,
+Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martín  
+**Modelo:** GeotermiaCNN (Custom ResNet-inspired)  
+**Estado:** Entrenamiento **COMPLETADO** — 23 épocas con EarlyStopping (patience=15)
 
 ---
 
 ## RESUMEN EJECUTIVO
 
-El entrenamiento comenzó exitosamente a las **18:55:28** y completó **30 de 100 épocas** antes de interrumpirse. Las métricas muestran un progreso saludable con tendencias positivas consistentes y sin señales de overfitting.
+El entrenamiento del modelo CNN se completó exitosamente el 18 de febrero de 2026, ejecutado en CPU (Intel i5-10300H) debido a que TensorFlow 2.20.0 en Windows no soporta CUDA. El modelo entrenó durante **23 épocas** (~35 minutos), con EarlyStopping deteniendo el entrenamiento cuando la val_loss dejó de mejorar. La **mejor época fue la 8** con val_accuracy de 70.96%.
 
-### Métricas Clave (Época 30)
+### Métricas de Evaluación en Test Set (396 imágenes)
 ```
- Accuracy: 65.26% (estable, ligera mejora)
- AUC: 0.6252 (crecimiento +39.5% desde época 1)
- Loss: 0.9241 (reducción -6.6% desde época 1)
- Precision: 84.61% (excelente discriminación positiva)
- Recall: 68.27% (bueno, margen de mejora)
- F1-Score: ~75.54% (calculado: 2*P*R/(P+R))
+ Accuracy:   68.43%
+ Precision:  86.32%
+ Recall:     48.10%
+ F1-Score:   61.77%
+ ROC AUC:    0.8198
+ R²:        -0.2673
 ```
 
-### Tiempo y Performance
+### Métricas de la Mejor Época (Época 8, validación)
 ```
- Tiempo por época: 117 segundos (1.95 minutos)
- Tiempo transcurrido: 59 minutos (30 épocas)
- Tiempo restante est.: 137 minutos (70 épocas × 117s)
- Tiempo total est.: 196 minutos (3.27 horas)
+ val_loss:       0.7710 (mínimo alcanzado)
+ val_accuracy:   70.96%
+ train_loss:     0.6268
+ train_accuracy: 83.40%
+```
+
+### Configuración del Entrenamiento
+```
+ Dataset:         2,635 imágenes (85 originales augmentadas)
+ Split:           1,843 train / 396 val / 396 test
+ Batch size:      32
+ Épocas máximas:  100 (detenido en 23 por EarlyStopping)
+ Optimizer:       Adam con ReduceLROnPlateau
+ Hardware:        CPU Intel i5-10300H (sin GPU disponible)
+ Tiempo/época:    ~90 segundos
+ Tiempo total:    ~35 minutos
 ```
 
 ---
@@ -34,337 +48,218 @@ El entrenamiento comenzó exitosamente a las **18:55:28** y completó **30 de 10
 
 ### Tabla Completa de Métricas
 
-| Época | Accuracy | AUC | Loss | Precision | Recall | Tiempo (s) |
-|-------|----------|-----|------|-----------|--------|------------|
-| 1 | 65.62% | 0.4481 | 0.9892 | - | - | 136 |
-| 2 | 66.41% | 0.4828 | 0.9149 | - | - | 117 |
-| 3 | 66.84% | 0.5126 | 0.8989 | - | - | 116 |
-| 4 | 66.15% | 0.5237 | 0.9018 | - | - | 118 |
-| 5 | 65.29% | 0.5265 | 0.9215 | - | - | 117 |
-| 6 | 65.00% | 0.5359 | 0.9350 | - | - | 117 |
-| 7 | 64.64% | 0.5446 | 0.9439 | - | - | 117 |
-| 8 | 64.28% | 0.5500 | 0.9491 | - | - | 117 |
-| 9 | 64.20% | 0.5567 | 0.9520 | - | - | 117 |
-| 10 | 64.15% | 0.5634 | 0.9523 | - | - | 117 |
-| 11 | 64.16% | 0.5677 | 0.9528 | - | - | 117 |
-| 12 | 64.15% | 0.5712 | 0.9528 | - | - | 117 |
-| 13 | 64.21% | 0.5749 | 0.9522 | - | - | 117 |
-| 14 | 64.29% | 0.5789 | 0.9509 | - | - | 117 |
-| 15 | 64.32% | 0.5819 | 0.9498 | - | - | 117 |
-| 16 | 64.35% | 0.5844 | 0.9494 | - | - | 117 |
-| 17 | 64.36% | 0.5865 | 0.9488 | - | - | 117 |
-| 18 | 64.42% | 0.5889 | 0.9476 | - | - | 117 |
-| 19 | 64.48% | 0.5916 | 0.9462 | - | - | 117 |
-| 20 | 64.55% | 0.5944 | 0.9447 | - | - | 117 |
-| 21 | 64.63% | 0.5974 | 0.9429 | - | - | 117 |
-| 22 | 64.70% | 0.6004 | 0.9410 | - | - | 117 |
-| 23 | 64.76% | 0.6037 | 0.9387 | - | - | 117 |
-| 24 | 64.83% | 0.6070 | 0.9362 | - | - | 117 |
-| 25 | 64.91% | 0.6104 | 0.9335 | - | - | 117 |
-| 26 | 64.98% | 0.6136 | 0.9312 | - | - | 117 |
-| 27 | 65.04% | 0.6166 | 0.9294 | - | - | 117 |
-| 28 | 65.11% | 0.6194 | 0.9276 | - | - | 117 |
-| 29 | 65.18% | 0.6223 | 0.9258 | - | - | 117 |
-| 30 | 65.26% | 0.6252 | 0.9241 | 0.8461 | 0.6827 | 117 |
+| Época | Train Loss | Train Acc | Val Loss | Val Acc | LR |
+|-------|-----------|-----------|----------|---------|-----|
+| 1 | 0.9749 | 59.09% | 0.9008 | 53.03% | 0.001000 |
+| 2 | 0.8932 | 65.93% | 0.9338 | 53.03% | 0.001000 |
+| 3 | 0.8459 | 69.78% | 1.0223 | 53.03% | 0.001000 |
+| 4 | 0.7803 | 73.41% | 1.0352 | 53.03% | 0.001000 |
+| 5 | 0.7270 | 77.05% | 1.1625 | 53.03% | 0.001000 |
+| 6 | 0.6761 | 80.03% | 0.8735 | 53.28% | 0.001000 |
+| 7 | 0.6552 | 81.77% | 0.8723 | 53.79% | 0.001000 |
+| **8** | **0.6268** | **83.40%** | **0.7710** | **70.96%** | **0.001000** |
+| 9 | 0.6106 | 83.83% | 1.5124 | 46.97% | 0.001000 |
+| 10 | 0.5788 | 85.46% | 0.8155 | 69.19% | 0.001000 |
+| 11 | 0.5645 | 86.33% | 1.3460 | 39.65% | 0.001000 |
+| 12 | 0.5629 | 86.60% | 1.1631 | 46.97% | 0.001000 |
+| 13 | 0.5562 | 85.84% | 1.6180 | 46.21% | 0.001000 |
+| 14 | 0.5241 | 87.47% | 4.5237 | 46.97% | 0.001000 |
+| 15 | 0.5072 | 88.93% | 1.4094 | 45.71% | 0.001000 |
+| 16 | 0.5041 | 88.55% | 3.6186 | 46.97% | 0.001000 |
+| 17 | 0.4898 | 89.58% | 2.5557 | 46.97% | 0.001000 |
+| 18 | 0.4915 | 89.09% | 5.4512 | 46.21% | 0.001000 |
+| 19 | 0.4697 | 90.23% | 4.7367 | 46.97% | 0.001000 |
+| 20 | 0.4578 | 90.29% | 3.1227 | 46.21% | 0.001000 |
+| 21 | 0.4475 | 91.26% | 2.2683 | 46.72% | 0.001000 |
+| 22 | 0.4382 | 91.48% | 4.5883 | 45.45% | 0.001000 |
+| 23 | 0.4393 | 91.75% | 4.8363 | 44.70% | 0.001000 |
+
+> **Nota:** La época 8 (resaltada) fue seleccionada como mejor modelo por mínimo val_loss (0.7710).
 
 ---
 
 ## ANÁLISIS DE TENDENCIAS
 
-### 1. Accuracy (Precisión General)
+### 1. Overfitting Severo Detectado
 
-**Tendencia:** Estable con ligera mejora sostenida
-
-```
-Época 1-5: 65.62% → 65.29% (leve caída inicial, ajuste normal)
-Época 5-10: 65.29% → 64.15% (consolidación)
-Época 10-20: 64.15% → 64.55% (recuperación gradual)
-Época 20-30: 64.55% → 65.26% (mejora constante)
-```
-
-**Interpretación:**
-- Patrón normal: caída inicial seguida de mejora
-- Sin estancamiento: mejora continua de época 10 en adelante
-- Velocidad apropiada: +0.07% por época (épocas 20-30)
-
-### 2. AUC (Area Under ROC Curve)
-
-**Tendencia:** Crecimiento sostenido y saludable
+El hallazgo más importante del entrenamiento es la presencia de **overfitting significativo**:
 
 ```
-Época 1: 0.4481 (inicio bajo, esperado)
-Época 10: 0.5634 (+25.7%)
-Época 20: 0.5944 (+32.6%)
-Época 30: 0.6252 (+39.5%)
+Época 8 (mejor):  Train Acc = 83.40%  |  Val Acc = 70.96%  |  Gap = 12.44%
+Época 23 (final): Train Acc = 91.75%  |  Val Acc = 44.70%  |  Gap = 47.05%
 ```
 
-**Tasa de mejora:**
-- Épocas 1-10: +0.0115 AUC/época
-- Épocas 10-20: +0.0031 AUC/época
-- Épocas 20-30: +0.0031 AUC/época
+**Evidencia:**
+- Train loss disminuyó consistentemente: 0.9749 → 0.4393 (-55%)
+- Val loss pasó de un mínimo de 0.7710 (época 8) a 4.8363 (época 23) — **aumento de 527%**
+- Train accuracy subió constantemente: 59.09% → 91.75%
+- Val accuracy colapsó después de época 8: 70.96% → 44.70%
 
-**Interpretación:**
-- Mejora rápida inicial, luego estabilización
-- Crecimiento sostenido sin meseta
-- AUC > 0.6: discriminación aceptable
-- Objetivo: AUC > 0.9 alcanzable con más épocas
+**Causas probables:**
+- Dataset relativamente pequeño (1,843 imágenes de entrenamiento, solo 85 originales)
+- Las imágenes augmentadas comparten la misma fuente, limitando diversidad real
+- La capacidad del modelo (bloques residuales con 32→512 filtros) supera la complejidad del dataset
 
-### 3. Loss (Función de Pérdida)
+### 2. Comportamiento de la Validation Loss
 
-**Tendencia:** Disminución constante y saludable
-
-```
-Época 1: 0.9892 (inicio alto)
-Época 5: 0.9215 (-6.8%)
-Época 10: 0.9523 (pequeño rebote)
-Época 20: 0.9447 (estabilización)
-Época 30: 0.9241 (-6.6% total)
-```
-
-**Interpretación:**
-- Disminución gradual sin colapso
-- Rebotes pequeños normales (épocas 4-12)
-- Tendencia general descendente clara
-- Loss aún alto (>0.9): necesita más entrenamiento
-
-### 4. Precision (Verdaderos Positivos / Predicciones Positivas)
-
-**Valor actual:** 84.61% (época 30)
-
-**Interpretación:**
-- **Excelente:** 84.61% de las predicciones "geotérmico" son correctas
-- Pocas falsas alarmas: solo 15.39% de falsos positivos
-- Confiabilidad alta para aplicación práctica
-- **Implicación:** El modelo es conservador pero preciso
-
-### 5. Recall (Sensibilidad / Verdaderos Positivos / Total Positivos)
-
-**Valor actual:** 68.27% (época 30)
-
-**Interpretación:**
-- **Moderado:** Captura 68.27% de las zonas geotérmicas reales
-- Miss rate: 31.73% de zonas geotérmicas no detectadas
-- Trade-off típico: alta precision, menor recall
-- **Objetivo de mejora:** Aumentar recall a >80% sin sacrificar precision
-
-### 6. F1-Score (Media Armónica Precision-Recall)
-
-**Valor calculado:** ~75.54%
+La val_loss muestra alta volatilidad después de la época 8:
 
 ```
-F1 = 2 × (Precision × Recall) / (Precision + Recall)
-F1 = 2 × (0.8461 × 0.6827) / (0.8461 + 0.6827)
-F1 = 2 × 0.5776 / 1.5288
-F1 = 0.7554 = 75.54%
+Épocas 1-8:   Disminución gradual (0.9008 → 0.7710) ✓
+Épocas 9-23:  Explosión errática (1.51, 0.82, 1.35, 1.16, 1.62, 4.52, ..., 4.84) ✗
 ```
 
-**Interpretación:**
-- Balance aceptable entre precision y recall
-- Objetivo: F1 > 85% para aplicación robusta
+Esto indica que el modelo está memorizando patrones del training set que no generalizan al validation set.
+
+### 3. Train Loss y Accuracy
+
+El modelo aprende eficientemente del training set:
+
+```
+Fase 1 (Épocas 1-5):   Loss 0.97→0.73  Acc 59%→77%  (aprendizaje rápido)
+Fase 2 (Épocas 6-10):  Loss 0.68→0.58  Acc 80%→85%  (refinamiento)
+Fase 3 (Épocas 11-23): Loss 0.56→0.44  Acc 86%→92%  (memorización/overfitting)
+```
+
+### 4. Precision vs Recall (Evaluación en Test)
+
+```
+Precision: 86.32% — Alta confiabilidad en predicciones positivas
+Recall:    48.10% — Solo detecta ~48% de las zonas geotérmicas reales
+```
+
+El modelo es **conservador**: cuando predice "geotérmico" suele acertar (86%), pero pierde más de la mitad de las zonas geotérmicas reales. Esto produce:
+- **170 verdaderos negativos** y **101 verdaderos positivos**
+- **16 falsos positivos** (bueno) y **109 falsos negativos** (problema)
+
+### 5. ROC AUC = 0.8198
+
+A pesar del overfitting, el ROC AUC de 0.8198 en test es un resultado **aceptable**:
+- Indica que el modelo tiene capacidad real de discriminación
+- Supera significativamente el azar (0.5)
+- La mejor época (8) fue seleccionada correctamente por EarlyStopping
 
 ---
 
 ## ANÁLISIS TÉCNICO
 
-### Comportamiento del Modelo
+### Matriz de Confusión (Test: 396 imágenes)
 
-#### Fase 1: Inicialización y Ajuste Rápido (Épocas 1-5)
 ```
-- Accuracy variable: 65.62% → 65.29%
-- AUC crecimiento rápido: 0.4481 → 0.5265
-- Loss caída inicial: 0.9892 → 0.9215
-```
-
-**Análisis:** El modelo está explorando el espacio de soluciones, encontrando características relevantes rápidamente.
-
-#### Fase 2: Consolidación (Épocas 6-15)
-```
-- Accuracy caída temporal: 65.29% → 64.32%
-- AUC crecimiento sostenido: 0.5265 → 0.5819
-- Loss estabilización alta: ~0.95
+                    Predicho
+                 Neg    Pos
+Real Neg  |   170  |   16   |  → Specificity: 91.40%
+Real Pos  |   109  |  101   |  → Recall: 48.10%
 ```
 
-**Análisis:** Ajuste de pesos más fino, el modelo está refinando fronteras de decisión.
+- **True Negative Rate:** 91.40% (excelente)
+- **True Positive Rate (Recall):** 48.10% (bajo)
+- **Precision:** 86.32%
+- **El modelo tiende a predecir "negativo"** → sesgo conservador
 
-#### Fase 3: Mejora Gradual (Épocas 16-30)
-```
-- Accuracy recuperación: 64.35% → 65.26%
-- AUC crecimiento lineal: 0.5844 → 0.6252
-- Loss reducción constante: 0.9494 → 0.9241
-```
+### Factores que Afectan el Rendimiento
 
-**Análisis:** Convergencia saludable hacia óptimo local, sin overfitting.
+1. **Dataset limitado:** Solo 85 imágenes originales (45 positivas + 40 negativas). Aunque se augmentaron a 2,635, la diversidad real es limitada.
 
-### Señales Positivas 
+2. **Desbalance post-augmentación:** Puede haber más imágenes de una clase que otra, afectando el entrenamiento.
 
-1. **No hay overfitting:**
- - Accuracy y loss mejoran consistentemente
- - No se observa divergencia entre train y validation (necesitaríamos val_loss para confirmar)
+3. **Entrenamiento en CPU:** TensorFlow 2.20.0 en Windows no tiene soporte CUDA. El entrenamiento en CPU limita la capacidad de experimentar con hiperparámetros.
 
-2. **Convergencia estable:**
- - Tiempo por época consistente (~117s)
- - Métricas mejoran suavemente sin oscilaciones
-
-3. **Balance precision-recall:**
- - Alta precision (84.61%) con recall aceptable (68.27%)
- - F1-Score balanceado (~75.54%)
-
-4. **AUC creciente:**
- - Mejor métrica que accuracy para datos desbalanceados
- - Crecimiento sostenido indica mejora real en discriminación
-
-### Señales de Atención 
-
-1. **Recall moderado:**
- - 31.73% de zonas geotérmicas no detectadas
- - Puede mejorarse con más épocas o ajuste de threshold
-
-2. **Loss aún alto:**
- - Loss > 0.9 indica margen de mejora
- - Necesita más entrenamiento para convergencia completa
-
-3. **Accuracy estable:**
- - Mejora lenta pero consistente
- - Dataset desbalanceado (77.5% positivos) puede estar influyendo
+4. **Capacidad del modelo vs datos:** La arquitectura ResNet-inspired con 4 bloques residuales (hasta 512 filtros) tiene alta capacidad, facilitando el overfitting con datos limitados.
 
 ---
 
-## PREDICCIONES Y PROYECCIONES
+## COMPARATIVO: OBJETIVOS vs RESULTADOS REALES
 
-### Proyección a 100 Épocas (extrapolación lineal)
+| Métrica | Objetivo Mínimo | Objetivo Ideal | Resultado Real | Estado |
+|---------|-----------------|----------------|----------------|--------|
+| **Accuracy** | >85% | >90% | 68.43% | No alcanzado |
+| **Precision** | >80% | >85% | 86.32% | **Logrado** ✓ |
+| **Recall** | >80% | >85% | 48.10% | No alcanzado |
+| **F1-Score** | >80% | >85% | 61.77% | No alcanzado |
+| **AUC-ROC** | >0.90 | >0.95 | 0.8198 | Parcial (~91% del mín.) |
 
-Basado en tendencia de épocas 20-30:
-
-| Métrica | Época 30 | Tasa de Mejora | Proyección Época 100 |
-|---------|----------|----------------|----------------------|
-| **Accuracy** | 65.26% | +0.07%/época | ~70.16% |
-| **AUC** | 0.6252 | +0.0031/época | ~0.84 |
-| **Loss** | 0.9241 | -0.0021/época | ~0.78 |
-| **Precision** | 84.61% | ? | ~85-90% |
-| **Recall** | 68.27% | ? | ~75-82% |
-
-**Nota:** Proyecciones asumen tendencia lineal. En realidad, la mejora se desacelera cerca de la convergencia.
-
-### Estimación Realista (con desaceleración)
-
-| Métrica | Estimación Conservadora | Estimación Optimista |
-|---------|------------------------|----------------------|
-| **Accuracy** | 68-72% | 73-78% |
-| **AUC** | 0.75-0.82 | 0.83-0.90 |
-| **Loss** | 0.75-0.85 | 0.65-0.75 |
-| **F1-Score** | 75-80% | 80-85% |
+**Conclusión:** Solo la **Precision** alcanzó el objetivo mínimo. El ROC AUC está cerca pero no lo logra. Las demás métricas quedan lejos, principalmente por el bajo recall.
 
 ---
 
-## RECOMENDACIONES
+## RECOMENDACIONES PARA MEJORAR
 
-### Para Continuar el Entrenamiento
+### Prioridad Alta — Combatir Overfitting
 
-1. **Reanudar desde último checkpoint**
- - El modelo se guardó en: `models/saved_models/geotermia_cnn_custom_best.keras`
- - Callbacks configurados para guardar mejor modelo automáticamente
+1. **Aumentar regularización:**
+   - Incrementar dropout rate (actualmente SpatialDropout2D)
+   - Agregar L2 regularización a las capas Dense
+   - Considerar reducir la capacidad del modelo (menos filtros)
 
-2. **Monitorear validation loss**
- - Revisar logs de TensorBoard: `logs/geotermia_cnn_custom_20251103-185602`
- - Confirmar que no hay overfitting
+2. **Mejorar data augmentation:**
+   - Agregar técnicas: Mixup, CutMix, random erasing
+   - Aumentar variabilidad en rotaciones, scales y flips
+   - Considerar augmentación online (en tiempo de entrenamiento)
 
-3. **Considerar early stopping**
- - Si val_loss deja de mejorar por 15 épocas, detenerse automáticamente
- - Callback ya configurado con patience=15
+3. **Obtener más datos originales:**
+   - Expandir la búsqueda de imágenes ASTER a más regiones
+   - Incluir zonas geotérmicas de otros países andinos para transfer
+   - Más zonas negativas con paisajes variados
 
-4. **Ajustar learning rate si se estanca**
- - ReduceLROnPlateau configurado (factor=0.5, patience=5)
- - Se reducirá automáticamente si necesario
+### Prioridad Media — Mejorar Recall
 
-### Para Mejorar Performance
+4. **Ajustar threshold de clasificación:**
+   - Threshold actual: 0.5 → probar 0.3 o 0.4 para aumentar recall
+   - Analizar curva ROC para punto óptimo de operación
+   - Trade-off: aumentar recall reducirá precision
 
-1. **Ajustar threshold de clasificación:**
- - Actualmente: 0.5 (por defecto)
- - Considerar threshold más bajo para aumentar recall
- - Analizar curva ROC para threshold óptimo
+5. **Class weights más agresivos:**
+   - Dar más peso a la clase positiva para que el modelo penalice más los falsos negativos
 
-2. **Analizar errores:**
- - Revisar imágenes mal clasificadas
- - Identificar patrones en falsos negativos (31.73%)
+6. **Focal Loss:**
+   - Reemplazar binary crossentropy por focal loss
+   - Pone más énfasis en ejemplos difíciles de clasificar
 
-3. **Considerar class weights ajustados:**
- - Actual: {0: 2.2247, 1: 0.6450}
- - Aumentar peso de clase 0 si queremos más balance
+### Prioridad Baja — Arquitectura
+
+7. **Transfer Learning:**
+   - Usar EfficientNet-B0 o ResNet50 preentrenado en ImageNet
+   - Fine-tuning con nuestro dataset
+
+8. **Entrenar con GPU:**
+   - Usar Google Colab, Kaggle, o una máquina con GPU
+   - Permite experimentar más rápido con hiperparámetros
 
 ---
 
 ## ARCHIVOS GENERADOS
 
-### Modelo
+### Modelo (en `models/saved_models/`)
 ```
-models/saved_models/
- └── geotermia_cnn_custom_best.keras [~19.17 MB]
- - Modelo con mejores pesos hasta época 30
- - Listo para reanudar entrenamiento
+geotermia_cnn_custom_best.keras   — 57.69 MB (mejor época 8)
+geotermia_cnn_custom_final.keras  — 57.69 MB (última época 23)
 ```
 
-### Logs
+### Métricas y Logs (en `results/metrics/` y `logs/`)
 ```
-logs/
- ├── geotermia_cnn_custom_20251103-185602.csv
- │ - Métricas de 30 épocas en formato CSV
- │
- └── geotermia_cnn_custom_20251103-185602/
- - Logs de TensorBoard (visualización web)
+results/metrics/evaluation_metrics.json   — Métricas de evaluación en test
+results/metrics/training_history.json     — Historial de 23 épocas
+results/metrics/metrics_table.csv         — Tabla de métricas en CSV
+logs/history_custom.json                  — Historial original
+logs/geotermia_cnn_custom_*.csv           — Logs CSV por época
 ```
 
-### Cómo Visualizar
-```bash
-# TensorBoard
-python -m tensorboard --logdir=logs/geotermia_cnn_custom_20251103-185602
-# Abrir: http://localhost:6006
+### Visualizaciones (en `results/figures/`)
+```
+training_history.png     — Curvas de loss y accuracy por época
+confusion_matrix.png     — Matriz de confusión del test set
+roc_curve.png            — Curva ROC con AUC
+metrics_comparison.png   — Barras comparativas de métricas
+```
 
-# CSV con pandas
-import pandas as pd
-df = pd.read_csv('logs/geotermia_cnn_custom_20251103-185602.csv')
-print(df.tail(10)) # Últimas 10 épocas
+### Reporte PDF
+```
+results/reporte_entrenamiento_completo.pdf — Reporte de 12 páginas
 ```
 
 ---
 
-## ANÁLISIS COMPARATIVO
-
-### Modelo Custom vs Objetivos del Proyecto
-
-| Métrica | Objetivo Mínimo | Objetivo Ideal | Actual (Época 30) | Estado |
-|---------|-----------------|----------------|-------------------|--------|
-| **Accuracy** | >85% | >90% | 65.26% | En progreso |
-| **Precision** | >80% | >85% | 84.61% | Logrado |
-| **Recall** | >80% | >85% | 68.27% | Por mejorar |
-| **F1-Score** | >80% | >85% | ~75.54% | En progreso |
-| **AUC** | >0.90 | >0.95 | 0.6252 | En progreso |
-
-**Conclusión:** El modelo está en camino correcto pero necesita completar el entrenamiento para alcanzar objetivos.
-
----
-
-## PRÓXIMOS PASOS
-
-### Inmediato
-1. Documentación actualizada
-2. **Reanudar entrenamiento** (70 épocas restantes)
-3. Monitorear métricas hasta convergencia
-
-### Al Completar Entrenamiento
-1. Evaluar en test set (828 imágenes)
-2. Generar curva ROC completa
-3. Analizar matriz de confusión
-4. Calcular métricas finales
-5. Comparar con objetivos
-
-### Optimizaciones Futuras (si es necesario)
-1. Transfer learning (EfficientNet, ResNet50)
-2. Hyperparameter tuning (learning rate, batch size)
-3. Más data augmentation
-4. Ensemble de modelos
-
----
-
-**Última actualización:** 3 de noviembre de 2025 - 19:56 
-**Estado:** Análisis completo de 30 épocas exitosas 
-**Próxima acción:** Reanudar entrenamiento para completar 100 épocas
+**Última actualización:** 18 de febrero de 2026  
+**Estado:** Entrenamiento completado — Evaluación y análisis finalizados  
+**Próxima acción:** Implementar mejoras para combatir overfitting (ver Recomendaciones)

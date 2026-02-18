@@ -3,7 +3,7 @@
 **Proyecto:** Sistema CNN para Identificación de Zonas Geotérmicas en Colombia 
 **Institución:** Universidad de San Buenaventura - Bogotá 
 **Fecha de inicio:** Noviembre 2025 
-**Última actualización:** 9 de febrero de 2026 
+**Última actualización:** 18 de febrero de 2026 
 **Repositorio:** https://github.com/crisveg24/geotermia-colombia-cnn
 
 ---
@@ -12,15 +12,15 @@
 
 | Componente | Progreso | Notas |
 |-----------|----------|-------|
-| Documentación técnica | 100% | `MODELO_PREDICTIVO.md` (1,269 líneas) |
+| Documentación técnica | 100% | `MODELO_PREDICTIVO.md` (1,272 líneas) |
 | Scripts de pipeline | 100% | Descarga, augmentación, preparación, entrenamiento, evaluación |
 | Dataset original | 100% | 85 imágenes ASTER descargadas desde GEE |
-| Dataset augmentado | 100% | 5,518 imágenes (64.9x factor de aumento) |
-| Entrenamiento parcial | 30% | 30/100 épocas en CPU |
+| Dataset augmentado | 100% | 2,635 imágenes (~31x factor de aumento) |
+| Entrenamiento completo | 100% | 23 épocas en CPU (EarlyStopping, mejor época 8) |
 | Interfaz gráfica | 100% | Streamlit con Folium, Plotly |
 | Optimizaciones del modelo | 100% | SpatialDropout2D, AdamW, Label Smoothing, PR-AUC, F1Score |
-| Entrenamiento completo | Pendiente | Requiere GPU (RTX 5070 objetivo) |
-| Evaluación final | Pendiente | Tras completar entrenamiento |
+| Evaluación final | 100% | Test: Accuracy 68.43%, ROC AUC 0.8198 |
+| Visualizaciones | 100% | 4 PNGs + Reporte PDF de 12 páginas |
 
 ---
 
@@ -37,8 +37,8 @@
 - **85 imágenes ASTER** descargadas desde Google Earth Engine (NASA/ASTER_GED/AG100_003).
 - **45 positivas** de 9 zonas volcánicas/geotérmicas (Nevado del Ruiz, Puracé, Galeras, Paipa, Tolima, Cumbal, Sotará, Azufral, termales).
 - **40 negativas** de 5 zonas de control (Llanos, Amazonas, Costa Caribe, Zona Andina Oriental, Chocó).
-- **5,518 imágenes** tras augmentación con 30 transformaciones (geométricas, intensidad, ruido, combinaciones).
-- **División estratificada:** 3,862 train (70%) / 828 val (15%) / 828 test (15%).
+- **2,635 imágenes** tras augmentación con 30 transformaciones (geométricas, intensidad, ruido, combinaciones).
+- **División estratificada:** 1,843 train (70%) / 396 val (15%) / 396 test (15%).
 
 ### 2.3 Modelo CNN
 - Arquitectura ResNet-inspired personalizada: 52 capas, 5,025,409 parámetros.
@@ -151,18 +151,27 @@ Get-ChildItem models/best_model.keras | Select-Object Name, Length, LastWriteTim
 
 ---
 
-## 6. Métricas del Entrenamiento Parcial (Época 30/100)
+## 6. Resultados del Entrenamiento Completado (18 de febrero de 2026)
 
-| Métrica | Valor | Tendencia |
-|---------|-------|-----------|
-| Accuracy | 65.26% | Mejorando (+0.07%/época) |
-| AUC | 0.6252 | Crecimiento sostenido (+39.5% desde época 1) |
-| Loss | 0.9241 | Disminuyendo (-6.6% total) |
-| Precision | 84.61% | Excelente |
-| Recall | 68.27% | Moderado, margen de mejora |
-| F1-Score | ~75.54% | Balance aceptable |
+### Evaluación en Test Set (396 imágenes)
 
-**Diagnóstico:** No hay overfitting. Convergencia estable. El modelo necesita completar las 100 épocas con GPU para alcanzar los objetivos.
+| Métrica | Valor |
+|---------|-------|
+| Accuracy | 68.43% |
+| Precision | 86.32% |
+| Recall | 48.10% |
+| F1-Score | 61.77% |
+| ROC AUC | 0.8198 |
+| R² | -0.2673 |
+
+### Mejor Época (Época 8 de 23)
+
+| Métrica | Train | Validation |
+|---------|-------|------------|
+| Loss | 0.6268 | 0.7710 |
+| Accuracy | 83.40% | 70.96% |
+
+**Diagnóstico:** Se detectó **overfitting significativo** a partir de la época 9. El train accuracy llegó a 91.75% mientras la val accuracy cayó a 44.70% en la época 23. EarlyStopping seleccionó correctamente la época 8 como mejor modelo. El ROC AUC de 0.8198 indica capacidad real de discriminación.
 
 > Para el análisis detallado por época, consultar `ANALISIS_ENTRENAMIENTO.md`.
 
@@ -185,18 +194,11 @@ Get-ChildItem models/best_model.keras | Select-Object Name, Length, LastWriteTim
 ### Fase 1 — Configuración (Completada)
 Documentación, scripts, datos de metadata, repositorio en GitHub.
 
-### Fase 2 — Entrenamiento (Pendiente)
-Clonar en máquina con GPU → regenerar datos → entrenar 100 épocas → evaluar → push resultados.
+### Fase 2 — Entrenamiento (Completada — 18 de febrero de 2026)
+Descarga de 85 imágenes → Augmentación a 2,635 → Preparación de splits → Entrenamiento 23 épocas en CPU → Evaluación en test → Visualizaciones generadas → Reporte PDF.
 
-```bash
-# En máquina con GPU:
-git clone https://github.com/crisveg24/geotermia-colombia-cnn.git
-cd geotermia-colombia-cnn
-# Seguir docs/ENTRENAMIENTO_EXTERNO.md
-```
-
-### Fase 3 — Finalización (Pendiente)
-Pull resultados → merge → actualizar documentación → presentación de tesis.
+### Fase 3 — Mejoras y Finalización (En progreso)
+Combatir overfitting → Mejorar recall → Actualizar documentación → Presentación de tesis.
 
 ---
 
@@ -266,7 +268,7 @@ geotermia-colombia-cnn/
 - Cristian Camilo Vega Sánchez (Lead Developer)
 - Daniel Santiago Arévalo Rubiano
 - Yuliet Katerin Espitia Ayala
-- Laura Sophie Rivera Martin
+- Laura Sophie Rivera Martín
 
 **Asesor Académico:**
 - Prof. Yeison Eduardo Conejo Sandoval
@@ -297,10 +299,11 @@ geotermia-colombia-cnn/
 - Mayor peso a clase minoritaria (negativo) para evitar sesgo.
 
 ### Hardware Requerido
-- **Mínimo:** CPU con 8 GB RAM (entrenamiento lento, ~117s/época).
-- **Recomendado:** GPU NVIDIA con CUDA (RTX 5070 objetivo, ~5-10s/época estimado).
+- **Mínimo:** CPU con 8 GB RAM (entrenamiento lento, ~90s/época).
+- **Recomendado:** GPU NVIDIA con CUDA (~5-10s/época estimado).
+- **Usado:** Intel i5-10300H (CPU), 12 GB RAM, TensorFlow 2.20.0 (sin CUDA en Windows).
 
 ---
 
-**Última actualización:** 9 de febrero de 2026 
+**Última actualización:** 18 de febrero de 2026 
 **Documento fusionado desde:** CONFIGURACION_COMPLETA.md, RESUMEN_EJECUTIVO.md, MONITOREO_ENTRENAMIENTO.md
