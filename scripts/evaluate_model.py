@@ -23,7 +23,7 @@ from pathlib import Path
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
     confusion_matrix, classification_report, roc_curve, auc,
-    roc_auc_score, r2_score
+    roc_auc_score, matthews_corrcoef
 )
 import json
 import logging
@@ -155,14 +155,14 @@ class ModelEvaluator:
             logger.warning(f"No se pudo calcular ROC AUC: {e}")
             metrics['roc_auc'] = None
 
-        # 6. R² (Coeficiente de determinación)
+        # 6. Matthews Correlation Coefficient (v2: reemplaza R² que no es estándar para clasificación — BUG 26)
         try:
-            r2 = r2_score(self.y_test, self.y_pred)
-            metrics['r2_score'] = r2
-            logger.info(f"R² Score: {r2:.4f}")
+            mcc = matthews_corrcoef(self.y_test, self.y_pred)
+            metrics['mcc'] = mcc
+            logger.info(f"MCC: {mcc:.4f}")
         except Exception as e:
-            logger.warning(f"No se pudo calcular R²: {e}")
-            metrics['r2_score'] = None
+            logger.warning(f"No se pudo calcular MCC: {e}")
+            metrics['mcc'] = None
 
         # 7. Matriz de Confusión
         cm = confusion_matrix(self.y_test, self.y_pred)
@@ -227,6 +227,12 @@ class ModelEvaluator:
         metrics: Diccionario de métricas
         filename: Nombre del archivo
         """
+        # v2: Manejar métricas None correctamente (BUG 28)
+        def _fmt(val, fmt=".4f"):
+            return f"{val:{fmt}}" if val is not None else "N/A"
+        def _pct(val):
+            return f"{val*100:.2f}%" if val is not None else "N/A"
+
         # Crear DataFrame para la tabla de la tesis
         df_metrics = pd.DataFrame({
             'Métrica': [
@@ -235,23 +241,23 @@ class ModelEvaluator:
             'Recall',
             'F1-Score',
             'ROC AUC',
-            'R² Score'
+            'MCC'
             ],
             'Valor': [
-            f"{metrics.get('accuracy', 0):.4f}",
-            f"{metrics.get('precision', 0):.4f}",
-            f"{metrics.get('recall', 0):.4f}",
-            f"{metrics.get('f1_score', 0):.4f}",
-            f"{metrics.get('roc_auc', 0):.4f}",
-            f"{metrics.get('r2_score', 0):.4f}"
+            _fmt(metrics.get('accuracy')),
+            _fmt(metrics.get('precision')),
+            _fmt(metrics.get('recall')),
+            _fmt(metrics.get('f1_score')),
+            _fmt(metrics.get('roc_auc')),
+            _fmt(metrics.get('mcc')),
             ],
             'Porcentaje': [
-            f"{metrics.get('accuracy', 0)*100:.2f}%",
-            f"{metrics.get('precision', 0)*100:.2f}%",
-            f"{metrics.get('recall', 0)*100:.2f}%",
-            f"{metrics.get('f1_score', 0)*100:.2f}%",
-            f"{metrics.get('roc_auc', 0)*100:.2f}%",
-            f"{metrics.get('r2_score', 0)*100:.2f}%"
+            _pct(metrics.get('accuracy')),
+            _pct(metrics.get('precision')),
+            _pct(metrics.get('recall')),
+            _pct(metrics.get('f1_score')),
+            _pct(metrics.get('roc_auc')),
+            _pct(metrics.get('mcc')),
             ]
         })
 

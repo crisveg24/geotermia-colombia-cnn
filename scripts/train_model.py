@@ -21,7 +21,7 @@ import sys
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import mixed_precision
+from tensorflow.keras import mixed_precision, layers
 from tensorflow.keras.callbacks import (
     ModelCheckpoint, EarlyStopping, ReduceLROnPlateau,
     TensorBoard, CSVLogger
@@ -35,7 +35,7 @@ from typing import Dict, Optional
 # Agregar el directorio raíz al path para imports
 sys.path.append(str(Path(__file__).parent.parent))
 
-from models.cnn_geotermia import create_geotermia_model
+from models.cnn_geotermia import create_geotermia_model, get_cosine_decay_schedule
 
 # Configurar logging
 logging.basicConfig(
@@ -59,7 +59,7 @@ class GeotermiaCNNTrainer:
         batch_size: int = 32,
         epochs: int = 100,
         use_mixed_precision: bool = True,
-        use_augmentation: bool = True
+        use_augmentation: bool = False
     ):
         """
         Inicializa el trainer.
@@ -189,13 +189,13 @@ class GeotermiaCNNTrainer:
         if self.use_augmentation:
             logger.info("Data Augmentation ACTIVADO")
 
-            # Data Augmentation Layer (moderno)
+            # v2: Eliminado RandomContrast — espera datos [0,1] pero nuestros
+            # datos están normalizados con z-score (media~0, rango [-3,3])
             data_augmentation = keras.Sequential([
                 layers.RandomFlip("horizontal_and_vertical"),
                 layers.RandomRotation(0.2),
-                layers.RandomZoom(0.2),
+                layers.RandomZoom(0.1),
                 layers.RandomTranslation(0.1, 0.1),
-                layers.RandomContrast(0.2),
             ], name='data_augmentation')
 
             # Crear datasets con augmentation
@@ -256,14 +256,9 @@ class GeotermiaCNNTrainer:
             verbose=1
         ))
 
-        # 3. ReduceLROnPlateau - Reducir learning rate
-        callbacks.append(ReduceLROnPlateau(
-            monitor='val_loss',
-            factor=0.5,
-            patience=5,
-            min_lr=1e-7,
-            verbose=1
-        ))
+        # v2: ReduceLROnPlateau eliminado — conflicta con AdamW.
+        # Ahora se usa CosineDecay schedule directamente en el optimizador.
+        # Ver build_model() en cnn_geotermia.py.
 
         # 4. TensorBoard - Visualización
         tensorboard_path = self.logs_path / f'{model_name}_{timestamp}'
@@ -400,6 +395,9 @@ def main():
     print(cfg.summary())
 
     # Configuración (rutas desde config.py)
+    # v2: use_augmentation=False porque el dataset ya fue augmentado 30x offline.
+    # Activar augmentation online causaría "augmentación de augmentaciones",
+    # generando transformaciones compuestas irrealistas.
     trainer = GeotermiaCNNTrainer(
         processed_data_path='data/processed',
         model_save_path='models/saved_models',
@@ -408,7 +406,7 @@ def main():
         batch_size=cfg.BATCH_SIZE,
         epochs=cfg.EPOCHS,
         use_mixed_precision=True,
-        use_augmentation=True
+        use_augmentation=False
     )
 
     # Entrenar modelo custom
@@ -430,7 +428,4 @@ def main():
 
 
 if __name__ == '__main__':
-    # Importar layers aquí para evitar error antes de configurar TensorFlow
-    from tensorflow.keras import layers
-
     main()

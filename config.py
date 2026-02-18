@@ -91,6 +91,9 @@ class ProjectConfig:
         self.WEIGHT_DECAY = 1e-4
         self.LABEL_SMOOTHING = 0.1
 
+        # 5. Google Earth Engine (v2: centralizado, BUG 10)
+        self.GEE_PROJECT = os.environ.get("GEE_PROJECT", "alpine-air-469115-f0")
+
     # ── utilidades ──────────────────────────────────────────
 
     def is_external(self) -> bool:

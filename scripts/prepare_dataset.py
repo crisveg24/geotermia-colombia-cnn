@@ -24,7 +24,7 @@ import pandas as pd
 import rasterio
 from pathlib import Path
 from typing import Tuple, List, Dict
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GroupShuffleSplit
 from sklearn.utils import class_weight
 import logging
 from tqdm import tqdm
@@ -220,18 +220,26 @@ class GeoDataPreparator:
         for file_path in tif_files:
             filename = file_path.name
 
-            # Inferir etiqueta basada en el nombre del archivo
-            # Zonas geotérmicas conocidas: Ruiz, Purace, Galeras, Paipa, Iza, Azufral
-            geothermal_keywords = [
-                'ruiz', 'purace', 'galeras', 'paipa', 'iza', 
-                'azufral', 'volcan', 'thermal', 'hot_spring'
-            ]
+            # Inferir etiqueta basada en el directorio padre o nombre del archivo
+            # v2: Priorizar directorio (positive/negative) sobre keywords (BUG 16)
+            if 'positive' in str(file_path.parent).lower():
+                label = 1
+            elif 'negative' in str(file_path.parent).lower():
+                label = 0
+            else:
+                # Fallback: keywords ampliadas con todas las zonas de download_dataset.py
+                geothermal_keywords = [
+                    'ruiz', 'purace', 'galeras', 'paipa', 'iza', 
+                    'azufral', 'volcan', 'thermal', 'hot_spring',
+                    'cumbal', 'sotara', 'tolima', 'manizales',
+                    'santa_rosa', 'herveo', 'coconuco', 'villa_maria',
+                ]
 
-            label = 0 # Por defecto: sin potencial
-            for keyword in geothermal_keywords:
-                if keyword.lower() in filename.lower():
-                    label = 1 # Con potencial geotérmico
-                    break
+                label = 0 # Por defecto: sin potencial
+                for keyword in geothermal_keywords:
+                    if keyword.lower() in filename.lower():
+                        label = 1 # Con potencial geotérmico
+                        break
 
             data.append({
                 'filename': filename,
@@ -253,6 +261,10 @@ class GeoDataPreparator:
         """
         Prepara el dataset completo: carga, procesa y divide.
 
+        v2: El split se realiza a nivel de IMAGEN ORIGINAL para evitar
+        data leakage. Todas las augmentaciones de una misma imagen caen
+        en el mismo subset (train, val o test).
+
         Returns:
         Diccionario con arrays de train, validation y test
         """
@@ -271,6 +283,7 @@ class GeoDataPreparator:
         images = []
         labels = []
         filenames = []
+        groups = []  # v2: grupo = imagen original (para GroupShuffleSplit)
 
         logger.info("\nCargando y procesando imágenes...")
         for idx, row in tqdm(labels_df.iterrows(), total=len(labels_df)):
@@ -304,39 +317,95 @@ class GeoDataPreparator:
             labels.append(label)
             filenames.append(filename)
 
+            # v2: Extraer grupo (imagen original) para evitar data leakage.
+            # Si labels.csv tiene columna 'original_image', usarla;
+            # si no, inferir eliminando el sufijo de augmentación.
+            if 'original_image' in labels_df.columns:
+                groups.append(row['original_image'])
+            else:
+                # Inferir: "Nevado_del_Ruiz_center_rotation_90.tif" → "Nevado_del_Ruiz_center"
+                stem = Path(filename).stem
+                # Eliminar sufijos de augmentación conocidos
+                aug_suffixes = [
+                    '_original', '_rotation_90', '_rotation_180', '_rotation_270',
+                    '_rotation_45', '_rotation_neg45', '_flip_horizontal', '_flip_vertical',
+                    '_brightness_1.2', '_brightness_0.8', '_contrast_1.3', '_contrast_0.7',
+                    '_noise_small', '_noise_medium', '_blur_light', '_blur_medium',
+                    '_crop_0.9', '_crop_0.85', '_rot90_flip_h', '_rot180_bright',
+                    '_flip_v_contrast', '_rot45_noise', '_crop_blur', '_bright_blur',
+                    '_contrast_noise', '_rot90_crop', '_rot180_contrast', '_flip_h_bright',
+                    '_rot270_blur', '_crop_contrast_noise', '_rot45_bright_blur',
+                ]
+                group = stem
+                for suffix in aug_suffixes:
+                    if group.endswith(suffix):
+                        group = group[:-len(suffix)]
+                        break
+                groups.append(group)
+
         # Convertir a arrays numpy
         X = np.array(images, dtype=np.float32)
         y = np.array(labels, dtype=np.int32)
+        groups_arr = np.array(groups)
 
         logger.info(f"\nDataset cargado:")
         logger.info(f"Shape: {X.shape}")
         logger.info(f"Labels: {y.shape}")
         logger.info(f"Clase 0: {(y == 0).sum()} imágenes")
         logger.info(f"Clase 1: {(y == 1).sum()} imágenes")
+        logger.info(f"Imágenes originales únicas: {len(np.unique(groups_arr))}")
 
-        # 3. Dividir en train/val/test
-        logger.info("\nDividiendo dataset...")
+        # 3. Dividir en train/val/test CON GroupShuffleSplit (v2)
+        # Esto garantiza que TODAS las augmentaciones de una misma imagen
+        # original caigan en el mismo subset → evita data leakage.
+        logger.info("\nDividiendo dataset (GroupShuffleSplit por imagen original)...")
 
         # Primero separar test
-        X_temp, X_test, y_temp, y_test, files_temp, files_test = train_test_split(
-            X, y, filenames,
-            test_size=self.test_size,
-            random_state=self.random_state,
-            stratify=y
+        gss_test = GroupShuffleSplit(
+            n_splits=1, test_size=self.test_size, random_state=self.random_state
         )
+        temp_idx, test_idx = next(gss_test.split(X, y, groups_arr))
+
+        X_test = X[test_idx]
+        y_test = y[test_idx]
+        files_test = [filenames[i] for i in test_idx]
+
+        X_temp = X[temp_idx]
+        y_temp = y[temp_idx]
+        groups_temp = groups_arr[temp_idx]
+        files_temp = [filenames[i] for i in temp_idx]
 
         # Luego separar train y validation
         val_size_adjusted = self.val_size / (1 - self.test_size)
-        X_train, X_val, y_train, y_val, files_train, files_val = train_test_split(
-            X_temp, y_temp, files_temp,
-            test_size=val_size_adjusted,
-            random_state=self.random_state,
-            stratify=y_temp
+        gss_val = GroupShuffleSplit(
+            n_splits=1, test_size=val_size_adjusted, random_state=self.random_state
         )
+        train_idx, val_idx = next(gss_val.split(X_temp, y_temp, groups_temp))
+
+        X_train = X_temp[train_idx]
+        y_train = y_temp[train_idx]
+        files_train = [files_temp[i] for i in train_idx]
+
+        X_val = X_temp[val_idx]
+        y_val = y_temp[val_idx]
+        files_val = [files_temp[i] for i in val_idx]
 
         logger.info(f"Train: {X_train.shape[0]} imágenes")
         logger.info(f"Validation: {X_val.shape[0]} imágenes")
         logger.info(f"Test: {X_test.shape[0]} imágenes")
+
+        # Verificar que no hay leakage
+        groups_train = set(groups_arr[temp_idx][train_idx])
+        groups_val = set(groups_arr[temp_idx][val_idx])
+        groups_test = set(groups_arr[test_idx])
+        leak_tv = groups_train & groups_val
+        leak_tt = groups_train & groups_test
+        leak_vt = groups_val & groups_test
+        if leak_tv or leak_tt or leak_vt:
+            logger.error(f"¡DATA LEAKAGE DETECTADO! train∩val={len(leak_tv)}, "
+                         f"train∩test={len(leak_tt)}, val∩test={len(leak_vt)}")
+        else:
+            logger.info("✓ Sin data leakage: ningún grupo original compartido entre splits")
 
         # 4. Calcular pesos de clase para balanceo
         class_weights = class_weight.compute_class_weight(

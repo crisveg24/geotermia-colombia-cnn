@@ -109,12 +109,13 @@ class GeotermiaCNN:
         Returns:
             Tensor procesado
         """
+        # v2: kernel_regularizer eliminado — AdamW weight_decay ya aplica
+        # regularización L2 decoupled. Usar ambos sobre-regulariza el modelo.
         x = layers.Conv2D(
             filters=filters,
             kernel_size=kernel_size,
             strides=strides,
             padding='same',
-            kernel_regularizer=regularizers.l2(self.l2_reg),
             name=f'{name}_conv'
         )(x)
         
@@ -154,7 +155,6 @@ class GeotermiaCNN:
             filters=filters,
             kernel_size=3,
             padding='same',
-            kernel_regularizer=regularizers.l2(self.l2_reg),
             name=f'{name}_2_conv'
         )(x)
         
@@ -162,6 +162,7 @@ class GeotermiaCNN:
             x = layers.BatchNormalization(name=f'{name}_2_bn')(x)
         
         # Ajustar dimensiones del shortcut si es necesario
+        # v2: Agregar BatchNorm al shortcut para igualar escalas con la rama principal
         if shortcut.shape[-1] != filters:
             shortcut = layers.Conv2D(
                 filters=filters,
@@ -169,6 +170,8 @@ class GeotermiaCNN:
                 padding='same',
                 name=f'{name}_shortcut'
             )(shortcut)
+            if self.use_batch_norm:
+                shortcut = layers.BatchNormalization(name=f'{name}_shortcut_bn')(shortcut)
         
         # Conexión residual
         x = layers.Add(name=f'{name}_add')([x, shortcut])
@@ -222,10 +225,9 @@ class GeotermiaCNN:
         # Global Average Pooling (reduce parámetros vs Flatten)
         x = layers.GlobalAveragePooling2D(name='global_avg_pool')(x)
         
-        # Dense layers con regularización
+        # Dense layers (v2: sin kernel_regularizer, AdamW weight_decay es suficiente)
         x = layers.Dense(
             256,
-            kernel_regularizer=regularizers.l2(self.l2_reg),
             name='dense_1'
         )(x)
         
@@ -261,9 +263,17 @@ class GeotermiaCNN:
         model = models.Model(inputs=inputs, outputs=outputs, name='GeotermiaCNN')
         
         # AdamW: Mejor regularización que Adam estándar (weight decay correcto)
+        # v2: Usar CosineDecay schedule para LR en vez de ReduceLROnPlateau.
+        # CosineDecay mantiene balance correcto entre gradiente y weight_decay.
+        # decay_steps se estima como epochs * steps_per_epoch_approx
+        lr_schedule = get_cosine_decay_schedule(
+            initial_learning_rate=0.001,
+            decay_steps=100 * 60,  # ~100 epochs × ~60 steps/epoch (se ajusta en train_model)
+            alpha=0.0001
+        )
         optimizer = keras.optimizers.AdamW(
-            learning_rate=0.001,
-            weight_decay=0.0001, # Regularización L2 correcta
+            learning_rate=lr_schedule,
+            weight_decay=0.0001, # Regularización L2 decoupled (única fuente de L2)
             beta_1=0.9,
             beta_2=0.999,
             epsilon=1e-07
@@ -332,12 +342,12 @@ class GeotermiaCNN:
             x = inputs
         
         # Aplicar modelo base pre-entrenado
-        x = base_model(x, training=False)
+        # v2: training=not freeze_base para que BN actualice estadísticas en fine-tuning
+        x = base_model(x, training=not freeze_base)
         
-        # Capas de clasificación personalizadas
+        # Capas de clasificación personalizadas (v2: sin kernel_regularizer)
         x = layers.Dense(
             256,
-            kernel_regularizer=regularizers.l2(self.l2_reg),
             activation='relu',
             name='dense_1'
         )(x)
@@ -345,7 +355,6 @@ class GeotermiaCNN:
         
         x = layers.Dense(
             128,
-            kernel_regularizer=regularizers.l2(self.l2_reg),
             activation='relu',
             name='dense_2'
         )(x)
@@ -354,7 +363,7 @@ class GeotermiaCNN:
         # Capa de salida
         if self.num_classes == 2:
             outputs = layers.Dense(1, activation='sigmoid', name='output')(x)
-            loss = 'binary_crossentropy'
+            loss = keras.losses.BinaryCrossentropy(label_smoothing=0.1)
             metrics = [
                 'accuracy',
                 keras.metrics.Precision(name='precision'),
@@ -363,14 +372,18 @@ class GeotermiaCNN:
             ]
         else:
             outputs = layers.Dense(self.num_classes, activation='softmax', name='output')(x)
-            loss = 'categorical_crossentropy'
+            loss = keras.losses.CategoricalCrossentropy(label_smoothing=0.1)
             metrics = ['accuracy']
         
         # Crear y compilar modelo
+        # v2: Usar AdamW + label_smoothing consistente con modelo custom (BUG 27)
         model = models.Model(inputs=inputs, outputs=outputs, name=f'GeotermiaCNN_{base_model_name}')
         
         model.compile(
-            optimizer=keras.optimizers.Adam(learning_rate=0.001),
+            optimizer=keras.optimizers.AdamW(
+                learning_rate=0.001,
+                weight_decay=0.0001,
+            ),
             loss=loss,
             metrics=metrics
         )

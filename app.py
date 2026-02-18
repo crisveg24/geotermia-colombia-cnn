@@ -437,8 +437,13 @@ def cargar_modelo():
     for r in rutas:
         if r.exists():
             try:
-                return tf.keras.models.load_model(str(r))
-            except Exception:
+                model = tf.keras.models.load_model(str(r))
+                # v2: Registrar qué modelo se cargó (BUG 8)
+                st.session_state["modelo_cargado_nombre"] = r.name
+                logging.info(f"Modelo cargado: {r.name}")
+                return model
+            except Exception as e:
+                logging.warning(f"No se pudo cargar {r.name}: {e}")
                 continue
     return None
 
@@ -491,16 +496,32 @@ def zonas_geotermicas():
     ]
 
 
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """
+    Distancia en km entre dos puntos usando fórmula de Haversine.
+    v2: Reemplaza distancia Euclidea en grados × 111 (BUG 13).
+    """
+    from math import radians, sin, cos, sqrt, atan2
+    R = 6371.0  # Radio de la Tierra en km
+    dlat = radians(lat2 - lat1)
+    dlon = radians(lon2 - lon1)
+    a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
+    return 2 * R * atan2(sqrt(a), sqrt(1 - a))
+
+
 def predecir_por_proximidad(lat: float, lon: float, zonas: list):
     """
     Prediccion deterministica basada en proximidad a zonas geotermicas.
     Usa sigmoide invertida sobre la distancia a la zona mas cercana.
     Solo se usa como FALLBACK si el modelo CNN o Earth Engine no estan disponibles.
     """
-    dists = [np.sqrt((lat - z["lat"])**2 + (lon - z["lon"])**2) for z in zonas]
-    idx = int(np.argmin(dists))
-    d = dists[idx]
+    # v2: Usar Haversine en vez de Euclidea en grados (BUG 13)
+    dists_km = [_haversine_km(lat, lon, z["lat"], z["lon"]) for z in zonas]
+    idx = int(np.argmin(dists_km))
+    d_km = dists_km[idx]
     z = zonas[idx]
+    # Convertir km a "grados equivalentes" para compatibilidad con sigmoide existente
+    d = d_km / 111.0
     pred = float(1.0 / (1.0 + np.exp(8.0 * (d - 0.5))))
     if z["potencial"] == "Alto" and d < 0.3:
         pred = min(pred * 1.1, 0.99)
@@ -512,7 +533,11 @@ def _inicializar_earth_engine():
     """Inicializa Earth Engine una sola vez (cacheado)."""
     try:
         import ee
-        ee.Initialize(project='alpine-air-469115-f0')
+        # v2: Usar GEE_PROJECT centralizado desde config.py (BUG 10)
+        import sys
+        sys.path.insert(0, str(PROJECT_ROOT))
+        from config import cfg
+        ee.Initialize(project=cfg.GEE_PROJECT)
         return True
     except Exception:
         return False
@@ -647,8 +672,11 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
             "dataset": "NASA/ASTER_GED/AG100_003",
         }
 
-    except Exception:
-        return {"prob": 0.0, "ok": False}
+    except Exception as e:
+        # v2: Registrar error en vez de silenciarlo (BUG 7)
+        import traceback
+        logging.error(f"Error en predicción CNN: {e}\n{traceback.format_exc()}")
+        return {"prob": 0.0, "ok": False, "error": str(e)}
 
 
 def generar_reporte_texto(p: dict) -> str:
@@ -729,16 +757,29 @@ def generar_reporte_texto(p: dict) -> str:
                 f"{zd['Zona']:<25} {zd['Tipo']:<18} {zd['Potencial']:<10} {zd['Distancia (km)']:>10.1f}"
             )
 
+    # v2: Leer métricas dinámicamente si están disponibles (BUG 15)
+    met = cargar_metricas()
+    if met:
+        acc_str = f"{met.get('accuracy', 0)*100:.2f}%"
+        prec_str = f"{met.get('precision', 0)*100:.2f}%"
+        roc_str = f"{met.get('roc_auc', 0):.4f}"
+        f1_str = f"{met.get('f1_score', 0)*100:.2f}%"
+        epoch_str = "ver historial"
+    else:
+        acc_str = "N/A (sin métricas)"
+        prec_str = "N/A"
+        roc_str = "N/A"
+        f1_str = "N/A"
+        epoch_str = "N/A"
+
     lines += [
         "",
         "--- MODELO ---",
         "Arquitectura:     CNN personalizada",
-        "Dataset:          2,635 imagenes (85 orig + augmentation)",
-        "Mejor epoca:      8 / 23",
-        "Accuracy:         68.43%",
-        "Precision:        86.32%",
-        "ROC AUC:          0.8198",
-        "F1-Score:         61.77%",
+        f"Accuracy:         {acc_str}",
+        f"Precision:        {prec_str}",
+        f"ROC AUC:          {roc_str}",
+        f"F1-Score:         {f1_str}",
         "Normalizacion:    Z-score por banda",
         "",
         "=" * 60,
@@ -1165,8 +1206,7 @@ def pagina_prediccion():
                 _, zona_c, dist = predecir_por_proximidad(latitud, longitud, zonas)
                 todas_dist = []
                 for z in zonas:
-                    d = float(np.sqrt((latitud - z["lat"])**2 + (longitud - z["lon"])**2))
-                    d_km = d * 111.0
+                    d_km = _haversine_km(latitud, longitud, z["lat"], z["lon"])
                     todas_dist.append({
                         "Zona": z["nombre"], "Tipo": z["tipo"],
                         "Potencial": z["potencial"],
@@ -1657,8 +1697,15 @@ def pagina_metricas():
         with c2:
             st.markdown("#### Curva ROC")
             auc = metricas.get("auc_roc", metricas.get("roc_auc", metricas.get("auc", 0.5)))
-            fpr = np.linspace(0, 1, 200)
-            tpr = 1 - (1 - fpr) ** (1 / max(auc, 0.51))
+            # v2: Usar curva ROC real del evaluate_model si está disponible (BUG 14)
+            roc_data = metricas.get("roc_curve")
+            if roc_data and "fpr" in roc_data and "tpr" in roc_data:
+                fpr = np.array(roc_data["fpr"])
+                tpr = np.array(roc_data["tpr"])
+            else:
+                # Fallback: aproximación matemática
+                fpr = np.linspace(0, 1, 200)
+                tpr = 1 - (1 - fpr) ** (1 / max(auc, 0.51))
             fig = go.Figure()
             fig.add_trace(go.Scatter(
                 x=fpr, y=tpr,
@@ -1850,8 +1897,8 @@ def pagina_arquitectura():
 | Resolucion | 100 metros |
 | Bandas | 10, 11, 12, 13, 14 (TIR) |
 | Entrada | 224 x 224 x 5 |
-| Normalizacion | 0-1 (Rescaling) |
-| Dataset | 5,518 imagenes (augmentadas) |
+| Normalizacion | Z-score por banda |
+| Dataset | ~2,635 imagenes (augmentadas) |
 """)
 
 
@@ -1906,7 +1953,7 @@ satelitales termicas del sensor **NASA ASTER**.
         "Fase": ["Adquisicion", "Augmentacion", "Preparacion", "Modelado", "Evaluacion", "Despliegue"],
         "Descripcion": [
             "Google Earth Engine → 85 imagenes ASTER",
-            "30 transformaciones → 5,518 imagenes",
+            "30 transformaciones → ~2,635 imagenes",
             "Normalizacion + split 70/15/15 estratificado",
             "CNN ResNet-inspired (5 M parametros)",
             "Accuracy, Precision, Recall, F1, ROC-AUC, PR-AUC",

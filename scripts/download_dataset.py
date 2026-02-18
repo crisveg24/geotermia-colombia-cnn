@@ -25,15 +25,16 @@ import geemap
 import pandas as pd
 from pathlib import Path
 
-# Crear directorio de logs si no existe
-os.makedirs('logs', exist_ok=True)
+# v2: Usar PROJECT_ROOT para logs (BUG 21)
+PROJECT_ROOT = Path(__file__).parent.parent
+os.makedirs(PROJECT_ROOT / 'logs', exist_ok=True)
 
 # Configurar logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-    logging.FileHandler('logs/download_dataset.log'),
+    logging.FileHandler(PROJECT_ROOT / 'logs' / 'download_dataset.log'),
     logging.StreamHandler()
     ]
 )
@@ -67,11 +68,11 @@ class GeotermalDatasetDownloader:
 
         # Inicializar Earth Engine con el proyecto configurado
         try:
-            # Intentar inicializar con el proyecto
+            # v2: Usar GEE_PROJECT de config.py en vez de hardcodeado (BUG 10)
             try:
-                ee.Initialize(project='alpine-air-469115-f0')
-                logger.info("Google Earth Engine inicializado con proyecto: alpine-air-469115-f0")
-            except:
+                ee.Initialize(project=cfg.GEE_PROJECT)
+                logger.info(f"Google Earth Engine inicializado con proyecto: {cfg.GEE_PROJECT}")
+            except Exception:  # v2: bare except → except Exception (BUG 9)
                 # Si falla, intentar sin especificar proyecto
                 ee.Initialize()
                 logger.info("Google Earth Engine inicializado correctamente")
@@ -217,7 +218,8 @@ class GeotermalDatasetDownloader:
         coords: List[float], 
         label: int,
         buffer_size: int = 5000,
-        scale: int = 90
+        scale: int = 90,
+        max_retries: int = 3
         ) -> bool:
         """
         Descargar una imagen ASTER de una zona específica.
@@ -228,63 +230,74 @@ class GeotermalDatasetDownloader:
         label: 1 para geotérmica, 0 para control
         buffer_size: Radio del área a descargar (metros)
         scale: Resolución espacial (metros/pixel)
+        max_retries: Número máximo de reintentos (v2: BUG 25)
 
         Returns:
         True si la descarga fue exitosa, False en caso contrario
         """
-        try:
-            # Crear geometría del punto y buffer
-            point = ee.Geometry.Point(coords)
-            roi = point.buffer(buffer_size)
+        for attempt in range(1, max_retries + 1):
+            try:
+                # Crear geometría del punto y buffer
+                point = ee.Geometry.Point(coords)
+                roi = point.buffer(buffer_size)
 
-            # Seleccionar bandas térmicas de emisividad (bandas 10-14)
-            # Estas son las más relevantes para análisis geotérmico
-            thermal_bands = ['emissivity_band10', 'emissivity_band11', 
-            'emissivity_band12', 'emissivity_band13', 
-            'emissivity_band14']
+                # Seleccionar bandas térmicas de emisividad (bandas 10-14)
+                # Estas son las más relevantes para análisis geotérmico
+                thermal_bands = ['emissivity_band10', 'emissivity_band11', 
+                'emissivity_band12', 'emissivity_band13', 
+                'emissivity_band14']
 
-            image = self.aster_dataset.select(thermal_bands).clip(roi)
+                image = self.aster_dataset.select(thermal_bands).clip(roi)
 
-            # Determinar directorio de salida según label
-            output_subdir = self.positive_dir if label == 1 else self.negative_dir
-            output_path = output_subdir / f"{name}.tif"
+                # Determinar directorio de salida según label
+                output_subdir = self.positive_dir if label == 1 else self.negative_dir
+                output_path = output_subdir / f"{name}.tif"
 
-            # Descargar imagen usando geemap
-            logger.info(f"Descargando: {name} (label={label})...")
+                # Descargar imagen usando geemap
+                logger.info(f"Descargando: {name} (label={label}, intento {attempt}/{max_retries})...")
 
-            geemap.ee_export_image(
-                image,
-                filename=str(output_path),
-                scale=scale,
-                region=roi,
-                file_per_band=False
-            )
+                geemap.ee_export_image(
+                    image,
+                    filename=str(output_path),
+                    scale=scale,
+                    region=roi,
+                    file_per_band=False
+                )
 
-            # Verificar que el archivo se descargó correctamente
-            if output_path.exists():
-                file_size = output_path.stat().st_size / (1024 * 1024) # MB
-                logger.info(f"Descargado: {name} ({file_size:.2f} MB)")
+                # Verificar que el archivo se descargó correctamente
+                if output_path.exists():
+                    file_size = output_path.stat().st_size / (1024 * 1024) # MB
+                    logger.info(f"Descargado: {name} ({file_size:.2f} MB)")
 
-                # Guardar metadata
-                self.metadata['image_details'].append({
-                    'name': name,
-                    'filename': output_path.name,
-                    'label': label,
-                    'coords': coords,
-                    'buffer_size': buffer_size,
-                    'scale': scale,
-                    'file_size_mb': round(file_size, 2),
-                    'bands': thermal_bands
-                })
+                    # Guardar metadata
+                    self.metadata['image_details'].append({
+                        'name': name,
+                        'filename': output_path.name,
+                        'label': label,
+                        'coords': coords,
+                        'buffer_size': buffer_size,
+                        'scale': scale,
+                        'file_size_mb': round(file_size, 2),
+                        'bands': thermal_bands
+                    })
 
-                return True
-            else:
-                logger.warning(f"Archivo no encontrado después de descarga: {name}")
-                return False
+                    return True
+                else:
+                    logger.warning(f"Archivo no encontrado después de descarga: {name}")
+                    if attempt < max_retries:
+                        wait = 2 ** attempt
+                        logger.info(f"Reintentando en {wait}s...")
+                        time.sleep(wait)
 
-        except Exception as e:
-            logger.error(f"Error descargando {name}: {e}")
-            return False
+            except Exception as e:
+                logger.error(f"Error descargando {name} (intento {attempt}): {e}")
+                if attempt < max_retries:
+                    wait = 2 ** attempt
+                    logger.info(f"Reintentando en {wait}s...")
+                    time.sleep(wait)
+
+        logger.error(f"Fallo definitivo descargando {name} tras {max_retries} intentos")
+        return False
 
     def download_all_zones(
         self, 

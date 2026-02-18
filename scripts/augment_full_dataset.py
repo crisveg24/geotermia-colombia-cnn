@@ -154,7 +154,9 @@ class FullDatasetAugmenter:
     def augment_noise(self, image: np.ndarray, sigma: float = 0.01) -> np.ndarray:
         """Agregar ruido gaussiano."""
         noise = np.random.normal(0, sigma * image.std(), image.shape)
-        return image + noise
+        # v2: Clampear al rango de valores originales (BUG 23)
+        noisy = image + noise
+        return np.clip(noisy, image.min(), image.max())
 
     def augment_gaussian_blur(self, image: np.ndarray, sigma: float = 1.0) -> np.ndarray:
         """Aplicar desenfoque gaussiano."""
@@ -229,7 +231,9 @@ class FullDatasetAugmenter:
         # Generar augmentaciones
         for aug_name, aug_func in augmentations[:num_augmentations]:
             try:
-                aug_image = aug_func(image.copy())
+                # v2: Convertir a float32 para evitar que transform.rotate/resize
+                # produzcan float64 (duplica tamaño en disco) — BUG 11
+                aug_image = aug_func(image.copy()).astype(np.float32)
                 filename = f"{base_name}_{aug_name}.tif"
                 output_path = output_dir / filename
 
