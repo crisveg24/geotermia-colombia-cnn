@@ -806,60 +806,183 @@ def pagina_prediccion():
     # Verificar si el modelo CNN esta disponible
     modelo = cargar_modelo()
     usa_cnn = modelo is not None
+    zonas = zonas_geotermicas()
 
     if usa_cnn:
         st.markdown(
             '<div class="info-box">'
-            'Ingresa coordenadas de una ubicacion en Colombia. El sistema descarga '
-            'datos satelitales ASTER de NASA (5 bandas termicas de emisividad) y los '
-            'analiza con el modelo CNN entrenado para predecir el potencial geotermico. '
-            '<b>Tiempo estimado: 10-15 segundos por consulta.</b></div>',
+            'Selecciona una ubicacion en Colombia haciendo <b>clic en el mapa</b>, '
+            'ingresando coordenadas manualmente, o eligiendo una zona conocida. '
+            'El sistema descarga datos ASTER de NASA y los analiza con el modelo CNN. '
+            '<b>Tiempo estimado: 10-15 segundos.</b></div>',
             unsafe_allow_html=True,
         )
     else:
         st.markdown(
             '<div class="info-box">'
-            '⚠️ Modelo CNN no disponible. Se usara estimacion por proximidad a zonas '
+            'Modelo CNN no disponible. Se usara estimacion por proximidad a zonas '
             'geotermicas conocidas (menos preciso). Entrena el modelo para obtener '
             'predicciones basadas en datos ASTER reales.</div>',
             unsafe_allow_html=True,
         )
 
-    col_in, col_out = st.columns([1, 2], gap="large")
+    # =====================================================================
+    # SECCION DE ENTRADA — Seleccion de ubicacion
+    # =====================================================================
+    st.markdown("#### Selecciona una ubicacion")
+    metodo = st.radio(
+        "Metodo de entrada:",
+        ["🗺️ Clic en mapa", "📝 Coordenadas", "📍 Zona conocida"],
+        horizontal=True, label_visibility="collapsed",
+    )
 
-    with col_in:
-        st.markdown("#### Coordenadas")
-        metodo = st.radio("Metodo de entrada:", ["Manual", "Zona conocida"], horizontal=True)
+    # Inicializar session state para coordenadas
+    if "pred_lat" not in st.session_state:
+        st.session_state["pred_lat"] = 4.8951
+        st.session_state["pred_lon"] = -75.3222
 
-        zonas = zonas_geotermicas()
-        if metodo == "Zona conocida":
+    analizar = False
+    latitud = st.session_state["pred_lat"]
+    longitud = st.session_state["pred_lon"]
+
+    if metodo == "🗺️ Clic en mapa":
+        st.caption("Haz clic en cualquier punto del mapa para seleccionar coordenadas.")
+
+        # Crear mapa selector interactivo
+        mapa_sel = folium.Map(
+            location=[4.57, -74.30], zoom_start=6,
+            tiles="CartoDB positron",
+        )
+
+        # Agregar zonas geotermicas como referencia
+        colores_z = {"Alto": "red", "Medio": "orange"}
+        for z in zonas:
+            c = colores_z.get(z["potencial"], "blue")
+            folium.CircleMarker(
+                [z["lat"], z["lon"]], radius=8,
+                popup=f'{z["nombre"]} ({z["potencial"]})',
+                tooltip=z["nombre"],
+                color=c, fill=True, fillColor=c, fillOpacity=0.6, weight=1.5,
+            ).add_to(mapa_sel)
+
+        # Marcador de seleccion actual
+        folium.Marker(
+            [st.session_state["pred_lat"], st.session_state["pred_lon"]],
+            tooltip=f'Seleccion: {st.session_state["pred_lat"]:.4f}, {st.session_state["pred_lon"]:.4f}',
+            icon=folium.Icon(color="blue", icon="crosshairs", prefix="fa"),
+        ).add_to(mapa_sel)
+
+        # Leyenda compacta
+        leyenda_sel = (
+            '<div style="position:fixed;bottom:30px;left:30px;z-index:9999;'
+            'background:#fff;padding:10px 14px;border-radius:8px;'
+            'box-shadow:0 2px 8px rgba(0,0,0,.12);font-size:11px;'
+            'font-family:Inter,sans-serif;line-height:1.7;">'
+            '<b>Leyenda</b><br>'
+            '<span style="color:red;font-size:14px">&#9679;</span> Potencial Alto<br>'
+            '<span style="color:orange;font-size:14px">&#9679;</span> Potencial Medio<br>'
+            '<span style="color:#1565c0;font-size:12px">📍</span> Tu seleccion</div>'
+        )
+        mapa_sel.get_root().html.add_child(folium.Element(leyenda_sel))
+
+        map_data = st_folium(
+            mapa_sel, height=380, width=None,
+            returned_objects=["last_clicked"],
+        )
+
+        # Actualizar coordenadas si hubo clic
+        if map_data and map_data.get("last_clicked"):
+            st.session_state["pred_lat"] = round(map_data["last_clicked"]["lat"], 4)
+            st.session_state["pred_lon"] = round(map_data["last_clicked"]["lng"], 4)
+
+        latitud = st.session_state["pred_lat"]
+        longitud = st.session_state["pred_lon"]
+
+        # Coordenadas seleccionadas + boton
+        sc1, sc2, sc3 = st.columns([1, 1, 1])
+        with sc1:
+            st.markdown(
+                f'<div style="background:#f0f4f8;border-radius:8px;padding:10px 14px;text-align:center;">'
+                f'<div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:0.5px;">Latitud</div>'
+                f'<div style="font-size:1.3rem;font-weight:700;color:#1a1a2e;">{latitud:.4f}</div></div>',
+                unsafe_allow_html=True,
+            )
+        with sc2:
+            st.markdown(
+                f'<div style="background:#f0f4f8;border-radius:8px;padding:10px 14px;text-align:center;">'
+                f'<div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:0.5px;">Longitud</div>'
+                f'<div style="font-size:1.3rem;font-weight:700;color:#1a1a2e;">{longitud:.4f}</div></div>',
+                unsafe_allow_html=True,
+            )
+        with sc3:
+            st.write("")
+            analizar = st.button(
+                "🔬 Analizar Potencial", type="primary", use_container_width=True,
+                key="btn_mapa",
+            )
+
+    elif metodo == "📝 Coordenadas":
+        mc1, mc2, mc3 = st.columns([1, 1, 1])
+        with mc1:
+            latitud = st.number_input(
+                "Latitud:", -4.0, 12.0,
+                st.session_state["pred_lat"], 0.0001, format="%.4f",
+            )
+        with mc2:
+            longitud = st.number_input(
+                "Longitud:", -82.0, -66.0,
+                st.session_state["pred_lon"], 0.0001, format="%.4f",
+            )
+        with mc3:
+            st.write("")
+            st.write("")
+            analizar = st.button(
+                "🔬 Analizar Potencial", type="primary", use_container_width=True,
+                key="btn_manual",
+            )
+        st.session_state["pred_lat"] = latitud
+        st.session_state["pred_lon"] = longitud
+
+    else:  # Zona conocida
+        zc1, zc2 = st.columns([2, 1])
+        with zc1:
             sel = st.selectbox("Selecciona una zona:", [z["nombre"] for z in zonas])
             z = next(x for x in zonas if x["nombre"] == sel)
             latitud, longitud = z["lat"], z["lon"]
-            st.info(f"**{z['nombre']}** · {z['tipo']} · Potencial {z['potencial']}")
-        else:
-            latitud = st.number_input("Latitud:", -4.0, 12.0, 4.8951, 0.0001, format="%.4f")
-            longitud = st.number_input("Longitud:", -82.0, -66.0, -75.3222, 0.0001, format="%.4f")
+            st.markdown(
+                f'<div style="background:#f0f4f8;border-radius:8px;padding:10px 14px;'
+                f'border-left:3px solid #e94560;">'
+                f'<b>{z["nombre"]}</b> · {z["tipo"]} · '
+                f'<span style="color:{"#d32f2f" if z["potencial"]=="Alto" else "#ff8f00"};'
+                f'font-weight:600;">Potencial {z["potencial"]}</span><br>'
+                f'<span style="font-size:0.85rem;color:#666;">'
+                f'Lat: {latitud:.4f} · Lon: {longitud:.4f}</span></div>',
+                unsafe_allow_html=True,
+            )
+        with zc2:
+            st.write("")
+            st.write("")
+            analizar = st.button(
+                "🔬 Analizar Potencial", type="primary", use_container_width=True,
+                key="btn_zona",
+            )
+        st.session_state["pred_lat"] = latitud
+        st.session_state["pred_lon"] = longitud
 
-        st.write("")
-        analizar = st.button("🔬 Analizar Potencial", type="primary", use_container_width=True)
-
+    # =====================================================================
+    # LOGICA DE PREDICCION
+    # =====================================================================
     if analizar:
-        zonas = zonas_geotermicas()
-
         if usa_cnn:
-            # === PREDICCION CON MODELO CNN REAL ===
             with st.spinner("Descargando imagen ASTER y analizando con CNN..."):
                 resultado_cnn = predecir_con_modelo_cnn(latitud, longitud, modelo)
 
             if resultado_cnn["ok"]:
-                # Tambien calcular proximidad para contexto
                 _, zona_c, dist = predecir_por_proximidad(latitud, longitud, zonas)
-                # Calcular distancias a TODAS las zonas
                 todas_dist = []
                 for z in zonas:
                     d = float(np.sqrt((latitud - z["lat"])**2 + (longitud - z["lon"])**2))
-                    d_km = d * 111.0  # aprox grados a km
+                    d_km = d * 111.0
                     todas_dist.append({
                         "Zona": z["nombre"], "Tipo": z["tipo"],
                         "Potencial": z["potencial"],
@@ -867,7 +990,7 @@ def pagina_prediccion():
                     })
                 todas_dist.sort(key=lambda x: x["Distancia (km)"])
 
-                st.session_state["pred"] = {
+                pred_data = {
                     "lat": latitud, "lon": longitud,
                     "valor": resultado_cnn["prob"],
                     "zona": zona_c["nombre"], "tipo": zona_c["tipo"], "dist": dist,
@@ -884,230 +1007,267 @@ def pagina_prediccion():
                     "n_bands": resultado_cnn.get("n_bands"),
                     "dataset": resultado_cnn.get("dataset"),
                     "todas_dist": todas_dist,
+                    "timestamp": datetime.now().strftime("%H:%M:%S"),
                 }
+                st.session_state["pred"] = pred_data
+
+                # Guardar en historial
+                if "pred_historial" not in st.session_state:
+                    st.session_state["pred_historial"] = []
+                st.session_state["pred_historial"].insert(0, pred_data)
+                if len(st.session_state["pred_historial"]) > 10:
+                    st.session_state["pred_historial"] = st.session_state["pred_historial"][:10]
             else:
-                # Fallback a proximidad si falla la descarga
                 pred, zona_c, dist = predecir_por_proximidad(latitud, longitud, zonas)
                 st.session_state["pred"] = {
                     "lat": latitud, "lon": longitud, "valor": pred,
                     "zona": zona_c["nombre"], "tipo": zona_c["tipo"], "dist": dist,
                     "metodo": "proximidad (CNN fallo)",
+                    "timestamp": datetime.now().strftime("%H:%M:%S"),
                 }
         else:
-            # === FALLBACK: PROXIMIDAD ===
             pred, zona_c, dist = predecir_por_proximidad(latitud, longitud, zonas)
             st.session_state["pred"] = {
                 "lat": latitud, "lon": longitud, "valor": pred,
                 "zona": zona_c["nombre"], "tipo": zona_c["tipo"], "dist": dist,
                 "metodo": "proximidad",
+                "timestamp": datetime.now().strftime("%H:%M:%S"),
             }
 
-    with col_out:
-        if "pred" in st.session_state:
-            p = st.session_state["pred"]
-            valor = p["valor"]
-            pos = valor >= 0.5
-            cls = "result-pos" if pos else "result-neg"
-            titulo = "ZONA CON POTENCIAL GEOTERMICO" if pos else "BAJO POTENCIAL GEOTERMICO"
-            icono = "🌋" if pos else "🏔️"
-            metodo_txt = p.get("metodo", "proximidad")
+    # =====================================================================
+    # SECCION DE RESULTADOS — Full width
+    # =====================================================================
+    if "pred" in st.session_state:
+        st.divider()
+        p = st.session_state["pred"]
+        valor = p["valor"]
+        pos = valor >= 0.5
+        cls = "result-pos" if pos else "result-neg"
+        titulo = "ZONA CON POTENCIAL GEOTERMICO" if pos else "BAJO POTENCIAL GEOTERMICO"
+        icono = "🌋" if pos else "🏔️"
+        metodo_txt = p.get("metodo", "proximidad")
 
-            if metodo_txt == "CNN":
-                subtitulo = "Prediccion del modelo CNN con datos ASTER reales"
-            else:
-                subtitulo = f"Estimacion por {metodo_txt}"
+        if metodo_txt == "CNN":
+            subtitulo = "Prediccion del modelo CNN con datos ASTER reales"
+        else:
+            subtitulo = f"Estimacion por {metodo_txt}"
 
-            # ---------- Clasificacion de confianza ----------
-            if valor >= 0.80:
-                nivel, nivel_color, nivel_desc = "ALTA", "#2e7d32", "Alta certeza de presencia geotermica"
-            elif valor >= 0.60:
-                nivel, nivel_color, nivel_desc = "MEDIA-ALTA", "#558b2f", "Indicadores favorables detectados"
-            elif valor >= 0.50:
-                nivel, nivel_color, nivel_desc = "MEDIA", "#f9a825", "Indicadores moderados, requiere validacion"
-            elif valor >= 0.35:
-                nivel, nivel_color, nivel_desc = "MEDIA-BAJA", "#ef6c00", "Pocos indicadores termicos detectados"
-            elif valor >= 0.20:
-                nivel, nivel_color, nivel_desc = "BAJA", "#d84315", "Baja presencia de anomalias termicas"
-            else:
-                nivel, nivel_color, nivel_desc = "MUY BAJA", "#b71c1c", "Sin indicadores termicos significativos"
+        # Clasificacion de confianza
+        if valor >= 0.80:
+            nivel, nivel_color, nivel_desc = "ALTA", "#2e7d32", "Alta certeza de presencia geotermica"
+        elif valor >= 0.60:
+            nivel, nivel_color, nivel_desc = "MEDIA-ALTA", "#558b2f", "Indicadores favorables detectados"
+        elif valor >= 0.50:
+            nivel, nivel_color, nivel_desc = "MEDIA", "#f9a825", "Indicadores moderados, requiere validacion"
+        elif valor >= 0.35:
+            nivel, nivel_color, nivel_desc = "MEDIA-BAJA", "#ef6c00", "Pocos indicadores termicos detectados"
+        elif valor >= 0.20:
+            nivel, nivel_color, nivel_desc = "BAJA", "#d84315", "Baja presencia de anomalias termicas"
+        else:
+            nivel, nivel_color, nivel_desc = "MUY BAJA", "#b71c1c", "Sin indicadores termicos significativos"
 
-            # ---------- Tarjeta principal de resultado ----------
-            st.markdown(
-                f'<div class="result-card {cls}">'
-                f'<h2>{titulo}</h2>'
-                f'<div class="big">{icono} {valor:.1%}</div>'
-                f'<p>{subtitulo}</p>'
-                f'<div style="margin-top:8px;display:inline-block;background:rgba(255,255,255,0.2);'
-                f'border:1px solid rgba(255,255,255,0.4);border-radius:20px;padding:4px 16px;'
-                f'font-size:0.85rem;font-weight:600;letter-spacing:0.5px;">'
-                f'Confianza {nivel}</div>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
+        # ---- Tarjeta principal de resultado ----
+        st.markdown(
+            f'<div class="result-card {cls}">'
+            f'<h2>{titulo}</h2>'
+            f'<div class="big">{icono} {valor:.1%}</div>'
+            f'<p>{subtitulo}</p>'
+            f'<div style="margin-top:8px;display:inline-block;background:rgba(255,255,255,0.2);'
+            f'border:1px solid rgba(255,255,255,0.4);border-radius:20px;padding:4px 16px;'
+            f'font-size:0.85rem;font-weight:600;letter-spacing:0.5px;">'
+            f'Confianza {nivel}</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
-            # ---------- Barra de probabilidad visual ----------
-            bar_color = "#2e7d32" if pos else "#d84315"
-            st.markdown(
-                f'<div style="margin:12px 0 4px 0;font-size:0.8rem;color:#666;">'
-                f'Probabilidad geotermica</div>'
-                f'<div style="background:#e0e0e0;border-radius:8px;height:14px;overflow:hidden;">'
-                f'<div style="width:{valor*100:.1f}%;height:100%;background:linear-gradient(90deg,{bar_color},{"#43a047" if pos else "#ef6c00"});'
-                f'border-radius:8px;transition:width 0.5s;"></div></div>'
-                f'<div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#999;margin-top:2px;">'
-                f'<span>0%</span><span>50%</span><span>100%</span></div>',
-                unsafe_allow_html=True,
-            )
+        # ---- Barra de probabilidad ----
+        bar_color = "#2e7d32" if pos else "#d84315"
+        bar_end = "#43a047" if pos else "#ef6c00"
+        st.markdown(
+            f'<div style="margin:14px 0 4px 0;font-size:0.8rem;color:#666;">'
+            f'Probabilidad geotermica</div>'
+            f'<div style="background:#e0e0e0;border-radius:8px;height:16px;overflow:hidden;">'
+            f'<div style="width:{valor*100:.1f}%;height:100%;'
+            f'background:linear-gradient(90deg,{bar_color},{bar_end});'
+            f'border-radius:8px;transition:width 0.5s;"></div></div>'
+            f'<div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#999;margin-top:2px;">'
+            f'<span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>',
+            unsafe_allow_html=True,
+        )
 
-            st.write("")
+        st.write("")
 
-            # ---------- Coordenadas y zona cercana ----------
-            m1, m2, m3, m4 = st.columns(4)
-            m1.metric("Latitud", f'{p["lat"]:.4f}')
-            m2.metric("Longitud", f'{p["lon"]:.4f}')
-            m3.metric("Zona mas cercana", p["zona"])
-            dist_km = p["dist"] * 111.0
-            m4.metric("Distancia", f'{dist_km:.1f} km')
+        # ---- Metricas clave ----
+        dist_km = p["dist"] * 111.0
+        mk1, mk2, mk3, mk4, mk5 = st.columns(5)
+        mk1.metric("Latitud", f'{p["lat"]:.4f}')
+        mk2.metric("Longitud", f'{p["lon"]:.4f}')
+        mk3.metric("Zona mas cercana", p["zona"])
+        mk4.metric("Distancia", f'{dist_km:.1f} km')
+        mk5.metric("Confianza", nivel)
 
-            # ---------- Interpretacion del resultado ----------
-            st.markdown(
-                f'<div style="background:#f8f9fa;border-left:4px solid {nivel_color};'
-                f'border-radius:0 8px 8px 0;padding:12px 16px;margin:12px 0;">'
-                f'<div style="font-weight:600;color:{nivel_color};margin-bottom:4px;">'
-                f'{nivel_desc}</div>'
-                f'<div style="font-size:0.88rem;color:#555;line-height:1.5;">'
-                f'La coordenada analizada ({p["lat"]:.4f}, {p["lon"]:.4f}) se encuentra '
-                f'a <b>{dist_km:.1f} km</b> de la zona geotermica mas cercana '
-                f'(<b>{p["zona"]}</b> · {p["tipo"]}). '
-                f'{"El modelo CNN detecta patrones termicos consistentes con actividad geotermica en las bandas de emisividad ASTER." if pos else "El modelo CNN no detecta patrones termicos significativos de actividad geotermica en esta ubicacion."}'
-                f'</div></div>',
-                unsafe_allow_html=True,
-            )
+        # ---- Interpretacion ----
+        st.markdown(
+            f'<div style="background:#f8f9fa;border-left:4px solid {nivel_color};'
+            f'border-radius:0 8px 8px 0;padding:14px 18px;margin:14px 0;">'
+            f'<div style="font-weight:600;color:{nivel_color};margin-bottom:4px;font-size:0.95rem;">'
+            f'{nivel_desc}</div>'
+            f'<div style="font-size:0.88rem;color:#555;line-height:1.6;">'
+            f'La coordenada analizada (<b>{p["lat"]:.4f}, {p["lon"]:.4f}</b>) se encuentra '
+            f'a <b>{dist_km:.1f} km</b> de la zona geotermica mas cercana '
+            f'(<b>{p["zona"]}</b> · {p["tipo"]}). '
+            f'{"El modelo CNN detecta patrones termicos consistentes con actividad geotermica en las bandas de emisividad ASTER." if pos else "El modelo CNN no detecta patrones termicos significativos de actividad geotermica en esta ubicacion."}'
+            f'</div></div>',
+            unsafe_allow_html=True,
+        )
 
-            # ---------- Secciones detalladas (solo CNN) ----------
+        # ---- Mapa de resultado + Datos tecnicos lado a lado ----
+        st.write("")
+        col_mapa, col_tech = st.columns([3, 2], gap="medium")
+
+        with col_mapa:
+            st.markdown("##### Ubicacion en el mapa")
+            mapa = crear_mapa(zonas, {"lat": p["lat"], "lon": p["lon"]}, p["valor"])
+            st_folium(mapa, width=None, height=400, returned_objects=[])
+
+        with col_tech:
             if metodo_txt == "CNN" and p.get("band_stats"):
+                st.markdown("##### Datos del analisis")
+                # Imagen ASTER
+                img_shape = p.get("img_shape", (0, 0, 0))
+                st.markdown(
+                    f'<div style="background:#f0f4f8;border-radius:10px;padding:12px 14px;margin-bottom:10px;">'
+                    f'<div style="font-weight:600;color:#1a1a2e;margin-bottom:6px;font-size:0.9rem;">'
+                    f'🛰️ Imagen ASTER</div>'
+                    f'<table style="width:100%;font-size:0.82rem;color:#444;">'
+                    f'<tr><td style="padding:2px 0;"><b>Dataset</b></td>'
+                    f'<td style="text-align:right;">ASTER GED v003</td></tr>'
+                    f'<tr><td style="padding:2px 0;"><b>Fuente</b></td>'
+                    f'<td style="text-align:right;">NASA/USGS via GEE</td></tr>'
+                    f'<tr><td style="padding:2px 0;"><b>Bandas</b></td>'
+                    f'<td style="text-align:right;">{p.get("n_bands", 5)} TIR (emisividad)</td></tr>'
+                    f'<tr><td style="padding:2px 0;"><b>Resolucion</b></td>'
+                    f'<td style="text-align:right;">{p.get("scale_m", 90)} m/pixel</td></tr>'
+                    f'<tr><td style="padding:2px 0;"><b>Area</b></td>'
+                    f'<td style="text-align:right;">{p.get("buffer_m", 5000)/1000:.0f} km radio</td></tr>'
+                    f'<tr><td style="padding:2px 0;"><b>Imagen</b></td>'
+                    f'<td style="text-align:right;">{img_shape[0]}x{img_shape[1]} → 224x224</td></tr>'
+                    f'<tr><td style="padding:2px 0;"><b>Tamano</b></td>'
+                    f'<td style="text-align:right;">{p.get("img_size_kb", 0):.1f} KB</td></tr>'
+                    f'</table></div>',
+                    unsafe_allow_html=True,
+                )
+                # Modelo CNN
+                st.markdown(
+                    '<div style="background:#f0f4f8;border-radius:10px;padding:12px 14px;margin-bottom:10px;">'
+                    '<div style="font-weight:600;color:#1a1a2e;margin-bottom:6px;font-size:0.9rem;">'
+                    '⚙️ Modelo CNN</div>'
+                    '<table style="width:100%;font-size:0.82rem;color:#444;">'
+                    '<tr><td style="padding:2px 0;"><b>Arquitectura</b></td>'
+                    '<td style="text-align:right;">CNN personalizada</td></tr>'
+                    '<tr><td style="padding:2px 0;"><b>Dataset</b></td>'
+                    '<td style="text-align:right;">2,635 imagenes</td></tr>'
+                    '<tr><td style="padding:2px 0;"><b>Mejor epoca</b></td>'
+                    '<td style="text-align:right;">8 / 23</td></tr>'
+                    '<tr><td style="padding:2px 0;"><b>Accuracy</b></td>'
+                    '<td style="text-align:right;">68.43%</td></tr>'
+                    '<tr><td style="padding:2px 0;"><b>Precision</b></td>'
+                    '<td style="text-align:right;">86.32%</td></tr>'
+                    '<tr><td style="padding:2px 0;"><b>ROC AUC</b></td>'
+                    '<td style="text-align:right;">0.8198</td></tr>'
+                    '<tr><td style="padding:2px 0;"><b>F1-Score</b></td>'
+                    '<td style="text-align:right;">61.77%</td></tr>'
+                    '</table></div>',
+                    unsafe_allow_html=True,
+                )
+                # Tiempos
+                st.markdown(
+                    f'<div style="background:#f0f4f8;border-radius:10px;padding:12px 14px;">'
+                    f'<div style="font-weight:600;color:#1a1a2e;margin-bottom:6px;font-size:0.9rem;">'
+                    f'⏱️ Tiempos</div>'
+                    f'<table style="width:100%;font-size:0.82rem;color:#444;">'
+                    f'<tr><td style="padding:2px 0;"><b>Descarga GEE</b></td>'
+                    f'<td style="text-align:right;">{p.get("t_download", 0):.1f}s</td></tr>'
+                    f'<tr><td style="padding:2px 0;"><b>Prediccion CNN</b></td>'
+                    f'<td style="text-align:right;">{p.get("t_pred", 0):.3f}s</td></tr>'
+                    f'<tr><td style="padding:2px 0;"><b>Total</b></td>'
+                    f'<td style="text-align:right;">{p.get("t_total", 0):.1f}s</td></tr>'
+                    f'</table></div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown("##### Informacion")
+                st.markdown(
+                    '<div style="background:#f0f4f8;border-radius:10px;padding:14px 16px;">'
+                    '<div style="font-size:0.88rem;color:#555;line-height:1.6;">'
+                    'Los datos tecnicos detallados (estadisticas de bandas, '
+                    'tiempos de procesamiento, informacion del modelo) se muestran '
+                    'cuando la prediccion se realiza con el modelo CNN.</div></div>',
+                    unsafe_allow_html=True,
+                )
 
-                st.write("")
-                st.markdown("#### Datos tecnicos del analisis")
+        # ---- Expanders con datos adicionales (solo CNN) ----
+        if metodo_txt == "CNN" and p.get("band_stats"):
+            band_names = ["B10 (8.3 um)", "B11 (8.6 um)", "B12 (9.1 um)", "B13 (10.6 um)", "B14 (11.3 um)"]
+            band_data = []
+            for i, bs in enumerate(p["band_stats"]):
+                band_data.append({
+                    "Banda": band_names[i] if i < len(band_names) else f"B{i+10}",
+                    "Min": f'{bs["min"]:.4f}',
+                    "Max": f'{bs["max"]:.4f}',
+                    "Media": f'{bs["mean"]:.4f}',
+                    "Desv. Est.": f'{bs["std"]:.4f}',
+                })
+            with st.expander("📊 Estadisticas de bandas termicas ASTER"):
+                st.markdown(
+                    '<div style="font-size:0.85rem;color:#666;margin-bottom:8px;">'
+                    'Valores de emisividad termica por banda antes de la normalizacion. '
+                    'Estas bandas TIR (Thermal Infrared) capturan la radiacion termica '
+                    'emitida por la superficie terrestre.</div>',
+                    unsafe_allow_html=True,
+                )
+                st.dataframe(
+                    pd.DataFrame(band_data).set_index("Banda"),
+                    use_container_width=True,
+                )
 
-                # Informacion de la imagen ASTER
-                tc1, tc2 = st.columns(2)
-                with tc1:
-                    st.markdown(
-                        '<div style="background:#f0f4f8;border-radius:10px;padding:14px 16px;">'
-                        '<div style="font-weight:600;color:#1a1a2e;margin-bottom:8px;">'
-                        '🛰️ Imagen satelital</div>',
-                        unsafe_allow_html=True,
-                    )
-                    img_shape = p.get("img_shape", (0, 0, 0))
-                    st.markdown(
-                        f'<table style="width:100%;font-size:0.85rem;color:#444;">'
-                        f'<tr><td style="padding:3px 0;"><b>Dataset</b></td>'
-                        f'<td style="text-align:right;">ASTER GED v003</td></tr>'
-                        f'<tr><td style="padding:3px 0;"><b>Fuente</b></td>'
-                        f'<td style="text-align:right;">NASA/USGS</td></tr>'
-                        f'<tr><td style="padding:3px 0;"><b>Bandas</b></td>'
-                        f'<td style="text-align:right;">{p.get("n_bands", 5)} termicas (TIR)</td></tr>'
-                        f'<tr><td style="padding:3px 0;"><b>Resolucion</b></td>'
-                        f'<td style="text-align:right;">{p.get("scale_m", 90)} m/pixel</td></tr>'
-                        f'<tr><td style="padding:3px 0;"><b>Area de analisis</b></td>'
-                        f'<td style="text-align:right;">{p.get("buffer_m", 5000)/1000:.0f} km de radio</td></tr>'
-                        f'<tr><td style="padding:3px 0;"><b>Imagen original</b></td>'
-                        f'<td style="text-align:right;">{img_shape[0]}x{img_shape[1]} px</td></tr>'
-                        f'<tr><td style="padding:3px 0;"><b>Entrada al modelo</b></td>'
-                        f'<td style="text-align:right;">224x224x5</td></tr>'
-                        f'<tr><td style="padding:3px 0;"><b>Tamano archivo</b></td>'
-                        f'<td style="text-align:right;">{p.get("img_size_kb", 0):.1f} KB</td></tr>'
-                        f'</table></div>',
-                        unsafe_allow_html=True,
-                    )
-
-                with tc2:
-                    st.markdown(
-                        '<div style="background:#f0f4f8;border-radius:10px;padding:14px 16px;">'
-                        '<div style="font-weight:600;color:#1a1a2e;margin-bottom:8px;">'
-                        '⚙️ Modelo CNN</div>',
-                        unsafe_allow_html=True,
-                    )
-                    st.markdown(
-                        '<table style="width:100%;font-size:0.85rem;color:#444;">'
-                        '<tr><td style="padding:3px 0;"><b>Arquitectura</b></td>'
-                        '<td style="text-align:right;">CNN personalizada</td></tr>'
-                        '<tr><td style="padding:3px 0;"><b>Entrenamiento</b></td>'
-                        '<td style="text-align:right;">2,635 imagenes</td></tr>'
-                        '<tr><td style="padding:3px 0;"><b>Mejor epoca</b></td>'
-                        '<td style="text-align:right;">8 de 23</td></tr>'
-                        '<tr><td style="padding:3px 0;"><b>Accuracy</b></td>'
-                        '<td style="text-align:right;">68.43%</td></tr>'
-                        '<tr><td style="padding:3px 0;"><b>Precision</b></td>'
-                        '<td style="text-align:right;">86.32%</td></tr>'
-                        '<tr><td style="padding:3px 0;"><b>ROC AUC</b></td>'
-                        '<td style="text-align:right;">0.8198</td></tr>'
-                        '<tr><td style="padding:3px 0;"><b>F1-Score</b></td>'
-                        '<td style="text-align:right;">61.77%</td></tr>'
-                        '<tr><td style="padding:3px 0;"><b>Normalizacion</b></td>'
-                        '<td style="text-align:right;">Z-score por banda</td></tr>'
-                        '</table></div>',
-                        unsafe_allow_html=True,
-                    )
-
-                # Estadisticas de bandas ASTER
-                st.write("")
-                band_names = ["B10 (8.3 um)", "B11 (8.6 um)", "B12 (9.1 um)", "B13 (10.6 um)", "B14 (11.3 um)"]
-                band_data = []
-                for i, bs in enumerate(p["band_stats"]):
-                    band_data.append({
-                        "Banda": band_names[i] if i < len(band_names) else f"B{i+10}",
-                        "Min": f'{bs["min"]:.4f}',
-                        "Max": f'{bs["max"]:.4f}',
-                        "Media": f'{bs["mean"]:.4f}',
-                        "Desv. Est.": f'{bs["std"]:.4f}',
-                    })
-                with st.expander("📊 Estadisticas de bandas termicas ASTER", expanded=False):
+            if p.get("todas_dist"):
+                with st.expander("📍 Distancia a zonas geotermicas conocidas"):
                     st.markdown(
                         '<div style="font-size:0.85rem;color:#666;margin-bottom:8px;">'
-                        'Valores de emisividad termica por banda antes de la normalizacion. '
-                        'Estas bandas TIR (Thermal Infrared) capturan la radiacion termica '
-                        'emitida por la superficie terrestre.</div>',
+                        'Distancia desde la coordenada analizada a las 10 zonas '
+                        'geotermicas conocidas en Colombia.</div>',
                         unsafe_allow_html=True,
                     )
-                    st.dataframe(
-                        pd.DataFrame(band_data).set_index("Banda"),
-                        use_container_width=True,
-                    )
+                    df_zonas = pd.DataFrame(p["todas_dist"])
+                    st.dataframe(df_zonas.set_index("Zona"), use_container_width=True)
 
-                # Tiempos de procesamiento
-                with st.expander("⏱️ Tiempos de procesamiento", expanded=False):
-                    t1, t2, t3 = st.columns(3)
-                    t1.metric("Descarga GEE", f'{p.get("t_download", 0):.1f}s')
-                    t2.metric("Prediccion CNN", f'{p.get("t_pred", 0):.3f}s')
-                    t3.metric("Total", f'{p.get("t_total", 0):.1f}s')
+        # ---- Historial de predicciones ----
+        if st.session_state.get("pred_historial") and len(st.session_state["pred_historial"]) > 1:
+            with st.expander(f"🕐 Historial de predicciones ({len(st.session_state['pred_historial'])})"):
+                hist_data = []
+                for h in st.session_state["pred_historial"]:
+                    hist_data.append({
+                        "Hora": h.get("timestamp", "-"),
+                        "Latitud": f'{h["lat"]:.4f}',
+                        "Longitud": f'{h["lon"]:.4f}',
+                        "Probabilidad": f'{h["valor"]:.1%}',
+                        "Resultado": "Con potencial" if h["valor"] >= 0.5 else "Bajo potencial",
+                        "Zona cercana": h.get("zona", "-"),
+                    })
+                st.dataframe(pd.DataFrame(hist_data), use_container_width=True, hide_index=True)
 
-                # Zonas geotermicas cercanas
-                if p.get("todas_dist"):
-                    with st.expander("📍 Distancia a zonas geotermicas conocidas", expanded=False):
-                        st.markdown(
-                            '<div style="font-size:0.85rem;color:#666;margin-bottom:8px;">'
-                            'Distancia desde la coordenada analizada a las 10 zonas '
-                            'geotermicas conocidas en Colombia.</div>',
-                            unsafe_allow_html=True,
-                        )
-                        df_zonas = pd.DataFrame(p["todas_dist"])
-                        st.dataframe(df_zonas.set_index("Zona"), use_container_width=True)
-
-            st.write("")
-            st.markdown("#### Ubicacion en el mapa")
-            zonas = zonas_geotermicas()
-            mapa = crear_mapa(zonas, {"lat": p["lat"], "lon": p["lon"]}, p["valor"])
-            st_folium(mapa, width=None, height=420, returned_objects=[])
-        else:
-            st.markdown(
-                '<div style="text-align:center;padding:3rem;color:#888">'
-                '<div style="font-size:3rem;margin-bottom:1rem">🗺️</div>'
-                '<p style="font-size:1.1rem">Ingresa coordenadas y presiona '
-                '<b>Analizar Potencial</b> para ver los resultados</p></div>',
-                unsafe_allow_html=True,
-            )
-            st_folium(crear_mapa(zonas_geotermicas()), width=None, height=420, returned_objects=[])
+    else:
+        # Estado vacio — mostrar mapa de zonas como referencia
+        st.divider()
+        st.markdown(
+            '<div style="text-align:center;padding:1.5rem 0;color:#888">'
+            '<div style="font-size:2.5rem;margin-bottom:0.8rem">🗺️</div>'
+            '<p style="font-size:1.05rem;margin:0">Selecciona una ubicacion y presiona '
+            '<b>Analizar Potencial</b> para obtener la prediccion</p></div>',
+            unsafe_allow_html=True,
+        )
+        st_folium(crear_mapa(zonas), width=None, height=380, returned_objects=[])
 
 
 def pagina_metricas():
