@@ -36,7 +36,6 @@ from typing import Dict, Optional
 sys.path.append(str(Path(__file__).parent.parent))
 
 from models.cnn_geotermia import create_geotermia_model, get_cosine_decay_schedule
-from scripts.prepare_dataset import _load_chunked, get_part_paths
 
 # Configurar logging
 logging.basicConfig(
@@ -128,37 +127,103 @@ class GeotermiaCNNTrainer:
         else:
             logger.warning("No se detectaron GPUs. Usando CPU.")
 
+    def _load_partitioned_or_single(self, prefix: str) -> np.ndarray:
+        """
+        Carga un array .npy que puede estar partido en multiples archivos.
+
+        Si existe <prefix>.npy lo carga directamente.
+        Si existen <prefix>_part0.npy, <prefix>_part1.npy, ... los concatena.
+
+        Args:
+            prefix: Nombre base sin extension (e.g. 'X_train')
+
+        Returns:
+            Array numpy concatenado
+        """
+        single = self.processed_data_path / f'{prefix}.npy'
+        if single.exists():
+            logger.info(f"  Cargando {prefix}.npy (archivo unico)")
+            return np.load(single)
+
+        # Buscar partes
+        import glob as _glob
+        pattern = str(self.processed_data_path / f'{prefix}_part*.npy')
+        parts = sorted(_glob.glob(pattern))
+        if not parts:
+            raise FileNotFoundError(
+                f"No se encontro {single} ni archivos {prefix}_part*.npy"
+            )
+
+        logger.info(f"  Cargando {prefix} desde {len(parts)} partes...")
+        arrays = []
+        for p in parts:
+            logger.info(f"    -> {Path(p).name}")
+            arrays.append(np.load(p))
+        return np.concatenate(arrays, axis=0)
+
+    def _get_train_part_paths(self) -> list:
+        """
+        Obtiene rutas de X_train particionado sin cargar en RAM.
+        Si existe X_train.npy unico, retorna [path].
+        """
+        single = self.processed_data_path / 'X_train.npy'
+        if single.exists():
+            return [single]
+
+        import glob as _glob
+        pattern = str(self.processed_data_path / 'X_train_part*.npy')
+        parts = sorted(_glob.glob(pattern))
+        if not parts:
+            raise FileNotFoundError(
+                "No se encontro X_train.npy ni X_train_part*.npy"
+            )
+        return [Path(p) for p in parts]
+
     def load_data(self) -> Dict:
         """
-        Carga los datos procesados.
+        Carga los datos procesados (soporta archivos particionados).
 
-        Train se retorna como rutas a partes (FAT32-safe, ~670 MB c/u)
+        Train X se retorna como rutas a partes (FAT32-safe, ~670 MB c/u)
         para que el generador cargue un lote a la vez.
         Val y test se cargan completos (~1.3 GB c/u, caben en RAM).
 
         Returns:
-        Diccionario con datos y rutas
+            Diccionario con datos y rutas
         """
         logger.info("Cargando datos procesados...")
+        logger.info(f"Ruta: {self.processed_data_path}")
 
         try:
-            # Train: solo rutas a partes (no cargar 5.5 GB en RAM)
-            train_parts = get_part_paths(self.processed_data_path, 'train')
-            y_train = np.load(self.processed_data_path / 'y_train.npy')
+            # Train X: solo rutas a partes (no cargar 5.5 GB en RAM)
+            train_parts = self._get_train_part_paths()
+            y_train = self._load_partitioned_or_single('y_train')
 
             # Val/Test: carga completa (caben en RAM)
-            X_val = _load_chunked(self.processed_data_path, 'val')
-            y_val = np.load(self.processed_data_path / 'y_val.npy')
-            X_test = _load_chunked(self.processed_data_path, 'test')
-            y_test = np.load(self.processed_data_path / 'y_test.npy')
+            X_val = self._load_partitioned_or_single('X_val')
+            y_val = self._load_partitioned_or_single('y_val')
+            X_test = self._load_partitioned_or_single('X_test')
+            y_test = self._load_partitioned_or_single('y_test')
 
             with open(self.processed_data_path / 'split_info.json', 'r') as f:
                 split_info = json.load(f)
 
+            # Auto-detectar input_shape desde header del primer part
+            with open(str(train_parts[0]), 'rb') as f:
+                version = np.lib.format.read_magic(f)
+                shape_info = np.lib.format._read_array_header(f, version)
+            actual_shape = shape_info[0][1:]  # (224, 224, N_bands)
+            if actual_shape != self.input_shape:
+                logger.warning(
+                    f"input_shape configurado {self.input_shape} != "
+                    f"shape real de datos {actual_shape}. "
+                    f"Actualizando a {actual_shape}."
+                )
+                self.input_shape = actual_shape
+
             logger.info(f"Datos cargados:")
-            logger.info(f"Train: {len(y_train)} imgs en {len(train_parts)} parte(s)")
-            logger.info(f"Validation: {X_val.shape}")
-            logger.info(f"Test: {X_test.shape}")
+            logger.info(f"  Train: {len(y_train)} imgs en {len(train_parts)} parte(s)")
+            logger.info(f"  Validation: {X_val.shape} | y: {y_val.shape}")
+            logger.info(f"  Test: {X_test.shape} | y: {y_test.shape}")
 
             return {
                 'train_parts': train_parts,
