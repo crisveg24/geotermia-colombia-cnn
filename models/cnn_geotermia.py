@@ -62,7 +62,7 @@ class GeotermiaCNN:
     
     def __init__(
         self,
-        input_shape: Tuple[int, int, int] = (224, 224, 5),
+        input_shape: Tuple[int, int, int] = (224, 224, 7),
         num_classes: int = 2,
         dropout_rate: float = 0.5,
         l2_reg: float = 0.0001,
@@ -73,7 +73,7 @@ class GeotermiaCNN:
         
         Args:
             input_shape: Dimensiones de entrada (height, width, channels)
-                Por defecto: (224, 224, 5) para 5 bandas térmicas ASTER
+                Por defecto: (224, 224, 7) para 7 bandas ASTER (5 TIR + temperature + NDVI)
             num_classes: Número de clases de salida (2 para binario)
             dropout_rate: Tasa de dropout para regularización
             l2_reg: Factor de regularización L2
@@ -184,7 +184,7 @@ class GeotermiaCNN:
         Construye la arquitectura CNN completa.
         
         Arquitectura:
-            1. Input Layer (224x224x5)
+            1. Input Layer (224x224x7)
             2. Initial Conv Block (32 filters)
             3. Residual Block 1 (64 filters) + MaxPooling
             4. Residual Block 2 (128 filters) + MaxPooling
@@ -439,7 +439,7 @@ def get_cosine_decay_schedule(
 
 
 def create_geotermia_model(
-    input_shape: Tuple[int, int, int] = (224, 224, 5),
+    input_shape: Tuple[int, int, int] = (224, 224, 7),
     num_classes: int = 2,
     model_type: str = 'custom',
     **kwargs
@@ -457,7 +457,7 @@ def create_geotermia_model(
         Modelo Keras compilado
     
     Example:
-        >>> model = create_geotermia_model(input_shape=(224, 224, 5))
+        >>> model = create_geotermia_model(input_shape=(224, 224, 7))
         >>> model.summary()
     """
     cnn = GeotermiaCNN(
@@ -484,7 +484,7 @@ if __name__ == '__main__':
     # Crear modelo custom
     print("\n1. Modelo Custom CNN:")
     model_custom = create_geotermia_model(
-        input_shape=(224, 224, 5),
+        input_shape=(224, 224, 7),
         num_classes=2,
         model_type='custom'
     )
@@ -493,7 +493,7 @@ if __name__ == '__main__':
     # Crear modelo con Transfer Learning (opcional)
     print("\n2. Modelo con Transfer Learning (EfficientNetB0):")
     model_transfer = create_geotermia_model(
-        input_shape=(224, 224, 5),
+        input_shape=(224, 224, 7),
         num_classes=2,
         model_type='transfer_learning',
         base_model_name='efficientnet'

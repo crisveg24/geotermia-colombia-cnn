@@ -161,9 +161,9 @@ def generar_reporte():
     pdf.cuerpo_texto(
         'El modelo fue entrenado utilizando 85 imagenes ASTER originales de zonas geotermicas '
         'y zonas de control en Colombia, las cuales fueron aumentadas a 2,635 imagenes mediante '
-        'tecnicas de data augmentation. El entrenamiento se realizo utilizando las 5 bandas '
-        'termicas de ASTER (TIR: bandas 10-14), que capturan informacion termica en el rango '
-        'de 8.125 a 11.65 micrometros.'
+        'tecnicas de data augmentation. El entrenamiento se realizo utilizando 7 bandas '
+        'ASTER: 5 bandas termicas de emisividad (TIR: bandas 10-14), temperatura superficial '
+        'y NDVI, que capturan informacion termica e indicadores de alteracion hidrotermal.'
     )
 
     pdf.subtitulo('1.1 Objetivo')
@@ -426,7 +426,7 @@ def generar_reporte():
         '1. Se implemento exitosamente un pipeline completo de deep learning para '
         'clasificacion de imagenes satelitales ASTER.\n\n'
         '2. Se disenouna arquitectura CNN inspirada en ResNet con 5 millones de parametros '
-        'optimizada para imagenes multiespectrales de 5 bandas.\n\n'
+        'optimizada para imagenes multiespectrales de 7 bandas.\n\n'
         '3. Se logro un ROC AUC de 0.82, demostrando que el modelo tiene capacidad '
         'discriminativa real para distinguir zonas geotermicas.\n\n'
         '4. Se automatizo la descarga de datos desde Google Earth Engine, el augmentation '

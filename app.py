@@ -553,6 +553,9 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
     """
     import tempfile
     import time
+    import sys
+    sys.path.insert(0, str(PROJECT_ROOT))
+    from config import cfg
     try:
         import ee
         import geemap
@@ -570,12 +573,12 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
         # Descargar imagen ASTER
         point = ee.Geometry.Point([lon, lat])
         roi = point.buffer(5000)
-        thermal_bands = [
+        aster_bands = [
             'emissivity_band10', 'emissivity_band11',
             'emissivity_band12', 'emissivity_band13',
-            'emissivity_band14'
+            'emissivity_band14', 'temperature', 'ndvi'
         ]
-        image = ee.Image('NASA/ASTER_GED/AG100_003').select(thermal_bands).clip(roi)
+        image = ee.Image('NASA/ASTER_GED/AG100_003').select(aster_bands).clip(roi)
 
         tmp_path = Path(tempfile.gettempdir()) / f'pred_{lat:.4f}_{lon:.4f}.tif'
         geemap.ee_export_image(
@@ -596,16 +599,17 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
             crs = str(src.crs) if src.crs else "N/A"
             img_shape_orig = img.shape
 
-        # Asegurar 5 bandas
-        if img.shape[2] < 5:
-            pad = np.zeros((img.shape[0], img.shape[1], 5 - img.shape[2]), dtype=np.float32)
+        # Asegurar 7 bandas (5 emisividad + temperature + NDVI)
+        n_bands = cfg.NUM_BANDS  # 7
+        if img.shape[2] < n_bands:
+            pad = np.zeros((img.shape[0], img.shape[1], n_bands - img.shape[2]), dtype=np.float32)
             img = np.concatenate([img, pad], axis=2)
-        elif img.shape[2] > 5:
-            img = img[:, :, :5]
+        elif img.shape[2] > n_bands:
+            img = img[:, :, :n_bands]
 
         # Estadisticas por banda (antes de normalizar)
         band_stats = []
-        for i in range(5):
+        for i in range(n_bands):
             b = img[:, :, i]
             # v2: Filtrar NoData (-9999) de estadísticas y normalización
             valid = b[b > -9999]
@@ -621,7 +625,7 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
                 band_stats.append({"min": 0, "max": 0, "mean": 0, "std": 0, "nodata_pct": 100.0})
 
         # v2: Reemplazar NoData con mediana por banda antes de resize
-        for i in range(5):
+        for i in range(n_bands):
             band = img[:, :, i]
             valid = band[band > -9999]
             if len(valid) > 0:
@@ -630,10 +634,10 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
                 band[band <= -9999] = 0
 
         # Resize a 224x224
-        img_resized = resize(img, (224, 224, 5), preserve_range=True, anti_aliasing=True).astype(np.float32)
+        img_resized = resize(img, (224, 224, n_bands), preserve_range=True, anti_aliasing=True).astype(np.float32)
 
         # Normalizar por banda (z-score)
-        for i in range(5):
+        for i in range(n_bands):
             band = img_resized[:, :, i]
             mean, std = band.mean(), band.std()
             if std > 0:
@@ -668,7 +672,7 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
             "t_total": t_total,
             "buffer_m": 5000,
             "scale_m": 90,
-            "n_bands": 5,
+            "n_bands": n_bands,
             "dataset": "NASA/ASTER_GED/AG100_003",
         }
 
@@ -1803,7 +1807,7 @@ def pagina_arquitectura():
         '<div class="info-box">'
         'Arquitectura <b>ResNet-inspired</b> con bloques residuales, '
         'SpatialDropout2D para regularizacion espacial y Global Average Pooling. '
-        'Disenada para clasificacion binaria de imagenes termicas ASTER de 5 bandas.'
+        'Disenada para clasificacion binaria de imagenes ASTER de 7 bandas (5 TIR + temperatura + NDVI).'
         '</div>',
         unsafe_allow_html=True,
     )

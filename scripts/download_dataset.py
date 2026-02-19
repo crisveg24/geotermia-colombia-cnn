@@ -420,13 +420,17 @@ class GeotermalDatasetDownloader:
                 point = ee.Geometry.Point(coords)
                 roi = point.buffer(buffer_size)
 
-                # Seleccionar bandas térmicas de emisividad (bandas 10-14)
-                # Estas son las más relevantes para análisis geotérmico
-                thermal_bands = ['emissivity_band10', 'emissivity_band11', 
-                'emissivity_band12', 'emissivity_band13', 
-                'emissivity_band14']
+                # Seleccionar 7 bandas: 5 emisividad TIR + temperatura + NDVI
+                # Las bandas TIR detectan anomalías térmicas, la temperatura
+                # confirma el gradiente superficial y el NDVI indica alteración
+                # hidrotermal (menor vegetación en zonas alteradas)
+                aster_bands = [
+                    'emissivity_band10', 'emissivity_band11',
+                    'emissivity_band12', 'emissivity_band13',
+                    'emissivity_band14', 'temperature', 'ndvi'
+                ]
 
-                image = self.aster_dataset.select(thermal_bands).clip(roi)
+                image = self.aster_dataset.select(aster_bands).clip(roi)
 
                 # Descargar imagen usando geemap
                 logger.info(f"Descargando: {name} (label={label}, intento {attempt}/{max_retries})...")
@@ -453,7 +457,7 @@ class GeotermalDatasetDownloader:
                         'buffer_size': buffer_size,
                         'scale': scale,
                         'file_size_mb': round(file_size, 2),
-                        'bands': thermal_bands
+                        'bands': aster_bands
                     })
 
                     return True

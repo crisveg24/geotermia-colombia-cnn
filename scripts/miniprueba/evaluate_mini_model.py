@@ -261,11 +261,11 @@ def main():
     print(f"Métricas: {METRICS_PATH}")
     
     print("\nArchivos para tu tesis:")
-    print(" - confusion_matrix.png → Matriz de confusión")
-    print(" - roc_curve.png → Curva ROC")
-    print(" - training_history.png → Historia de entrenamiento")
-    print(" - metrics_comparison.png → Comparación de métricas")
-    print(" - metrics_table.csv → Tabla con valores")
+    print(" - confusion_matrix.png -> Matriz de confusion")
+    print(" - roc_curve.png -> Curva ROC")
+    print(" - training_history.png -> Historia de entrenamiento")
+    print(" - metrics_comparison.png -> Comparacion de metricas")
+    print(" - metrics_table.csv -> Tabla con valores")
 
 
 if __name__ == "__main__":
