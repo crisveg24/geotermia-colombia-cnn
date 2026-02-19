@@ -25,6 +25,7 @@ import sys
 from pathlib import Path
 import json
 import io
+import logging
 from datetime import datetime
 
 # Ruta raiz del proyecto (app.py esta en la raiz)
