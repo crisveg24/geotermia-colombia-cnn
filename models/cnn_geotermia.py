@@ -252,7 +252,7 @@ class GeotermiaCNN:
             ]
             # Agregar F1Score si está disponible (TensorFlow 2.13+)
             if HAS_F1_METRIC:
-                metrics.append(F1Score(name='f1_score', threshold=0.5))
+                metrics.append(F1Score(name='f1_score', threshold=0.5, average='micro'))
         else:
             # Clasificación multiclase
             outputs = layers.Dense(self.num_classes, activation='softmax', name='output')(x)

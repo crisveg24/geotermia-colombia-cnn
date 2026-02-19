@@ -127,30 +127,75 @@ class GeotermiaCNNTrainer:
         else:
             logger.warning("No se detectaron GPUs. Usando CPU.")
 
+    def _load_partitioned_or_single(self, prefix: str) -> np.ndarray:
+        """
+        Carga un array .npy que puede estar partido en múltiples archivos.
+
+        Si existe <prefix>.npy lo carga directamente.
+        Si existen <prefix>_part0.npy, <prefix>_part1.npy, ... los concatena.
+
+        Args:
+            prefix: Nombre base sin extensión (e.g. 'X_train')
+
+        Returns:
+            Array numpy concatenado
+        """
+        single = self.processed_data_path / f'{prefix}.npy'
+        if single.exists():
+            logger.info(f"  Cargando {prefix}.npy (archivo único)")
+            return np.load(single)
+
+        # Buscar partes
+        import glob as _glob
+        pattern = str(self.processed_data_path / f'{prefix}_part*.npy')
+        parts = sorted(_glob.glob(pattern))
+        if not parts:
+            raise FileNotFoundError(
+                f"No se encontró {single} ni archivos {prefix}_part*.npy"
+            )
+
+        logger.info(f"  Cargando {prefix} desde {len(parts)} partes...")
+        arrays = []
+        for p in parts:
+            logger.info(f"    → {Path(p).name}")
+            arrays.append(np.load(p))
+        return np.concatenate(arrays, axis=0)
+
     def load_data(self) -> Dict[str, np.ndarray]:
         """
-        Carga los datos procesados.
+        Carga los datos procesados (soporta archivos particionados).
 
         Returns:
         Diccionario con arrays de datos
         """
         logger.info("Cargando datos procesados...")
+        logger.info(f"Ruta: {self.processed_data_path}")
 
         try:
-            X_train = np.load(self.processed_data_path / 'X_train.npy')
-            y_train = np.load(self.processed_data_path / 'y_train.npy')
-            X_val = np.load(self.processed_data_path / 'X_val.npy')
-            y_val = np.load(self.processed_data_path / 'y_val.npy')
-            X_test = np.load(self.processed_data_path / 'X_test.npy')
-            y_test = np.load(self.processed_data_path / 'y_test.npy')
+            X_train = self._load_partitioned_or_single('X_train')
+            y_train = self._load_partitioned_or_single('y_train')
+            X_val = self._load_partitioned_or_single('X_val')
+            y_val = self._load_partitioned_or_single('y_val')
+            X_test = self._load_partitioned_or_single('X_test')
+            y_test = self._load_partitioned_or_single('y_test')
 
             with open(self.processed_data_path / 'split_info.json', 'r') as f:
                 split_info = json.load(f)
 
+            # Auto-detectar input_shape desde los datos cargados
+            actual_shape = X_train.shape[1:]  # (224, 224, N_bands)
+            if actual_shape != self.input_shape:
+                logger.warning(
+                    f"input_shape configurado {self.input_shape} != "
+                    f"shape real de datos {actual_shape}. "
+                    f"Actualizando a {actual_shape}."
+                )
+                self.input_shape = actual_shape
+
             logger.info(f"Datos cargados:")
-            logger.info(f"Train: {X_train.shape}")
-            logger.info(f"Validation: {X_val.shape}")
-            logger.info(f"Test: {X_test.shape}")
+            logger.info(f"  Train: {X_train.shape} | y: {y_train.shape}")
+            logger.info(f"  Validation: {X_val.shape} | y: {y_val.shape}")
+            logger.info(f"  Test: {X_test.shape} | y: {y_test.shape}")
 
             return {
                 'X_train': X_train,
