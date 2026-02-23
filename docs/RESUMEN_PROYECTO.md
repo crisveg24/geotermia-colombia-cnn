@@ -42,7 +42,7 @@
 
 ### 2.3 Modelo CNN
 - Arquitectura ResNet-inspired personalizada: 52 capas, 5,025,409 parámetros.
-- Input: (224, 224, 5) — 5 bandas térmicas ASTER (bandas 10-14).
+- Input: (224, 224, 7) — 7 bandas ASTER (5 térmicas + temp + ndvi).
 - Output: clasificación binaria (sigmoid).
 - Optimizado con SpatialDropout2D, AdamW, Label Smoothing (0.1), PR-AUC, F1Score.
 

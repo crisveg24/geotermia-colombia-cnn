@@ -81,15 +81,42 @@ class ModelEvaluator:
             logger.error(f"Error cargando modelo: {e}")
             return False
 
+    def _load_partitioned_or_single(self, prefix: str) -> np.ndarray:
+        """
+        Carga un array .npy que puede estar partido en multiples archivos.
+
+        Si existe <prefix>.npy lo carga directamente.
+        Si existen <prefix>_part0.npy, <prefix>_part1.npy, ... los concatena.
+        """
+        single = self.processed_data_path / f'{prefix}.npy'
+        if single.exists():
+            logger.info(f"  Cargando {prefix}.npy (archivo unico)")
+            return np.load(single)
+
+        import glob as _glob
+        pattern = str(self.processed_data_path / f'{prefix}_part*.npy')
+        parts = sorted(_glob.glob(pattern))
+        if not parts:
+            raise FileNotFoundError(
+                f"No se encontro {single} ni archivos {prefix}_part*.npy"
+            )
+
+        logger.info(f"  Cargando {prefix} desde {len(parts)} partes...")
+        arrays = []
+        for p in parts:
+            logger.info(f"    -> {Path(p).name}")
+            arrays.append(np.load(p))
+        return np.concatenate(arrays, axis=0)
+
     def load_test_data(self):
-        """Carga los datos de test."""
+        """Carga los datos de test (soporta archivos particionados)."""
         logger.info("Cargando datos de test...")
 
         try:
-            self.X_test = np.load(self.processed_data_path / 'X_test.npy')
-            self.y_test = np.load(self.processed_data_path / 'y_test.npy')
+            self.X_test = self._load_partitioned_or_single('X_test')
+            self.y_test = self._load_partitioned_or_single('y_test')
 
-            logger.info(f"Datos cargados: {self.X_test.shape}")
+            logger.info(f"Datos cargados: X_test={self.X_test.shape}, y_test={self.y_test.shape}")
             return True
         except Exception as e:
             logger.error(f"Error cargando datos: {e}")

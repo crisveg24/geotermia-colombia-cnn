@@ -634,8 +634,9 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
             else:
                 band[band <= -9999] = 0
 
-        # Resize a 224x224
-        img_resized = resize(img, (224, 224, n_bands), preserve_range=True, anti_aliasing=True).astype(np.float32)
+        # 1. No hacemos resize directo a 224x224 para Sliding Window
+        # Mantenemos las proporciones
+        img_resized = img.astype(np.float32)
 
         # Normalizar por banda (z-score)
         for i in range(n_bands):
@@ -646,11 +647,50 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
             else:
                 img_resized[:, :, i] = band - mean
 
-        # Prediccion
+        # Prediccion con Sliding Window si es mas grande que 224x224
         t_pred = time.time()
-        input_tensor = np.expand_dims(img_resized, axis=0)
-        prediction = modelo.predict(input_tensor, verbose=0)
-        probability = float(prediction[0, 0])
+        
+        h_img, w_img, c = img_resized.shape
+        h_win, w_win = (224, 224)
+        stride = 112
+        
+        if h_img <= h_win and w_img <= w_win:
+            # Padding si es mas pequeña
+            padded = np.zeros((h_win, w_win, c), dtype=np.float32)
+            padded[:h_img, :w_img, :] = img_resized
+            input_tensor = np.expand_dims(padded, axis=0)
+            prediction = modelo.predict(input_tensor, verbose=0)
+            probability = float(prediction[0, 0])
+        else:
+            # Sliding window real
+            windows = []
+            for y in range(0, h_img - h_win + 1, stride):
+                for x in range(0, w_img - w_win + 1, stride):
+                    windows.append(img_resized[y:y+h_win, x:x+w_win, :])
+            
+            # Asegurar bordes
+            if (h_img - h_win) % stride != 0:
+                for x in range(0, w_img - w_win + 1, stride):
+                    windows.append(img_resized[-h_win:, x:x+w_win, :])
+            if (w_img - w_win) % stride != 0:
+                for y in range(0, h_img - h_win + 1, stride):
+                    windows.append(img_resized[y:y+h_win, -w_win:, :])
+            if (h_img - h_win) % stride != 0 and (w_img - w_win) % stride != 0:
+                windows.append(img_resized[-h_win:, -w_win:, :])
+                
+            if not windows:
+                padded = np.zeros((h_win, w_win, c), dtype=np.float32)
+                padded[:h_img, :w_img, :] = img_resized
+                windows.append(padded)
+                
+            batch = np.array(windows)
+            predictions = modelo.predict(batch, batch_size=32, verbose=0)
+            
+            if predictions.shape[1] == 1:
+                probability = float(np.max(predictions))
+            else:
+                probability = float(np.max(predictions[:, 1]))
+                
         t_pred = time.time() - t_pred
 
         t_total = time.time() - t0
@@ -729,11 +769,11 @@ def generar_reporte_texto(p: dict) -> str:
             "",
             "--- IMAGEN SATELITAL ---",
             f"Dataset:          {p.get('dataset', 'ASTER GED v003')}",
-            f"Bandas:           {p.get('n_bands', 5)} TIR (emisividad)",
+            f"Bandas:           {p.get('n_bands', 7)} (5 TIR + temperature + NDVI)",
             f"Resolucion:       {p.get('scale_m', 90)} m/pixel",
             f"Area analizada:   {p.get('buffer_m', 5000)/1000:.0f} km de radio",
             f"Imagen original:  {p.get('img_shape', (0,0,0))[0]}x{p.get('img_shape', (0,0,0))[1]} px",
-            f"Entrada modelo:   224x224x5",
+            f"Entrada modelo:   224x224x7",
             f"Tamano archivo:   {p.get('img_size_kb', 0):.1f} KB",
             "",
             "--- ESTADISTICAS DE BANDAS ---",
@@ -974,7 +1014,7 @@ def pagina_inicio():
     with st.expander("Ver detalle de todas las zonas"):
         df_zonas = pd.DataFrame(zonas)
         df_zonas.columns = ["Zona", "Latitud", "Longitud", "Tipo", "Potencial"]
-        st.dataframe(df_zonas, use_container_width=True, hide_index=True)
+        st.dataframe(df_zonas, width="stretch", hide_index=True)
 
     st.write("")
     st.divider()
@@ -1147,7 +1187,7 @@ def pagina_prediccion():
         with sc3:
             st.write("")
             analizar = st.button(
-                "🔬 Analizar Potencial", type="primary", use_container_width=True,
+                "🔬 Analizar Potencial", type="primary", width="stretch",
                 key="btn_mapa",
             )
 
@@ -1167,7 +1207,7 @@ def pagina_prediccion():
             st.write("")
             st.write("")
             analizar = st.button(
-                "🔬 Analizar Potencial", type="primary", use_container_width=True,
+                "🔬 Analizar Potencial", type="primary", width="stretch",
                 key="btn_manual",
             )
         st.session_state["pred_lat"] = latitud
@@ -1193,7 +1233,7 @@ def pagina_prediccion():
             st.write("")
             st.write("")
             analizar = st.button(
-                "🔬 Analizar Potencial", type="primary", use_container_width=True,
+                "🔬 Analizar Potencial", type="primary", width="stretch",
                 key="btn_zona",
             )
         st.session_state["pred_lat"] = latitud
@@ -1374,7 +1414,7 @@ def pagina_prediccion():
                     f'<tr><td style="padding:2px 0;"><b>Fuente</b></td>'
                     f'<td style="text-align:right;">NASA/USGS via GEE</td></tr>'
                     f'<tr><td style="padding:2px 0;"><b>Bandas</b></td>'
-                    f'<td style="text-align:right;">{p.get("n_bands", 5)} TIR (emisividad)</td></tr>'
+                    f'<td style="text-align:right;">{p.get("n_bands", 7)} (5 TIR + temp + NDVI)</td></tr>'
                     f'<tr><td style="padding:2px 0;"><b>Resolucion</b></td>'
                     f'<td style="text-align:right;">{p.get("scale_m", 90)} m/pixel</td></tr>'
                     f'<tr><td style="padding:2px 0;"><b>Area</b></td>'
@@ -1395,17 +1435,17 @@ def pagina_prediccion():
                     '<tr><td style="padding:2px 0;"><b>Arquitectura</b></td>'
                     '<td style="text-align:right;">CNN personalizada</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>Dataset</b></td>'
-                    '<td style="text-align:right;">2,635 imagenes</td></tr>'
+                    '<td style="text-align:right;">6,200 imagenes</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>Mejor epoca</b></td>'
-                    '<td style="text-align:right;">8 / 23</td></tr>'
+                    '<td style="text-align:right;">8 / 22</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>Accuracy</b></td>'
-                    '<td style="text-align:right;">68.43%</td></tr>'
+                    '<td style="text-align:right;">91.45%</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>Precision</b></td>'
-                    '<td style="text-align:right;">86.32%</td></tr>'
+                    '<td style="text-align:right;">97.94%</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>ROC AUC</b></td>'
-                    '<td style="text-align:right;">0.8198</td></tr>'
+                    '<td style="text-align:right;">0.983</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>F1-Score</b></td>'
-                    '<td style="text-align:right;">61.77%</td></tr>'
+                    '<td style="text-align:right;">91.61%</td></tr>'
                     '</table></div>',
                     unsafe_allow_html=True,
                 )
@@ -1457,7 +1497,7 @@ def pagina_prediccion():
                 )
                 st.dataframe(
                     pd.DataFrame(band_data).set_index("Banda"),
-                    use_container_width=True,
+                    width="stretch",
                 )
 
             if p.get("todas_dist"):
@@ -1469,7 +1509,7 @@ def pagina_prediccion():
                         unsafe_allow_html=True,
                     )
                     df_zonas = pd.DataFrame(p["todas_dist"])
-                    st.dataframe(df_zonas.set_index("Zona"), use_container_width=True)
+                    st.dataframe(df_zonas.set_index("Zona"), width="stretch")
 
         # ---- Historial de predicciones ----
         if st.session_state.get("pred_historial") and len(st.session_state["pred_historial"]) > 1:
@@ -1484,7 +1524,7 @@ def pagina_prediccion():
                         "Resultado": "Con potencial" if h["valor"] >= 0.5 else "Bajo potencial",
                         "Zona cercana": h.get("zona", "-"),
                     })
-                st.dataframe(pd.DataFrame(hist_data), use_container_width=True, hide_index=True)
+                st.dataframe(pd.DataFrame(hist_data), width="stretch", hide_index=True)
 
         # ---- Exportar reporte ----
         st.write("")
@@ -1496,7 +1536,7 @@ def pagina_prediccion():
                 data=reporte_txt,
                 file_name=f"reporte_geotermico_{p['lat']:.4f}_{p['lon']:.4f}.txt",
                 mime="text/plain",
-                use_container_width=True,
+                width="stretch",
             )
         with exp2:
             if st.session_state.get("pred_historial"):
@@ -1525,7 +1565,7 @@ def pagina_prediccion():
                     data=csv_df.to_csv(index=False),
                     file_name="historial_predicciones.csv",
                     mime="text/csv",
-                    use_container_width=True,
+                    width="stretch",
                 )
 
         # ---- Mapa de calor (heatmap) ----
@@ -1563,7 +1603,7 @@ def pagina_prediccion():
                 cmp_lat_b = st.number_input("Latitud B:", -4.0, 12.0, 5.7781, 0.0001, format="%.4f", key="cmp_lat_b")
                 cmp_lon_b = st.number_input("Longitud B:", -82.0, -66.0, -73.1124, 0.0001, format="%.4f", key="cmp_lon_b")
 
-            cmp_btn = st.button("🔬 Comparar ambas ubicaciones", type="primary", use_container_width=True, key="btn_cmp")
+            cmp_btn = st.button("🔬 Comparar ambas ubicaciones", type="primary", width="stretch", key="btn_cmp")
 
             if cmp_btn and usa_cnn and modelo is not None:
                 cmp_r1, cmp_r2 = st.columns(2, gap="medium")
@@ -1697,7 +1737,7 @@ def pagina_metricas():
             )
             fig.update_xaxes(showgrid=False)
             fig.update_yaxes(showgrid=True, gridcolor="rgba(0,0,0,0.05)")
-            st.plotly_chart(fig, use_container_width=True, key="bar_metricas")
+            st.plotly_chart(fig, width="stretch", key="bar_metricas")
 
         with c2:
             st.markdown("#### Curva ROC")
@@ -1735,7 +1775,7 @@ def pagina_metricas():
             )
             fig.update_xaxes(showgrid=True, gridcolor="rgba(0,0,0,0.05)")
             fig.update_yaxes(showgrid=True, gridcolor="rgba(0,0,0,0.05)")
-            st.plotly_chart(fig, use_container_width=True, key="roc")
+            st.plotly_chart(fig, width="stretch", key="roc")
 
     # Historial
     if historial:
@@ -1766,7 +1806,7 @@ def pagina_metricas():
             )
             fig.update_xaxes(showgrid=True, gridcolor="rgba(0,0,0,0.05)")
             fig.update_yaxes(showgrid=True, gridcolor="rgba(0,0,0,0.05)")
-            st.plotly_chart(fig, use_container_width=True, key="loss")
+            st.plotly_chart(fig, width="stretch", key="loss")
 
         with c2:
             fig = go.Figure()
@@ -1783,7 +1823,7 @@ def pagina_metricas():
             )
             fig.update_xaxes(showgrid=True, gridcolor="rgba(0,0,0,0.05)")
             fig.update_yaxes(showgrid=True, gridcolor="rgba(0,0,0,0.05)")
-            st.plotly_chart(fig, use_container_width=True, key="acc")
+            st.plotly_chart(fig, width="stretch", key="acc")
 
     # Figuras PNG
     figs_dir = PROJECT_ROOT / "results" / "figures"
@@ -1793,7 +1833,7 @@ def pagina_metricas():
         st.markdown("#### Visualizaciones Generadas")
         cols = st.columns(min(len(imgs), 3), gap="medium")
         for i, img in enumerate(imgs[:6]):
-            cols[i % len(cols)].image(str(img), caption=img.stem.replace("_", " ").title(), use_container_width=True)
+            cols[i % len(cols)].image(str(img), caption=img.stem.replace("_", " ").title(), width="stretch")
 
 
 def pagina_arquitectura():
@@ -1832,13 +1872,13 @@ def pagina_arquitectura():
             "—", "256", "1",
         ],
         "Salida": [
-            "224x224x5", "224x224x32", "224x224x32", "112x112x32",
+            "224x224x7", "224x224x32", "224x224x32", "112x112x32",
             "112x112x64", "56x56x64", "56x56x128", "28x28x128",
             "28x28x256", "14x14x256", "14x14x512", "14x14x512",
             "512", "256", "1",
         ],
     })
-    st.dataframe(capas, use_container_width=True, hide_index=True)
+    st.dataframe(capas, width="stretch", hide_index=True)
 
     st.write("")
 
@@ -1875,7 +1915,7 @@ def pagina_arquitectura():
         height=560, margin=dict(l=5, r=5, t=5, b=5),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
     )
-    st.plotly_chart(fig, use_container_width=True, key="arch")
+    st.plotly_chart(fig, width="stretch", key="arch")
 
     st.divider()
 
@@ -1900,10 +1940,10 @@ def pagina_arquitectura():
 |----------------|-------|
 | Fuente | NASA ASTER Global Emissivity Dataset (AG100) V003 |
 | Resolucion | 100 metros |
-| Bandas | 10, 11, 12, 13, 14 (TIR) |
-| Entrada | 224 x 224 x 5 |
+| Bandas | 10, 11, 12, 13, 14 (TIR) + temperature + NDVI |
+| Entrada | 224 x 224 x 7 |
 | Normalizacion | Z-score por banda |
-| Dataset | ~2,635 imagenes (augmentadas) |
+| Dataset | ~6,200 imagenes (augmentadas) |
 """)
 
 
@@ -1957,15 +1997,15 @@ satelitales termicas del sensor **NASA ASTER**.
     met_data = pd.DataFrame({
         "Fase": ["Adquisicion", "Augmentacion", "Preparacion", "Modelado", "Evaluacion", "Despliegue"],
         "Descripcion": [
-            "Google Earth Engine → 85 imagenes ASTER",
-            "30 transformaciones → ~2,635 imagenes",
+            "Google Earth Engine -> 200 imagenes ASTER (7 bandas)",
+            "31 transformaciones -> ~6,200 imagenes",
             "Normalizacion + split 70/15/15 estratificado",
             "CNN ResNet-inspired (5 M parametros)",
             "Accuracy, Precision, Recall, F1, ROC-AUC, PR-AUC",
             "Streamlit + Folium + Plotly",
         ],
     })
-    st.dataframe(met_data, use_container_width=True, hide_index=True)
+    st.dataframe(met_data, width="stretch", hide_index=True)
 
     st.markdown("""
 ---

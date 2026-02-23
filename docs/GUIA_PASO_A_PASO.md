@@ -247,7 +247,7 @@ xcopy /E data\processed D:\geotermia_datos\processed\
 python scripts/download_dataset.py
 ```
 
-- Descarga 85 imágenes ASTER GED (5 bandas térmicas de emisividad)
+- Descarga 85 imágenes ASTER GED (7 bandas: 5 de emisividad térmica + Temperatura + NDVI)
 - 45 zonas geotérmicas (volcanes: Ruiz, Puracé, Galeras, Paipa-Iza, etc.)
 - 40 zonas de control (Llanos, Amazonía, Costa Caribe, etc.)
 - Resolución: 100 m/pixel (ASTER GED AG100), radio 5 km por zona
@@ -324,7 +324,7 @@ python scripts/train_model.py
 
 | Parámetro | Valor | Notas |
 |-----------|-------|-------|
-| Input shape | 224×224×5 | 5 bandas ASTER (emisividad térmica) |
+| Input shape | 224×224×7 | 7 bandas ASTER (5 TIR + Temperatura + NDVI) |
 | Batch size | 32 | Reducir a 16 si hay poca RAM/VRAM |
 | Épocas | 100 máx | EarlyStopping con patience=15 |
 | Optimizer | AdamW | lr=0.001, weight_decay=0.0001 |

@@ -99,7 +99,7 @@ El proyecto analiza zonas geotérmicas de interés en Colombia:
 **ASTER Global Emissivity Dataset (AG100) V003**
 - **Proveedor**: NASA/METI/AIST/Japan Spacesystems
 - **Resolución espacial**: 100 metros
-- **Bandas térmicas**: 10-14 (emisividad térmica infrarroja)
+- **Bandas térmicas**: 10-14 (emisividad térmica infrarroja) + temperatura + NDVI
 - **Cobertura**: Global
 - **Fuente**: Google Earth Engine
 
@@ -336,7 +336,7 @@ python scripts/predict.py --image test.tif --model models/saved_models/mi_modelo
 
 ```python
 GeotermiaCNN(
- input_shape=(224, 224, 5), # 5 bandas térmicas ASTER
+ input_shape=(224, 224, 7), # 7 bandas (5 TIR + temp + NDVI)
  num_classes=2, # Clasificación binaria
  dropout_rate=0.5, # Regularización
  l2_reg=0.0001 # Regularización L2
@@ -345,7 +345,7 @@ GeotermiaCNN(
 
 **Arquitectura:**
 ```
-Input (224×224×5)
+Input (224×224×7)
  ↓
 Rescaling (normalización)
  ↓
@@ -382,7 +382,7 @@ Output (1 neuron, sigmoid)
 ```python
 # Usar EfficientNetB0 pre-entrenado
 model = create_geotermia_model(
- input_shape=(224, 224, 5),
+ input_shape=(224, 224, 7),
  model_type='transfer_learning',
  base_model_name='efficientnet'
 )

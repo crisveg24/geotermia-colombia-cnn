@@ -66,7 +66,7 @@
 - **Modelo:** CNN personalizado con arquitectura ResNet-inspired
 - **Parámetros totales:** 5,025,409
 - **Capas totales:** 52
-- **Input shape:** (None, 224, 224, 5) - 5 bandas térmicas ASTER
+- **Input shape:** (None, 224, 224, 7) - 7 bandas ASTER (5 TIR + Temperatura + NDVI)
 - **Output shape:** (None, 1) - clasificación binaria con sigmoid
 - **Características:** Batch normalization, dropout, mixed precision
 - **Estado:** Verificado y funcional
@@ -114,7 +114,7 @@
 
 - **Tamaño total:** 2.49 MB
 - **Balance inicial:** 88.9% (45/85 positivas)
-- **Formato:** GeoTIFF con 5 bandas térmicas
+- **Formato:** GeoTIFF con 7 bandas (5 térmicas + temperatura + NDVI)
 - **Resolución espacial:** Variable según zona
 - **Salida:** `data/raw/` con subdirectorios `positive/` y `negative/`
 
@@ -211,15 +211,15 @@
 
 2. Normalización de bandas espectrales:
  - Detección automática de número de bandas
- - Expansión a 5 bandas si < 5 (duplicación de última banda)
- - Recorte a 5 bandas si > 5 (tomar primeras 5)
- - Garantiza consistencia: todas las imágenes tienen exactamente 5 bandas
+ - Expansión a 7 bandas si < 7 (padding con ceros)
+ - Recorte a 7 bandas si > 7 (tomar primeras 7)
+ - Garantiza consistencia: todas las imágenes tienen exactamente 7 bandas
 
 **Procesamiento Aplicado:**
 - Carga de imágenes GeoTIFF con rasterio
 - Redimensionamiento a 224x224 píxeles
-- Normalización de valores de píxel (0-1)
-- Preservación de 5 bandas térmicas ASTER
+- Normalización de valores de píxel (z-score)
+- Preservación de 7 bandas ASTER
 
 #### 5.2 División del Dataset
 - **Estrategia:** Estratificada para mantener proporción de clases
@@ -254,13 +254,13 @@ Cálculo: peso_clase = n_samples / (n_classes * n_samples_clase)
 **Ubicación:** `data/processed/`
 
 ```
-X_train.npy - Imágenes de entrenamiento: (1843, 224, 224, 5)
+X_train.npy - Imágenes de entrenamiento: (1843, 224, 224, 7)
 y_train.npy - Etiquetas de entrenamiento: (1843,)
 
-X_val.npy - Imágenes de validación: (396, 224, 224, 5)
+X_val.npy - Imágenes de validación: (396, 224, 224, 7)
 y_val.npy - Etiquetas de validación: (396,)
 
-X_test.npy - Imágenes de prueba: (396, 224, 224, 5)
+X_test.npy - Imágenes de prueba: (396, 224, 224, 7)
 y_test.npy - Etiquetas de prueba: (396,)
 
 dataset_info.json - Metadata completa del dataset procesado
@@ -461,7 +461,7 @@ results/
 Para verificar que todo el pipeline funciona correctamente sin necesidad de descargar el dataset completo, se creó un flujo de validación con un mini-dataset:
 
 - **Descarga:** 20 imágenes ASTER (10 geotérmicas + 10 control) mediante `scripts/miniprueba/download_mini_dataset.py`.
-- **Preparación:** Normalización a 224×224×5, división train/val/test con `prepare_mini_dataset.py`.
+- **Preparación:** Normalización a 224×224×7, división train/val/test con `prepare_mini_dataset.py`.
 - **Entrenamiento:** Mini-modelo CNN de 6 épocas con `train_mini_model.py` — accuracy ~67%.
 - **Evaluación:** Métricas básicas calculadas con `evaluate_mini_model.py`.
 - **Predicción:** Script `predict_images.py` ejecutó predicciones sobre las 20 imágenes.
@@ -640,14 +640,14 @@ Se actualizó `docs/REGISTRO_PROCESO.md` (este documento) con el registro detall
 - **Imágenes originales descargadas:** 85
 - **Imágenes después de augmentación:** 2,635
 - **Factor de aumento:** ~31x
-- **Bandas espectrales por imagen:** 5 (ASTER térmico)
+- **Bandas espectrales por imagen:** 7 (5 térmicas + temperatura + NDVI)
 - **Resolución final:** 224x224 píxeles
 
 ### Modelo
 - **Arquitectura:** CNN personalizada ResNet-inspired
 - **Capas totales:** 52
 - **Parámetros entrenables:** 5,025,409
-- **Input shape:** (224, 224, 5)
+- **Input shape:** (224, 224, 7)
 - **Output:** Clasificación binaria (sigmoid)
 
 ### Distribución de Datos

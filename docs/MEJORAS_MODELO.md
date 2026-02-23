@@ -21,6 +21,7 @@ El modelo fue entrenado el 18 de febrero de 2026 (23 épocas, CPU). Resultados e
 | F1Score nativo | ✅ Implementada | Monitoreo directo precision-recall |
 | Cosine LR Decay | ✅ Disponible (función auxiliar) | No utilizada en el entrenamiento final |
 | Class Weights | ✅ Implementada | Compensa desbalance de clases |
+| Predicción por Sliding Window | ✅ Implementada | Inferencia preserva la escala real (~90m/px) en radios extensos |
 
 ## Mejoras Pendientes (Recomendadas)
 
@@ -165,6 +166,7 @@ def make_gradcam_heatmap(model, img_array, last_conv_layer_name):
 | Label Smoothing | Medio | Baja | ✅ Hecha | — |
 | LR Scheduling | Medio | Baja | ✅ Hecha | — |
 | F1Score/PR-AUC | Medio | Baja | ✅ Hecha | — |
+| Sliding Window Inferencia | Alto | Media | ✅ Hecha | — |
 | **Más datos originales** | **Muy Alto** | Media | ❌ Pendiente | **Crítica** |
 | **Reducir capacidad modelo** | **Alto** | Baja | ❌ Pendiente | **Alta** |
 | **Threshold < 0.5** | **Alto** | Baja | ❌ Pendiente | **Alta** |

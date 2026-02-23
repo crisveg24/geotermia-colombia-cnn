@@ -121,15 +121,16 @@ class GeotermalPredictor:
         """
         from skimage.transform import resize
 
-        # 1. Resize
-        target_shape = (*self.target_size, image.shape[-1])
-        resized = resize(
-            image,
-            target_shape,
-            mode='reflect',
-            anti_aliasing=True,
-            preserve_range=True
-        )
+        # 1. Resize (v2: Comentado para Sliding Window, ahora solo normalizamos las proporciones crudas)
+        # target_shape = (*self.target_size, image.shape[-1])
+        # resized = resize(
+        #     image,
+        #     target_shape,
+        #     mode='reflect',
+        #     anti_aliasing=True,
+        #     preserve_range=True
+        # )
+        resized = image.astype(np.float32)
 
         # 2. Normalización por banda
         normalized = np.zeros_like(resized, dtype=np.float32)
@@ -145,6 +146,58 @@ class GeotermalPredictor:
                 normalized[:, :, i] = band - mean
 
         return normalized
+
+    def _predict_sliding_window(self, processed_image: np.ndarray, stride: int = 112) -> float:
+        """
+        Realiza predicción usando ventana deslizante sobre toda la imagen original.
+
+        Args:
+        processed_image: Imagen normalizada de tamaño arbitrario
+        stride: Paso de avance de la ventana (default: mitad del tamaño = 112)
+
+        Returns:
+        float: Probabilidad máxima encontrada en cualquier ventana
+        """
+        h_img, w_img, c = processed_image.shape
+        h_win, w_win = self.target_size
+
+        if h_img <= h_win and w_img <= w_win:
+            # Si la imagen es más pequeña o igual a 224x224, padding y predecir
+            padded = np.zeros((h_win, w_win, c), dtype=np.float32)
+            padded[:h_img, :w_img, :] = processed_image
+            return float(self.model.predict(np.expand_dims(padded, axis=0), verbose=0)[0, 0])
+
+        # Recorrer con ventana deslizante
+        windows = []
+        for y in range(0, h_img - h_win + 1, stride):
+            for x in range(0, w_img - w_win + 1, stride):
+                window = processed_image[y:y+h_win, x:x+w_win, :]
+                windows.append(window)
+
+        # Asegurar bordes si el tamaño de la imagen no es un múltiplo exacto del salto
+        if (h_img - h_win) % stride != 0:
+            for x in range(0, w_img - w_win + 1, stride):
+                windows.append(processed_image[-h_win:, x:x+w_win, :])
+        if (w_img - w_win) % stride != 0:
+            for y in range(0, h_img - h_win + 1, stride):
+                windows.append(processed_image[y:y+h_win, -w_win:, :])
+        if (h_img - h_win) % stride != 0 and (w_img - w_win) % stride != 0:
+            windows.append(processed_image[-h_win:, -w_win:, :])
+
+        if not windows:
+            padded = np.zeros((h_win, w_win, c), dtype=np.float32)
+            padded[:h_img, :w_img, :] = processed_image
+            windows.append(padded)
+
+        # Predecir en batch para ser más rápido
+        batch = np.array(windows)
+        predictions = self.model.predict(batch, batch_size=32, verbose=0)
+        
+        # En clasificación binaria, tomar la máxima probabilidad de presencia geotérmica
+        if predictions.shape[1] == 1:
+            return float(np.max(predictions))
+        else:
+            return float(np.max(predictions[:, 1]))
 
     def predict(
         self,
@@ -179,11 +232,21 @@ class GeotermalPredictor:
         # 2. Preprocesar
         processed = self.preprocess_image(image)
 
-        # 3. Añadir dimensión de batch
-        input_tensor = np.expand_dims(processed, axis=0)
-
-        # 4. Predicción
-        prediction = self.model.predict(input_tensor, verbose=0)
+        # 4. Predicción (Elegir método basado en tamaño de imagen)
+        h, w = processed.shape[:2]
+        if h > self.target_size[0] or w > self.target_size[1]:
+            logger.info(f"Imagen grande ({h}x{w}), aplicando Sliding Window...")
+            # Aquí `processed` no debería haber pasado por `resize` en preprocesamiento
+            probability = self._predict_sliding_window(processed)
+            if self.model.output_shape[-1] == 1:
+                prediction = np.array([[probability]])
+            else:
+                prediction = np.array([[1 - probability, probability]])
+        else:
+            # 3. Añadir dimensión de batch
+            input_tensor = np.expand_dims(processed, axis=0)
+            # 4. Predicción normal
+            prediction = self.model.predict(input_tensor, verbose=0)
 
         # 5. Interpretar resultado
         if prediction.shape[1] == 1:

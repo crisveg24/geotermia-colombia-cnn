@@ -37,7 +37,7 @@ El modelo predictivo implementado utiliza **Redes Neuronales Convolucionales (CN
 | **Tipo de Modelo** | Red Neuronal Convolucional (CNN) |
 | **Arquitectura** | ResNet-inspired con bloques residuales |
 | **Tarea** | Clasificación binaria (Con/Sin potencial geotérmico) |
-| **Input** | Imágenes 224×224×5 (5 bandas térmicas ASTER) |
+| **Input** | Imágenes 224×224×7 (5 bandas ASTER + Temperatura + NDVI) |
 | **Output** | Probabilidad [0, 1] de potencial geotérmico |
 | **Framework** | TensorFlow 2.20+ / Keras 3.x |
 | **Precisión Esperada** | > 85% (con dataset adecuado) |
@@ -804,11 +804,12 @@ $$
 2 \times \frac{0.857 \times 0.900}{0.857 + 0.900} = 0.878 = 87.8\%
 $$
 
-**Interpretación:** Balance entre Precision y Recall
+**Interpretación:** Balance entre Precision y Recall. 
+*Nota del Proyecto:* Se implementó `F1-Score (Micro)` desde TensorFlow 2.13+ dado que, a diferencia del Accuracy, el F1-Score castiga a los modelos que ignoran las clases minoritarias (potencial geotérmico).
 
-#### 6.1.6 ROC AUC (Area Under Curve)
+#### 6.1.6 ROC AUC y PR-AUC (Precision-Recall Area Under Curve)
 
-**Curva ROC**: True Positive Rate vs False Positive Rate
+**A. Curva ROC**: True Positive Rate vs False Positive Rate
 
 ```
 TPR (Recall)
@@ -828,12 +829,17 @@ TPR (Recall)
  0.0 0.5 1.0 → FPR
 ```
 
-**Interpretación:**
 - **AUC = 1.0**: Clasificador perfecto 
 - **AUC = 0.9-1.0**: Excelente
 - **AUC = 0.8-0.9**: Muy bueno
 - **AUC = 0.7-0.8**: Bueno
 - **AUC = 0.5**: Random (inútil)
+
+**B. Curva PR-AUC**: Precision vs Recall
+
+En la construcción de `cnn_geotermia.py`, se integró específicamente `keras.metrics.AUC(curve='PR')`.
+* **Justificación de Diseño:** Colombia posee millones de hectáreas (clase Negativa/0) y pocos puntos volcánicos (clase Positiva/1). La métrica clásica ROC-AUC suele presentar valores artificialmente altos en sets de datos severamente **desbalanceados**. 
+* El **PR-AUC** evalúa únicamente el territorio "positivo" pronosticado. Una red que lance falsas alarmas reducirá drásticamente la curva *Precision-Recall*, convirtiendo a **PR-AUC en la métrica más confiable y conservadora para este proyecto**.
 
 #### 6.1.7 R² Score
 
