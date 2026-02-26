@@ -37,10 +37,10 @@ El modelo predictivo implementado utiliza **Redes Neuronales Convolucionales (CN
 | **Tipo de Modelo** | Red Neuronal Convolucional (CNN) |
 | **Arquitectura** | ResNet-inspired con bloques residuales |
 | **Tarea** | Clasificación binaria (Con/Sin potencial geotérmico) |
-| **Input** | Imágenes 224×224×7 (5 bandas ASTER + Temperatura + NDVI) |
+| **Input** | Imágenes 224×224×7 (5 bandas emisividad ASTER + Temperatura + NDVI) |
 | **Output** | Probabilidad [0, 1] de potencial geotérmico |
-| **Framework** | TensorFlow 2.20+ / Keras 3.x |
-| **Precisión Esperada** | > 85% (con dataset adecuado) |
+| **Framework** | TensorFlow 2.20.0 / Keras 3.12.1 |
+| **Precisión Lograda (v2)** | Accuracy 91.45%, ROC AUC 0.983 |
 
 ### 1.3 Innovaciones Implementadas
 
@@ -64,7 +64,7 @@ Las **CNNs** son arquitecturas de Deep Learning especializadas en procesar datos
 ```
 ┌─────────────┐
 │ Input Image │ → Conv2D → Feature Map
-│ 224×224×5 │ ↓
+│ 224×224×7 │ ↓
 └─────────────┘ Filters detect patterns
  (edges, textures, etc.)
 ```
@@ -126,14 +126,14 @@ Las CNNs **aprenden automáticamente** estos patrones, superando métodos tradic
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ INPUT LAYER │
-│ (224×224×5 pixels) │
-│ 5 bandas térmicas ASTER │
+│ (224×224×7 pixels) │
+│ 5 bandas emisividad + temperatura + NDVI │
 └────────────────────────┬────────────────────────────────────────┘
  │
  ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ RESCALING LAYER │
-│ Normalización [0, 255] → [0, 1] │
+│ NORMALIZACIÓN (en prepare_dataset.py) │
+│ Z-score por banda (media=0, std=1) │
 └────────────────────────┬────────────────────────────────────────┘
  │
  ▼
@@ -303,15 +303,15 @@ $$
 ┌────────────────┐
 │ Google Earth │
 │ Engine │ NASA ASTER AG100 V003
-└───────┬────────┘ (5 bandas térmicas)
+└───────┬────────┘ (7 bandas: 5 emisividad + temp + ndvi)
  │
  │ Download (.tif files)
  ▼
 ┌────────────────────────────────┐
 │ data/raw/ │
-│ - Nevado_del_Ruiz.tif │ Raw Satellite Images
-│ - Volcan_Purace.tif │ (Resolution: variable)
-│ - Paipa_Iza.tif │
+│ - positive/*.tif │ Raw Satellite Images
+│ - negative/*.tif │ 200 imágenes, 7 bandas
+│ - labels.csv │
 └───────────┬────────────────────┘
  │
  │ scripts/prepare_dataset.py
@@ -319,19 +319,19 @@ $$
 ┌─────────────────────────────────────────────┐
 │ DATA PREPROCESSING │
 │ 1. Load .tif (rasterio) │
-│ 2. Resize to 224×224 │
-│ 3. Normalize (z-score per band) │
-│ 4. Create labels (labels.csv) │
-│ 5. Split: 70% train, 15% val, 15% test │
-│ 6. Save as .npy files │
+│ 2. Filter NoData (-9999) │
+│ 3. Resize to 224×224 │
+│ 4. Normalize (z-score per band) │
+│ 5. GroupShuffleSplit (sin data leakage) │
+│ 6. Save as .npy particionados (FAT32) │
 └───────────┬─────────────────────────────────┘
  │
  ▼
 ┌────────────────────────────────┐
 │ data/processed/ │
-│ - X_train.npy (70%) │ Processed Data
-│ - X_val.npy (15%) │ Ready for Training
-│ - X_test.npy (15%) │
+│ - X_train_part*.npy (68%) │ Processed Data
+│ - X_val_part*.npy (16%) │ Partitioned for FAT32
+│ - X_test_part*.npy (16%) │ Ready for Training
 │ - y_*.npy (labels) │
 └───────────┬────────────────────┘
  │
@@ -340,12 +340,12 @@ $$
 ┌─────────────────────────────────────────────┐
 │ MODEL TRAINING │
 │ 1. Create CNN architecture │
-│ 2. Apply data augmentation │
-│ 3. Train with callbacks: │
+│ 2. Train with callbacks: │
 │ - ModelCheckpoint │
 │ - EarlyStopping │
-│ - ReduceLROnPlateau │
 │ - TensorBoard │
+│ - CSVLogger │
+│ 3. CosineDecay LR schedule │
 │ 4. Save best model │
 └───────────┬─────────────────────────────────┘
  │
@@ -377,23 +377,30 @@ $$
 import rasterio
 
 def load_tif_image(file_path):
- """Carga imagen satelital ASTER."""
+ """Carga imagen satelital ASTER (7 bandas)."""
  with rasterio.open(file_path) as src:
- # Leer bandas 10-14 (emisividad térmica)
  bands = [src.read(i) for i in range(1, src.count + 1)]
- image = np.stack(bands, axis=-1) # Shape: (H, W, 5)
+ image = np.stack(bands, axis=-1) # Shape: (H, W, 7)
+ # Filtrar NoData (-9999)
+ for b in range(image.shape[-1]):
+ band = image[:, :, b]
+ mask = band == -9999
+ if mask.any():
+ band[mask] = np.median(band[~mask])
  return image
 ```
 
-**Bandas ASTER utilizadas:**
+**Bandas ASTER utilizadas (7):**
 
 | Banda | Longitud de Onda | Utilidad Geotérmica |
 |-------|------------------|---------------------|
-| **Band 10** | 8.125-8.475 μm | Detección de cuarzo caliente |
-| **Band 11** | 8.475-8.825 μm | Identificación de feldespatos |
-| **Band 12** | 8.925-9.275 μm | Detección de minerales arcillosos |
-| **Band 13** | 10.25-10.95 μm | Temperatura superficial |
-| **Band 14** | 10.95-11.65 μm | Anomalías térmicas |
+| **emissivity_band10** | 8.125-8.475 μm | Detección de cuarzo caliente |
+| **emissivity_band11** | 8.475-8.825 μm | Identificación de feldespatos |
+| **emissivity_band12** | 8.925-9.275 μm | Detección de minerales arcillosos |
+| **emissivity_band13** | 10.25-10.95 μm | Temperatura superficial |
+| **emissivity_band14** | 10.95-11.65 μm | Anomalías térmicas |
+| **temperature** | — | Temperatura superficial (°C × 100) |
+| **ndvi** | — | Índice de vegetación (proxy de cobertura) |
 
 #### 4.2.2 Redimensionamiento
 
@@ -841,49 +848,52 @@ En la construcción de `cnn_geotermia.py`, se integró específicamente `keras.m
 * **Justificación de Diseño:** Colombia posee millones de hectáreas (clase Negativa/0) y pocos puntos volcánicos (clase Positiva/1). La métrica clásica ROC-AUC suele presentar valores artificialmente altos en sets de datos severamente **desbalanceados**. 
 * El **PR-AUC** evalúa únicamente el territorio "positivo" pronosticado. Una red que lance falsas alarmas reducirá drásticamente la curva *Precision-Recall*, convirtiendo a **PR-AUC en la métrica más confiable y conservadora para este proyecto**.
 
-#### 6.1.7 R² Score
+#### 6.1.7 MCC (Matthews Correlation Coefficient)
 
 $$
-R^2 = 1 - \frac{\sum(y_i - \hat{y}_i)^2}{\sum(y_i - \bar{y})^2}
+MCC = \frac{TP \times TN - FP \times FN}{\sqrt{(TP+FP)(TP+FN)(TN+FP)(TN+FN)}}
 $$
 
 **Interpretación:**
-- **R² = 1.0**: Predicciones perfectas
-- **R² = 0.8**: Explica 80% de la varianza
-- **R² < 0**: Peor que predecir la media
+- **MCC = 1.0**: Clasificación perfecta
+- **MCC = 0.0**: No mejor que clasificación aleatoria
+- **MCC = -1.0**: Clasificación inversamente perfecta
+- **MCC > 0.7**: Fuerte correlación (resultado v2: **0.837**)
 
-### 6.2 Tabla de Resultados Esperados
+> **Nota:** En v2 se reemplazó R² por MCC, ya que R² no es una métrica apropiada para clasificación binaria.
 
-| Métrica | Valor Objetivo | Interpretación |
-|---------|----------------|----------------|
-| **Accuracy** | > 85% | Exactitud global |
-| **Precision** | > 80% | Confiabilidad de detecciones positivas |
-| **Recall** | > 80% | Capacidad de encontrar todas las zonas |
-| **F1-Score** | > 80% | Balance general |
-| **ROC AUC** | > 0.90 | Capacidad discriminativa |
-| **R²** | > 0.70 | Explicación de varianza |
+### 6.2 Tabla de Resultados Esperados vs Logrados
+
+| Métrica | Objetivo | Resultado v2 | Interpretación |
+|---------|----------|:------------:|----------------|
+| **Accuracy** | > 85% | **91.45%** | Exactitud global |
+| **Precision** | > 80% | **97.94%** | Confiabilidad de detecciones positivas |
+| **Recall** | > 80% | **86.05%** | Capacidad de encontrar todas las zonas |
+| **F1-Score** | > 80% | **91.61%** | Balance general |
+| **ROC AUC** | > 0.90 | **0.983** | Capacidad discriminativa |
+| **MCC** | > 0.50 | **0.837** | Correlación real entre predicción y realidad |
 
 ### 6.3 Resultados Reales del Entrenamiento (18 de febrero de 2026)
 
-El modelo fue entrenado con 2,635 imágenes (85 originales augmentadas), divididas en 1,843 train / 396 val / 396 test. Entrenamiento de 23 épocas en CPU (Intel i5-10300H), con EarlyStopping seleccionando la época 8 como mejor modelo.
+**Resultados v2:** El modelo fue entrenado con 6,200 imágenes (200 originales augmentadas), divididas con GroupShuffleSplit en Train 4,223 / Val 960 / Test 1,017 (sin data leakage). Entrenamiento de 22 épocas en CPU, mejor época 8 (val_acc 94.17%).
 
-| Métrica | Objetivo | Resultado | Estado |
-|---------|----------|-----------|--------|
-| **Accuracy** | > 85% | 68.43% | No alcanzado |
-| **Precision** | > 80% | 86.32% | **Logrado** ✓ |
-| **Recall** | > 80% | 48.10% | No alcanzado |
-| **F1-Score** | > 80% | 61.77% | No alcanzado |
-| **ROC AUC** | > 0.90 | 0.8198 | Parcial (~91%) |
-| **R²** | > 0.70 | -0.2673 | No alcanzado |
+| Métrica | Objetivo | Resultado v2 | Estado |
+|---------|----------|:------------:|:------:|
+| **Accuracy** | > 85% | **91.45%** | Logrado |
+| **Precision** | > 80% | **97.94%** | Superado |
+| **Recall** | > 80% | **86.05%** | Logrado |
+| **F1-Score** | > 80% | **91.61%** | Superado |
+| **ROC AUC** | > 0.90 | **0.983** | Superado |
+| **MCC** | > 0.50 | **0.837** | Superado |
 
-**Matriz de Confusión (Test: 396 imágenes):**
+**Matriz de Confusión v2 (Test: 1,017 imágenes):**
 ```
               Predicho Neg  Predicho Pos
-Real Neg         170          16
-Real Pos         109         101
+Real Neg         455          10
+Real Pos          77         475
 ```
 
-**Análisis:** Se detectó overfitting severo a partir de la época 9 (train accuracy 91.75% vs val accuracy 44.70% en época 23). La Precision es la única métrica que superó el objetivo. El bajo recall (48.10%) indica que el modelo deja de detectar más del 50% de las zonas geotérmicas reales. Ver `ANALISIS_ENTRENAMIENTO.md` para detalles completos.
+**Análisis:** El modelo v2 supera todos los objetivos. La precisión de 97.94% indica que cuando predice "geotérmico", casi siempre acierta. El recall de 86.05% representa una mejora masiva respecto al 48.10% de v1. El ROC AUC de 0.983 demuestra excelente capacidad discriminativa. Ver `ANALISIS_ENTRENAMIENTO.md` y `CHANGELOG_V2.md` para detalles.
 
 ---
 
@@ -894,17 +904,17 @@ Real Pos         109         101
 ```
 ┌──────────────────┐
 │ Nueva Imagen │ Input: Zona desconocida
-│ (.tif file) │ Size: Variable (e.g., 1000×1000×5)
+│ (.tif file) │ Size: Variable (e.g., 1000×1000×7)
 └────────┬─────────┘
  │
  ▼
 ┌────────────────────────────────┐
 │ PREPROCESAMIENTO │
 │ 1. Load with rasterio │
-│ 2. Resize to 224×224×5 │
-│ 3. Normalize (z-score) │
-│ 4. Add batch dimension │
-│ Shape: (1, 224, 224, 5) │
+│ 2. Filter NoData (-9999) │
+│ 3. Resize to 224×224×7 │
+│ 4. Normalize (z-score) │
+│ Shape: (1, 224, 224, 7) │
 └────────┬───────────────────────┘
  │
  ▼
@@ -1075,7 +1085,7 @@ loss: 0.1789 - accuracy: 0.9345 - val_loss: 0.3145 - val_accuracy: 0.8706 Overfi
 ```python
 OPTIMAL_HYPERPARAMETERS = {
  # Arquitectura
- 'input_shape': (224, 224, 5),
+ 'input_shape': (224, 224, 7),
  'filters_progression': [32, 64, 128, 256, 512],
  'kernel_sizes': [7, 3, 3, 3, 3],
  'dropout_rate': 0.5,

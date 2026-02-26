@@ -1,230 +1,142 @@
-# ANÁLISIS DEL ENTRENAMIENTO - CNN Geotermia Colombia
+# ANALISIS DEL ENTRENAMIENTO — CNN Geotermia Colombia (v2)
 
-**Fecha del entrenamiento:** 18 de febrero de 2026  
-**Autores:** Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano,
-Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martín  
-**Modelo:** GeotermiaCNN (Custom ResNet-inspired)  
-**Estado:** Entrenamiento **COMPLETADO** — 23 épocas con EarlyStopping (patience=15)
+**Fecha del entrenamiento v2:** 19 de febrero de 2026
+**Autores:** Cristian Camilo Vega Sanchez, Daniel Santiago Arevalo Rubiano,
+Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martin
+**Modelo:** GeotermiaCNN (Custom ResNet-inspired, 5,032,385 parametros)
+**Estado:** Entrenamiento v2 **COMPLETADO** — 22 epocas con EarlyStopping (patience=15)
 
 ---
 
 ## RESUMEN EJECUTIVO
 
-El entrenamiento del modelo CNN se completó exitosamente el 18 de febrero de 2026, ejecutado en CPU (Intel i5-10300H) debido a que TensorFlow 2.20.0 en Windows no soporta CUDA. El modelo entrenó durante **23 épocas** (~35 minutos), con EarlyStopping deteniendo el entrenamiento cuando la val_loss dejó de mejorar. La **mejor época fue la 8** con val_accuracy de 70.96%.
+El entrenamiento v2 del modelo CNN se completo el 19 de febrero de 2026, con un dataset expandido (200 imagenes originales → 6,200 augmentadas) y los 28 bugs de v1 corregidos. El modelo entreno durante **22 epocas**, con EarlyStopping seleccionando la **mejor epoca 8** (val_accuracy 94.17%).
 
-### Métricas de Evaluación en Test Set (396 imágenes)
+### Metricas de Evaluacion en Test Set (1,017 imagenes)
 ```
- Accuracy:   68.43%
- Precision:  86.32%
- Recall:     48.10%
- F1-Score:   61.77%
- ROC AUC:    0.8198
- R²:        -0.2673
-```
-
-### Métricas de la Mejor Época (Época 8, validación)
-```
- val_loss:       0.7710 (mínimo alcanzado)
- val_accuracy:   70.96%
- train_loss:     0.6268
- train_accuracy: 83.40%
+ Accuracy:   91.45%
+ Precision:  97.94%
+ Recall:     86.05%
+ F1-Score:   91.61%
+ ROC AUC:    0.983
+ MCC:        0.837
 ```
 
-### Configuración del Entrenamiento
+### Metricas de la Mejor Epoca (Epoca 8, validacion)
 ```
- Dataset:         2,635 imágenes (85 originales augmentadas)
- Split:           1,843 train / 396 val / 396 test
+ val_accuracy:   94.17%
+ train_accuracy: (mejora continua)
+```
+
+### Configuracion del Entrenamiento v2
+```
+ Dataset:         6,200 imagenes (200 originales augmentadas)
+ Split:           4,223 train / 960 val / 1,017 test (GroupShuffleSplit)
+ Bandas:          7 (emissivity_band10-14 + temperature + ndvi)
  Batch size:      32
- Épocas máximas:  100 (detenido en 23 por EarlyStopping)
- Optimizer:       AdamW (weight_decay=1e-4) con ReduceLROnPlateau
- Hardware:        CPU Intel i5-10300H (sin GPU disponible)
- Tiempo/época:    ~90 segundos
- Tiempo total:    ~35 minutos
+ Epocas maximas:  100 (detenido en 22 por EarlyStopping)
+ Optimizer:       AdamW (weight_decay=1e-4) con CosineDecay
+ Loss:            BinaryCrossentropy (label_smoothing=0.1)
+ Metricas:        Accuracy, Precision, Recall, AUC, PR-AUC, F1Score
+ Hardware:        CPU Intel i5-10300H (sin GPU)
+ Particionado:    9 partes train, 2 val, 3 test (FAT32 compatible)
 ```
 
 ---
 
-## PROGRESO DETALLADO POR ÉPOCA
+## COMPARATIVO v1 vs v2
 
-### Tabla Completa de Métricas
-
-| Época | Train Loss | Train Acc | Val Loss | Val Acc | LR |
-|-------|-----------|-----------|----------|---------|-----|
-| 1 | 0.9749 | 59.09% | 0.9008 | 53.03% | 0.001000 |
-| 2 | 0.8932 | 65.93% | 0.9338 | 53.03% | 0.001000 |
-| 3 | 0.8459 | 69.78% | 1.0223 | 53.03% | 0.001000 |
-| 4 | 0.7803 | 73.41% | 1.0352 | 53.03% | 0.001000 |
-| 5 | 0.7270 | 77.05% | 1.1625 | 53.03% | 0.001000 |
-| 6 | 0.6761 | 80.03% | 0.8735 | 53.28% | 0.001000 |
-| 7 | 0.6552 | 81.77% | 0.8723 | 53.79% | 0.001000 |
-| **8** | **0.6268** | **83.40%** | **0.7710** | **70.96%** | **0.001000** |
-| 9 | 0.6106 | 83.83% | 1.5124 | 46.97% | 0.001000 |
-| 10 | 0.5788 | 85.46% | 0.8155 | 69.19% | 0.001000 |
-| 11 | 0.5645 | 86.33% | 1.3460 | 39.65% | 0.001000 |
-| 12 | 0.5629 | 86.60% | 1.1631 | 46.97% | 0.001000 |
-| 13 | 0.5562 | 85.84% | 1.6180 | 46.21% | 0.001000 |
-| 14 | 0.5241 | 87.47% | 4.5237 | 46.97% | 0.001000 |
-| 15 | 0.5072 | 88.93% | 1.4094 | 45.71% | 0.001000 |
-| 16 | 0.5041 | 88.55% | 3.6186 | 46.97% | 0.001000 |
-| 17 | 0.4898 | 89.58% | 2.5557 | 46.97% | 0.001000 |
-| 18 | 0.4915 | 89.09% | 5.4512 | 46.21% | 0.001000 |
-| 19 | 0.4697 | 90.23% | 4.7367 | 46.97% | 0.001000 |
-| 20 | 0.4578 | 90.29% | 3.1227 | 46.21% | 0.001000 |
-| 21 | 0.4475 | 91.26% | 2.2683 | 46.72% | 0.001000 |
-| 22 | 0.4382 | 91.48% | 4.5883 | 45.45% | 0.001000 |
-| 23 | 0.4393 | 91.75% | 4.8363 | 44.70% | 0.001000 |
-
-> **Nota:** La época 8 (resaltada) fue seleccionada como mejor modelo por mínimo val_loss (0.7710).
+| Aspecto | v1 (baseline) | v2 (actual) |
+|---------|:-------------:|:-----------:|
+| Imagenes originales | 85 | 200 |
+| Imagenes augmentadas | 2,635 | 6,200 |
+| Test images | 396 | 1,017 |
+| Split method | train_test_split (leakage) | GroupShuffleSplit (sin leakage) |
+| Epocas entrenadas | 23 | 22 |
+| Mejor epoca | 8 (val_acc 70.96%) | 8 (val_acc 94.17%) |
+| Normalizacion | z-score + Rescaling | Solo z-score |
+| NoData filtering | No | Si |
+| **Test Accuracy** | 68.43% | **91.45%** |
+| **Test Precision** | 86.32% | **97.94%** |
+| **Test Recall** | 48.10% | **86.05%** |
+| **Test F1** | 61.77% | **91.61%** |
+| **ROC AUC** | 0.8198 | **0.983** |
+| **MCC** | -0.2673 (era R2) | **0.837** |
 
 ---
 
-## ANÁLISIS DE TENDENCIAS
+## RESULTADOS DEL TEST SET v2
 
-### 1. Overfitting Severo Detectado
-
-El hallazgo más importante del entrenamiento es la presencia de **overfitting significativo**:
-
-```
-Época 8 (mejor):  Train Acc = 83.40%  |  Val Acc = 70.96%  |  Gap = 12.44%
-Época 23 (final): Train Acc = 91.75%  |  Val Acc = 44.70%  |  Gap = 47.05%
-```
-
-**Evidencia:**
-- Train loss disminuyó consistentemente: 0.9749 → 0.4393 (-55%)
-- Val loss pasó de un mínimo de 0.7710 (época 8) a 4.8363 (época 23) — **aumento de 527%**
-- Train accuracy subió constantemente: 59.09% → 91.75%
-- Val accuracy colapsó después de época 8: 70.96% → 44.70%
-
-**Causas probables:**
-- Dataset relativamente pequeño (1,843 imágenes de entrenamiento, solo 85 originales)
-- Las imágenes augmentadas comparten la misma fuente, limitando diversidad real
-- La capacidad del modelo (bloques residuales con 32→512 filtros) supera la complejidad del dataset
-
-### 2. Comportamiento de la Validation Loss
-
-La val_loss muestra alta volatilidad después de la época 8:
-
-```
-Épocas 1-8:   Disminución gradual (0.9008 → 0.7710) ✓
-Épocas 9-23:  Explosión errática (1.51, 0.82, 1.35, 1.16, 1.62, 4.52, ..., 4.84) ✗
-```
-
-Esto indica que el modelo está memorizando patrones del training set que no generalizan al validation set.
-
-### 3. Train Loss y Accuracy
-
-El modelo aprende eficientemente del training set:
-
-```
-Fase 1 (Épocas 1-5):   Loss 0.97→0.73  Acc 59%→77%  (aprendizaje rápido)
-Fase 2 (Épocas 6-10):  Loss 0.68→0.58  Acc 80%→85%  (refinamiento)
-Fase 3 (Épocas 11-23): Loss 0.56→0.44  Acc 86%→92%  (memorización/overfitting)
-```
-
-### 4. Precision vs Recall (Evaluación en Test)
-
-```
-Precision: 86.32% — Alta confiabilidad en predicciones positivas
-Recall:    48.10% — Solo detecta ~48% de las zonas geotérmicas reales
-```
-
-El modelo es **conservador**: cuando predice "geotérmico" suele acertar (86%), pero pierde más de la mitad de las zonas geotérmicas reales. Esto produce:
-- **170 verdaderos negativos** y **101 verdaderos positivos**
-- **16 falsos positivos** (bueno) y **109 falsos negativos** (problema)
-
-### 5. ROC AUC = 0.8198
-
-A pesar del overfitting, el ROC AUC de 0.8198 en test es un resultado **aceptable**:
-- Indica que el modelo tiene capacidad real de discriminación
-- Supera significativamente el azar (0.5)
-- La mejor época (8) fue seleccionada correctamente por EarlyStopping
-
----
-
-## ANÁLISIS TÉCNICO
-
-### Matriz de Confusión (Test: 396 imágenes)
+### Matriz de Confusion (Test: 1,017 imagenes)
 
 ```
                     Predicho
                  Neg    Pos
-Real Neg  |   170  |   16   |  → Specificity: 91.40%
-Real Pos  |   109  |  101   |  → Recall: 48.10%
+Real Neg  |   455  |   10   |  -> Specificity: 97.85%
+Real Pos  |    77  |  475   |  -> Recall: 86.05%
 ```
 
-- **True Negative Rate:** 91.40% (excelente)
-- **True Positive Rate (Recall):** 48.10% (bajo)
-- **Precision:** 86.32%
-- **El modelo tiende a predecir "negativo"** → sesgo conservador
+### Analisis de la Matriz
 
-### Factores que Afectan el Rendimiento
+- **True Negatives (455):** El modelo identifica correctamente el 97.85% de las zonas sin potencial.
+- **True Positives (475):** El modelo detecta el 86.05% de las zonas geotermicas reales.
+- **False Positives (10):** Solo 10 zonas no-geotermicas fueron incorrectamente clasificadas como positivas. Esto da una precision de 97.94%.
+- **False Negatives (77):** 77 zonas geotermicas no fueron detectadas (13.95% de los positivos reales).
 
-1. **Dataset limitado:** Solo 85 imágenes originales (45 positivas + 40 negativas). Aunque se augmentaron a 2,635, la diversidad real es limitada.
+### Interpretacion
 
-2. **Desbalance post-augmentación:** Puede haber más imágenes de una clase que otra, afectando el entrenamiento.
+El modelo v2 es **altamente preciso** (97.94% precision) y tiene **buen recall** (86.05%). El balance precision-recall se refleja en el F1-Score de 91.61%. El ROC AUC de 0.983 indica capacidad discriminativa cercana a la perfeccion.
 
-3. **Entrenamiento en CPU:** TensorFlow 2.20.0 en Windows no tiene soporte CUDA. El entrenamiento en CPU limita la capacidad de experimentar con hiperparámetros.
-
-4. **Capacidad del modelo vs datos:** La arquitectura ResNet-inspired con 4 bloques residuales (hasta 512 filtros) tiene alta capacidad, facilitando el overfitting con datos limitados.
+**Mejora principal respecto a v1:** El recall paso de 48.10% a 86.05% (+37.95 pp). En v1, el modelo dejaba de detectar mas de la mitad de las zonas geotermicas. En v2, detecta el 86%.
 
 ---
 
-## COMPARATIVO: OBJETIVOS vs RESULTADOS REALES
+## ANALISIS DE TENDENCIAS DEL ENTRENAMIENTO v2
 
-| Métrica | Objetivo Mínimo | Objetivo Ideal | Resultado Real | Estado |
-|---------|-----------------|----------------|----------------|--------|
-| **Accuracy** | >85% | >90% | 68.43% | No alcanzado |
-| **Precision** | >80% | >85% | 86.32% | **Logrado** ✓ |
-| **Recall** | >80% | >85% | 48.10% | No alcanzado |
-| **F1-Score** | >80% | >85% | 61.77% | No alcanzado |
-| **AUC-ROC** | >0.90 | >0.95 | 0.8198 | Parcial (~91% del mín.) |
+### 1. Overfitting Controlado
 
-**Conclusión:** Solo la **Precision** alcanzó el objetivo mínimo. El ROC AUC está cerca pero no lo logra. Las demás métricas quedan lejos, principalmente por el bajo recall.
+A diferencia de v1 donde se observo overfitting severo (train 91.75% vs val 44.70%), en v2 el overfitting fue significativamente menor gracias a:
+- Mas datos (200 vs 85 originales)
+- GroupShuffleSplit (sin data leakage que inflara metricas)
+- Solo z-score (sin doble normalizacion)
+- CosineDecay en vez de ReduceLROnPlateau
+
+La mejor epoca 8 alcanzo val_acc de 94.17%, indicando que el modelo generaliza bien.
+
+### 2. Factores de Mejora
+
+| Factor | Impacto estimado | Evidencia |
+|--------|-----------------|-----------|
+| **Mas datos (85→200)** | Alto | Principal causa de mejora en generalizacion |
+| **NoData filtering** | Alto | Eliminacion de ruido -9999 permitio señales limpias |
+| **Sin data leakage** | Medio-Alto | Metricas ahora reflejan rendimiento real |
+| **Sin Rescaling doble** | Medio | La señal z-score llega intacta al modelo |
+| **Sin doble L2** | Medio | Modelo no sobre-regularizado |
+| **CosineDecay** | Bajo-Medio | Convergencia mas suave |
+
+### 3. Precision vs Recall
+
+```
+v1: Precision 86.32% | Recall 48.10%  -> modelo conservador, pierde +50% positivos
+v2: Precision 97.94% | Recall 86.05%  -> modelo equilibrado y altamente preciso
+```
+
+En v2, el modelo es tanto mas preciso como mas sensible. La precision subio de 86% a 98% (falsos positivos casi eliminados) y el recall subio de 48% a 86%.
 
 ---
 
-## RECOMENDACIONES PARA MEJORAR
+## OBJETIVOS vs RESULTADOS
 
-### Prioridad Alta — Combatir Overfitting
+| Metrica | Objetivo minimo | Objetivo ideal | Resultado v2 | Estado |
+|---------|:--------------:|:--------------:|:------------:|:------:|
+| Accuracy | >85% | >90% | **91.45%** | Superado |
+| Precision | >80% | >85% | **97.94%** | Superado |
+| Recall | >80% | >85% | **86.05%** | Superado |
+| F1-Score | >80% | >85% | **91.61%** | Superado |
+| ROC AUC | >0.90 | >0.95 | **0.983** | Superado |
+| MCC | >0.50 | >0.70 | **0.837** | Superado |
 
-1. **Aumentar regularización:**
-   - Incrementar dropout rate (actualmente SpatialDropout2D)
-   - Agregar L2 regularización a las capas Dense
-   - Considerar reducir la capacidad del modelo (menos filtros)
-
-2. **Mejorar data augmentation:**
-   - Agregar técnicas: Mixup, CutMix, random erasing
-   - Aumentar variabilidad en rotaciones, scales y flips
-   - Considerar augmentación online (en tiempo de entrenamiento)
-
-3. **Obtener más datos originales:**
-   - Expandir la búsqueda de imágenes ASTER a más regiones
-   - Incluir zonas geotérmicas de otros países andinos para transfer
-   - Más zonas negativas con paisajes variados
-
-### Prioridad Media — Mejorar Recall
-
-4. **Ajustar threshold de clasificación:**
-   - Threshold actual: 0.5 → probar 0.3 o 0.4 para aumentar recall
-   - Analizar curva ROC para punto óptimo de operación
-   - Trade-off: aumentar recall reducirá precision
-
-5. **Class weights más agresivos:**
-   - Dar más peso a la clase positiva para que el modelo penalice más los falsos negativos
-
-6. **Focal Loss:**
-   - Reemplazar binary crossentropy por focal loss
-   - Pone más énfasis en ejemplos difíciles de clasificar
-
-### Prioridad Baja — Arquitectura
-
-7. **Transfer Learning:**
-   - Usar EfficientNet-B0 o ResNet50 preentrenado en ImageNet
-   - Fine-tuning con nuestro dataset
-
-8. **Entrenar con GPU:**
-   - Usar Google Colab, Kaggle, o una máquina con GPU
-   - Permite experimentar más rápido con hiperparámetros
+**Conclusion: Todas las metricas superan los objetivos ideales.**
 
 ---
 
@@ -232,34 +144,47 @@ Real Pos  |   109  |  101   |  → Recall: 48.10%
 
 ### Modelo (en `models/saved_models/`)
 ```
-geotermia_cnn_custom_best.keras   — 57.69 MB (mejor época 8)
-geotermia_cnn_custom_final.keras  — 57.69 MB (última época 23)
+geotermia_cnn_custom_best.keras   — 52.87 MB (mejor epoca 8)
 ```
 
-### Métricas y Logs (en `results/metrics/` y `logs/`)
+### Metricas y Logs (en `results/metrics/` y `logs/`)
 ```
-results/metrics/evaluation_metrics.json   — Métricas de evaluación en test
-results/metrics/training_history.json     — Historial de 23 épocas
-results/metrics/metrics_table.csv         — Tabla de métricas en CSV
-logs/history_custom.json                  — Historial original
-logs/geotermia_cnn_custom_*.csv           — Logs CSV por época
+results/metrics/evaluation_metrics.json   — Metricas v2 de evaluacion en test
+results/metrics/training_history.json     — Historial de entrenamiento v2
+logs/history_custom.json                  — Historial original v2
 ```
 
-### Visualizaciones (en `results/figures/`)
+### Datos del Test Set
 ```
-training_history.png     — Curvas de loss y accuracy por época
-confusion_matrix.png     — Matriz de confusión del test set
-roc_curve.png            — Curva ROC con AUC
-metrics_comparison.png   — Barras comparativas de métricas
-```
-
-### Reporte PDF
-```
-results/reporte_entrenamiento_completo.pdf — Reporte de 12 páginas
+Particionados en D:\geotermia_datos\processed\:
+X_test_part0.npy, X_test_part1.npy, X_test_part2.npy
+y_test.npy
+Total: 1,017 imagenes de prueba
 ```
 
 ---
 
-**Última actualización:** 18 de febrero de 2026  
-**Estado:** Entrenamiento completado — Evaluación y análisis finalizados  
-**Próxima acción:** Implementar mejoras para combatir overfitting (ver Recomendaciones)
+## NOTA HISTORICA: RESULTADOS v1
+
+Para referencia, los resultados del entrenamiento v1 (baseline) fueron:
+
+| Metrica | v1 | Problema |
+|---------|:--:|---------|
+| Accuracy | 68.43% | No alcanza objetivo |
+| Precision | 86.32% | Unica metrica lograda |
+| Recall | 48.10% | Pierde +50% de positivos |
+| F1-Score | 61.77% | Bajo por recall |
+| ROC AUC | 0.8198 | Decente pero inflado por leakage |
+
+**Problemas principales de v1:**
+- Overfitting severo (train 91.75% vs val 44.70% en epoca 23)
+- Data leakage inflaba metricas artificialmente
+- NoData (-9999) sin filtrar distorsionaba normalizacion
+- Solo 85 imagenes originales
+
+Estos problemas fueron documentados en detalle en [CHANGELOG_V2.md](CHANGELOG_V2.md).
+
+---
+
+**Ultima actualizacion:** 25 de febrero de 2026
+**Estado:** Entrenamiento v2 completado — Evaluacion y analisis finalizados

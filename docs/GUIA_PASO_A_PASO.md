@@ -4,7 +4,7 @@
 > el pipeline completo del proyecto: desde cero hasta un modelo entrenado y la
 > interfaz Streamlit funcionando.
 >
-> **Última actualización**: 18 de febrero de 2026 
+> **Última actualización**: 25 de febrero de 2026 
 > **Autores**: Cristian Vega, Daniel Arévalo, Yuliet Espitia, Laura Rivera 
 > **Universidad de San Buenaventura — Bogotá**
 
@@ -37,7 +37,7 @@
 | pip | 23+ | `python -m pip install --upgrade pip` |
 | Git | 2.x | Para clonar el repo |
 | Cuenta Google | — | Para Google Earth Engine |
-| Espacio disco | ~5 GB | Dataset completo + modelo |
+| Espacio disco | ~10 GB | Dataset completo + modelo |
 | GPU (opcional) | NVIDIA + CUDA 12 | Acelera el entrenamiento. Sin GPU funciona en CPU |
 
 ---
@@ -153,12 +153,12 @@ D:\geotermia_datos\ ← (o E:\, F:\, la letra que tenga tu disco)
  negative\
  labels.csv
  processed\
- X_train.npy
- y_train.npy
- X_val.npy
- y_val.npy
- X_test.npy
- y_test.npy
+ X_train_part00.npy … X_train_part08.npy
+ y_train_part00.npy … y_train_part08.npy
+ X_val_part00.npy … X_val_part01.npy
+ y_val_part00.npy … y_val_part01.npy
+ X_test_part00.npy … X_test_part02.npy
+ y_test_part00.npy … y_test_part02.npy
  split_info.json
 ```
 
@@ -207,10 +207,10 @@ CONFIGURACIÓN DEL PROYECTO GEOTERMIA CNN
  Disco externo : SÍ
  Data root : D:\geotermia_datos
  
- raw/positive → 45 .tif, 0 .npy
- raw/negative → 40 .tif, 0 .npy
- augmented → 2635 .tif, 0 .npy
- processed → 0 .tif, 6 .npy
+ raw/positive → 111 .tif, 0 .npy
+ raw/negative → 89 .tif, 0 .npy
+ augmented → 6200 .tif, 0 .npy
+ processed → 0 .tif, 14 .npy (particionados)
 ============================================================
 ```
 
@@ -247,17 +247,17 @@ xcopy /E data\processed D:\geotermia_datos\processed\
 python scripts/download_dataset.py
 ```
 
-- Descarga 85 imágenes ASTER GED (7 bandas: 5 de emisividad térmica + Temperatura + NDVI)
-- 45 zonas geotérmicas (volcanes: Ruiz, Puracé, Galeras, Paipa-Iza, etc.)
-- 40 zonas de control (Llanos, Amazonía, Costa Caribe, etc.)
+- Descarga **200 imágenes** ASTER GED (7 bandas: 5 de emisividad térmica + Temperatura + NDVI)
+- 111 zonas geotérmicas (volcanes: Ruiz, Puracé, Galeras, Paipa-Iza, Azufral, Sotará, etc.)
+- 89 zonas de control (Llanos, Amazonía, Costa Caribe, Altiplano Cundi-Boyacense, etc.)
 - Resolución: 100 m/pixel (ASTER GED AG100), radio 5 km por zona
 - Tiempo estimado: 15-30 minutos
 - Requiere conexión a internet y auth de Earth Engine
 
 **Salida**:
 ```
-data/raw/positive/ ← 45 archivos .tif
-data/raw/negative/ ← 40 archivos .tif
+data/raw/positive/ ← 111 archivos .tif
+data/raw/negative/ ← 89 archivos .tif
 data/raw/labels.csv ← archivo de etiquetas
 ```
 
@@ -277,12 +277,12 @@ python scripts/augment_full_dataset.py
 - Técnicas: rotación, flip, brillo, contraste, ruido, blur, crop, combinaciones
 - Tiempo estimado: 10-20 minutos
 
-**Salida** (con 85 originales):
+**Salida** (con 200 originales):
 ```
 data/augmented/positive/ ← imágenes positivas augmentadas
 data/augmented/negative/ ← imágenes negativas augmentadas
 data/augmented/labels.csv
-Total: ~2,635 imágenes
+Total: ~6,200 imágenes
 ```
 
 ---
@@ -296,21 +296,25 @@ python scripts/prepare_dataset.py
 - Carga todos los .tif de `data/augmented/`
 - Redimensiona a 224×224 píxeles
 - Normaliza por banda (z-score: media=0, std=1)
-- Divide en train/val/test (70/15/15, estratificado)
+- Filtra imágenes con NoData (valores ≤ 0 en emisividad)
+- Divide en train/val/test (~68/15.5/16.5) con **GroupShuffleSplit** (las augmentaciones de una misma imagen original quedan en el mismo split)
 - Calcula pesos de clase para balanceo
 - Tiempo estimado: 5-15 minutos
 
-**Salida**:
+**Salida** (archivos **particionados** para compatibilidad FAT32):
 ```
 data/processed/
- X_train.npy, y_train.npy ← ~70% de las imágenes
- X_val.npy, y_val.npy ← ~15%
- X_test.npy, y_test.npy ← ~15%
+ X_train_part00.npy … X_train_part08.npy ← 9 partes (~500 imgs c/u)
+ y_train_part00.npy … y_train_part08.npy
+ X_val_part00.npy … X_val_part01.npy ← 2 partes
+ y_val_part00.npy … y_val_part01.npy
+ X_test_part00.npy … X_test_part02.npy ← 3 partes
+ y_test_part00.npy … y_test_part02.npy
  split_info.json ← metadatos del split
 ```
 
-> Los archivos .npy pueden ser grandes. Si usas disco externo,
-> estos también se guardarán ahí.
+> Los archivos .npy se particionan (~500 imágenes por parte) para no exceder el
+> límite de 4 GB de FAT32. Si usas disco externo, se guardarán ahí.
 
 ---
 
@@ -344,7 +348,7 @@ python scripts/train_model.py
 
 - **ModelCheckpoint**: Guarda el mejor modelo según `val_loss`
 - **EarlyStopping**: Para si val_loss no mejora en 15 épocas
-- **ReduceLROnPlateau**: Reduce learning rate si val_loss se estanca 5 épocas
+- **CosineDecay**: Reduce learning rate progresivamente durante el entrenamiento
 - **TensorBoard**: Logs para visualización
 - **CSVLogger**: Historial en CSV
 
@@ -512,9 +516,9 @@ $env:GEOTERMIA_DATA_ROOT = "D:\geotermia_datos"
 python config.py
 
 # 4. Pipeline de datos (saltar si ya tienes los .npy)
-python scripts/download_dataset.py # ~30 min, requiere internet
-python scripts/augment_full_dataset.py # ~15 min
-python scripts/prepare_dataset.py # ~10 min
+python scripts/download_dataset.py # ~30 min, requiere internet (200 imágenes)
+python scripts/augment_full_dataset.py # ~15 min (~6,200 augmentadas)
+python scripts/prepare_dataset.py # ~10 min (particionado para FAT32)
 
 # 5. Entrenar
 python scripts/train_model.py # 15 min (GPU) / 35 min (CPU)

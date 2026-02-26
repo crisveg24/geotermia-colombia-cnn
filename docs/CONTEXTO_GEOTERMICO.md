@@ -184,16 +184,28 @@ Nuestro modelo CNN opera en la **Fase 1 (Reconocimiento regional)** como una her
 **Escenario de uso:**
 > El Servicio Geológico Colombiano quiere identificar nuevas zonas con potencial geotérmico fuera de las áreas volcánicas conocidas. Usando la CNN, puede escanear sistemáticamente regiones del territorio colombiano y obtener un mapa de probabilidades que le permita **enfocar los recursos limitados de exploración en las zonas más prometedoras**.
 
-### 5.4 Limitaciones del modelo v1 (baseline actual)
+### 5.4 Logros del modelo v2 (versión actual) y limitaciones residuales
 
-El modelo actual (v1) es un **prototipo académico** con limitaciones conocidas:
+El modelo v1 era un **prototipo académico** con limitaciones significativas (accuracy 68.43%, recall 48.10%, solo 85 imágenes). Todas fueron abordadas en la versión v2:
 
-- **Accuracy:** 68.43% — aceptable como prueba de concepto, insuficiente para decisiones operativas
-- **Recall:** 48.10% — pierde más de la mitad de las zonas positivas (falsos negativos altos)
-- **Dataset:** Solo 85 imágenes originales (45 positivas + 40 negativas)
-- **Entrenamiento CPU:** Limitó la convergencia del modelo
+| Aspecto | v1 (Baseline) | v2 (Actual) |
+|---------|---------------|--------------|
+| **Accuracy** | 68.43% | **91.45%** |
+| **Recall** | 48.10% | **86.05%** |
+| **F1-Score** | 61.77% | **91.61%** |
+| **ROC AUC** | 0.8198 | **0.9830** |
+| **Dataset** | 85 imágenes (5 bandas) | 200 imágenes (7 bandas) |
+| **Filtrado NoData** | No | Sí |
+| **Split** | Aleatorio (data leakage) | GroupShuffleSplit |
 
-Estas limitaciones están documentadas en detalle en [PREDICCIONES_PRUEBA.md](PREDICCIONES_PRUEBA.md) junto con el plan de mejoras para v2.
+**Limitaciones residuales** (alcance académico del proyecto):
+
+- **Generalización:** Entrenado solo en Colombia; puede no funcionar en otros contextos geológicos.
+- **Resolución temporal:** ASTER GED es un producto promediado; no captura variaciones temporales.
+- **Entrenamiento CPU:** Limitado a 22 épocas con CosineDecay; GPU podría mejorar más.
+- **Validación por zona específica:** Predicciones individuales por zona pendientes de re-ejecutar con v2.
+
+Estas limitaciones están documentadas en detalle en [PREDICCIONES_PRUEBA.md](PREDICCIONES_PRUEBA.md) y [CHANGELOG_V2.md](CHANGELOG_V2.md).
 
 ## 6. Resumen Visual
 
@@ -214,9 +226,9 @@ ENERGÍA GEOTÉRMICA
        │     └── Composición mineral (SWIR + TIR)
        │
        ├── ¿Qué hace nuestra CNN?
-       │     ├── Analiza imágenes ASTER (5 bandas TIR de emisividad)
-       │     ├── Identifica patrones térmicos de potencial geotérmico
-       │     └── Produce probabilidad (0–100%) por zona
+       │     ├── Analiza imágenes ASTER (7 bandas: 5 TIR emisividad + Temperatura + NDVI)
+       │     ├── Identifica patrones térmicos y espectrales de potencial geotérmico
+       │     └── Produce probabilidad (0–100%) por zona — v2: 91.45% accuracy
        │
        └── ¿Para qué sirve?
              ├── Screening automatizado (Fase 1 exploración)

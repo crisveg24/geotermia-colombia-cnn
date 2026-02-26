@@ -1,14 +1,18 @@
-# Predicciones de Prueba — Modelo v1 (Baseline)
+# Predicciones de Prueba — Modelo v1 (Baseline) y Comparativa v2
 
-> **Fecha:** 18 de febrero de 2026
-> **Modelo:** `geotermia_cnn_custom_best.keras` (~57 MB)
-> **Entrenamiento:** 2,635 imagenes, mejor epoca 8/23
-> **Metricas test:** Accuracy 68.43% · Precision 86.32% · ROC AUC 0.8198 · F1 61.77%
+> **Fecha original (v1):** 18 de febrero de 2026 
+> **Actualización (v2):** 25 de febrero de 2026 
+> **Modelo:** `geotermia_cnn_custom_best.keras` (~52.87 MB) 
+> **Entrenamiento v2:** 6,200 imágenes (200 originales × 31), mejor época 8/22 
+> **Métricas test v2:** Accuracy 91.45% · Precision 97.94% · Recall 86.05% · ROC AUC 0.983 · F1 91.61% 
 > **Hardware:** Intel i5-10300H (CPU) · 12 GB RAM
 
 ---
 
-## Resumen de Predicciones
+## Resumen de Predicciones (v1 — Baseline)
+
+> **Nota:** Las predicciones por zona de esta sección corresponden al **modelo v1**
+> (85 imágenes, 5 bandas TIR, sin filtrado NoData). Se conservan como referencia histórica.
 
 | # | Ubicacion | Lat | Lon | Prob. | Resultado | Confianza | Zona cercana | Dist. |
 |---|-----------|-----|-----|-------|-----------|-----------|--------------|-------|
@@ -101,7 +105,7 @@
 
 ## Observaciones y Conclusiones
 
-### Hallazgos clave
+### Hallazgos clave (v1)
 
 1. **Todas las predicciones resultaron BAJO POTENCIAL (< 50%)**, incluyendo zonas
    geotermicas conocidas. Esto indica que el modelo v1 tiene un recall bajo
@@ -118,27 +122,64 @@
 4. **Tiempos de respuesta excelentes:** ~1 segundo total por prediccion (descarga + inferencia).
    La primera prediccion es mas lenta (0.4s) por carga del modelo en memoria.
 
-### Mejoras necesarias para modelo v2
+---
 
-| Mejora | Impacto esperado | Prioridad |
-|--------|------------------|-----------|
-| **Filtrar valores NoData (-9999)** antes de normalizar | Alto — corrige distorsion | Critica |
-| **Mas datos de entrenamiento** (> 500 imagenes originales) | Alto — mejora generalizacion | Alta |
-| **Entrenamiento en GPU** (mas epocas, mejor convergencia) | Medio-Alto | Alta |
-| **Data augmentation mas agresiva** | Medio | Media |
-| **Fine-tuning de hiperparametros** (learning rate, dropout) | Medio | Media |
-| **Transfer learning** (ResNet50 pre-entrenado) | Alto — mejor feature extraction | Media |
-| **Validacion cruzada** (k-fold) | Medio — evaluacion mas robusta | Baja |
+## Resultados v2 — Comparativa con v1
 
-### Linea base establecida
+### Mejoras implementadas en v2
 
-Estos resultados sirven como **baseline (v1)** para comparar con versiones futuras
-del modelo entrenadas con mas datos y en mejor hardware. El objetivo para v2 es:
+Las limitaciones identificadas en las predicciones v1 se abordaron en el modelo v2:
 
-- Accuracy > 80%
-- Recall > 70% (detectar correctamente zonas geotermicas)
-- Probabilidad > 50% para Nevado del Ruiz y Paipa-Iza
-- F1-Score > 75%
+| Mejora | Estado | Impacto real |
+|--------|--------|--------------|
+| **Filtrar valores NoData (-9999)** antes de normalizar | ✅ Implementado | Eliminó distorsión en bandas |
+| **Más datos de entrenamiento** (200 imágenes vs 85) | ✅ 200 originales (111 pos + 89 neg) | +135% datos, mejor generalización |
+| **7 bandas** (5 TIR + Temperatura + NDVI) | ✅ Implementado | Más información espectral |
+| **GroupShuffleSplit** (evita data leakage) | ✅ Implementado | Evaluación más honesta |
+| **Normalización z-score** por banda | ✅ Implementado | Mejor convergencia |
+| **CosineDecay** en learning rate | ✅ Implementado | Entrenamiento más estable |
+| **Particionado FAT32** de .npy | ✅ Implementado | Portabilidad en disco externo |
+
+### Métricas test set: v1 vs v2
+
+| Métrica | v1 (Baseline) | v2 (Actual) | Cambio |
+|---------|---------------|-------------|--------|
+| Accuracy | 68.43% | **91.45%** | +23.02 pp |
+| Precision | 86.32% | **97.94%** | +11.62 pp |
+| Recall | 48.10% | **86.05%** | +37.95 pp |
+| F1-Score | 61.77% | **91.61%** | +29.84 pp |
+| ROC AUC | 0.8198 | **0.9830** | +0.1632 |
+| MCC | — | **0.8370** | — |
+
+### Matriz de confusión v2 (test set: 1,017 imágenes)
+
+```
+ Pred Negativo Pred Positivo
+Real Negativo 455 (TN) 10 (FP)
+Real Positivo 77 (FN) 475 (TP)
+```
+
+- **FP rate:** 2.15% — casi nulo, muy pocas falsas alarmas
+- **FN rate:** 13.95% — solo 77 de 552 positivos no detectados
+
+### Objetivos del baseline vs resultados v2
+
+| Objetivo planteado en v1 | Meta | Resultado v2 | Estado |
+|--------------------------|------|--------------|--------|
+| Accuracy > 80% | 80% | 91.45% | ✅ Superado |
+| Recall > 70% | 70% | 86.05% | ✅ Superado |
+| F1-Score > 75% | 75% | 91.61% | ✅ Superado |
+| Prob > 50% para zonas conocidas | 50% | Pendiente re-evaluar | ⏳ |
+
+### Predicciones por zona con v2 — Pendiente
+
+> Las predicciones específicas por zona (Nevado del Ruiz, Paipa-Iza, Bogotá,
+> Chocontá) **no se han re-ejecutado aún** con el modelo v2. Sin embargo, dado
+> el salto de recall de 48.10% → 86.05% y la corrección del filtrado NoData,
+> se espera que el modelo v2 clasifique correctamente las zonas geotérmicas
+> conocidas (Ruiz y Paipa-Iza) con probabilidades > 50%.
+>
+> Cuando se ejecuten, agregar los resultados aquí para completar la comparativa.
 
 ---
 

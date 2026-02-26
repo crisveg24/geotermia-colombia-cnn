@@ -1,22 +1,80 @@
-# CHANGELOG v2 — Auditoría Completa y Correcciones
+# CHANGELOG v2 — Auditoria, Correcciones y Resultados
 
-**Rama:** `development`  
-**Fecha de inicio:** 18 de febrero de 2026  
-**Estado:** En desarrollo — requiere reentrenamiento  
-**Auditoría:** 28 bugs identificados, todos corregidos
+**Rama:** `development`
+**Fecha de inicio:** 18 de febrero de 2026
+**Estado:** Completado — modelo v2 entrenado y evaluado
+**Auditoria:** 28 bugs identificados, todos corregidos
+**Resultado:** Accuracy 91.45%, ROC AUC 0.983
 
 ---
 
 ## Resumen Ejecutivo
 
-La v1 del modelo (baseline en rama `main`) contenía **28 bugs** de diversa severidad detectados en una auditoría exhaustiva del código. La v2 los corrige todos y sienta las bases para un modelo significativamente más preciso y profesional.
+La v1 del modelo (baseline en rama `main`) contenia **28 bugs** de diversa severidad detectados en una auditoria exhaustiva del codigo. La v2 los corrige todos, expande el dataset de 85 a 200 imagenes originales, y logra un rendimiento significativamente superior.
 
 | Severidad | Cantidad | Estado |
 |-----------|:--------:|--------|
-| **CRITICAL** | 4 | ✅ Corregidos |
-| **HIGH** | 4 | ✅ Corregidos |
-| **MEDIUM** | 10 | ✅ Corregidos |
-| **LOW** | 10 | ✅ Corregidos |
+| **CRITICAL** | 4 | Corregidos |
+| **HIGH** | 4 | Corregidos |
+| **MEDIUM** | 10 | Corregidos |
+| **LOW** | 10 | Corregidos |
+
+---
+
+## Resultados v2 — Metricas Reales en Test Set
+
+### Comparativo v1 vs v2
+
+| Metrica | v1 (baseline) | v2 (actual) | Cambio |
+|---------|:-------------:|:-----------:|:------:|
+| Accuracy | 68.43% | **91.45%** | +23.02 pp |
+| Precision | 86.32% | **97.94%** | +11.62 pp |
+| Recall | 48.10% | **86.05%** | +37.95 pp |
+| F1-Score | 61.77% | **91.61%** | +29.84 pp |
+| ROC AUC | 0.8198 | **0.983** | +0.163 |
+| MCC | — | **0.837** | Nuevo |
+
+> **Nota:** Las metricas de v1 estaban infladas por data leakage (BUG 3). El rendimiento real de v1 era probablemente peor.
+
+### Matriz de Confusion v2
+
+```
+              Predicho Neg  Predicho Pos
+Real Neg         455          10
+Real Pos          77         475
+```
+
+- **True Negative Rate:** 97.85% (455/465)
+- **True Positive Rate (Recall):** 86.05% (475/552)
+- **False Positive Rate:** 2.15% (10/465)
+- **False Negative Rate:** 13.95% (77/552)
+
+### Objetivos vs Resultado
+
+| Metrica | Objetivo CHANGELOG_V2 | Resultado real | Estado |
+|---------|:---------------------:|:--------------:|:------:|
+| Accuracy | >75% | 91.45% | Superado |
+| Precision | >80% | 97.94% | Superado |
+| Recall | >65% | 86.05% | Superado |
+| F1-Score | >72% | 91.61% | Superado |
+| ROC AUC | >0.85 | 0.983 | Superado |
+| MCC | >0.50 | 0.837 | Superado |
+
+**Todos los objetivos fueron superados ampliamente.**
+
+### Datos del Entrenamiento v2
+
+| Parametro | Valor |
+|-----------|-------|
+| Imagenes originales | 200 (111 positivas + 89 negativas) |
+| Imagenes augmentadas | 6,200 (3,441 pos + 2,759 neg) |
+| Bandas | 7 (emissivity_band10-14 + temperature + ndvi) |
+| Split | GroupShuffleSplit (sin data leakage) |
+| Train / Val / Test | 4,223 / 960 / 1,017 |
+| Epocas | 22 (EarlyStopping, mejor epoca 8) |
+| Mejor val_acc | 94.17% (epoca 8) |
+| Modelo | 5,032,385 parametros |
+| Archivo | `geotermia_cnn_custom_best.keras` (52.87 MB) |
 
 ---
 
@@ -25,30 +83,30 @@ La v1 del modelo (baseline en rama `main`) contenía **28 bugs** de diversa seve
 ### BUG 1: NoData no filtrado
 **Archivos:** `prepare_dataset.py`, `augment_full_dataset.py`, `predict.py`, `app.py`
 
-Los datos ASTER GED usan **-9999** como NoData. Ningún script lo filtraba.
-- La normalización z-score incluía -9999 → media y std completamente distorsionadas
-- Las augmentaciones de brillo/contraste usaban `image.min()` → rango dinámico de 10,989 en vez de ~140
+Los datos ASTER GED usan **-9999** como NoData. Ningun script lo filtraba.
+- La normalizacion z-score incluia -9999 → media y std completamente distorsionadas.
+- Las augmentaciones de brillo/contraste usaban `image.min()` → rango dinamico de 10,989 en vez de ~140.
 
-**Fix:** Filtrado de NoData en todos los puntos de carga: detección, descarte si >50%, interpolación con mediana por banda.
+**Fix:** Filtrado de NoData en todos los puntos de carga: deteccion, descarte si >50%, interpolacion con mediana por banda.
 
-### BUG 2: Doble normalización (z-score + Rescaling 1/255)
+### BUG 2: Doble normalizacion (z-score + Rescaling 1/255)
 **Archivo:** `models/cnn_geotermia.py`
 
 El pipeline aplicaba z-score en prepare_dataset.py y luego `Rescaling(1./255)` en el modelo, aplastando la señal a ~[-0.008, +0.008].
 
-**Fix:** Eliminada capa `Rescaling(1./255)`. La normalización z-score es la única.
+**Fix:** Eliminada capa `Rescaling(1./255)`. La normalizacion z-score es la unica.
 
 ### BUG 3: Data Leakage en train/val/test split
 **Archivo:** `scripts/prepare_dataset.py`
 
-`train_test_split` se ejecutaba sobre las ~2,635 imágenes augmentadas sin agrupar por imagen original. Augmentaciones de la MISMA imagen podían caer en train Y test → métricas infladas de forma artificial.
+`train_test_split` se ejecutaba sobre las ~2,635 imagenes augmentadas sin agrupar por imagen original. Augmentaciones de la MISMA imagen podian caer en train Y test → metricas infladas.
 
-**Fix:** Reemplazado `train_test_split` por `GroupShuffleSplit` que agrupa por imagen original. Verificación automática de que no hay grupos compartidos entre splits.
+**Fix:** Reemplazado `train_test_split` por `GroupShuffleSplit` que agrupa por imagen original. Verificacion automatica de que no hay grupos compartidos entre splits.
 
-### BUG 4: Doble regularización L2 (kernel_regularizer + AdamW weight_decay)
+### BUG 4: Doble regularizacion L2 (kernel_regularizer + AdamW weight_decay)
 **Archivo:** `models/cnn_geotermia.py`
 
-Todos los `Conv2D` y `Dense` tenían `kernel_regularizer=l2(0.0001)` Y AdamW tenía `weight_decay=0.0001`. Esto sobre-regularizaba el modelo con el doble de fuerza efectiva de L2.
+Todos los `Conv2D` y `Dense` tenian `kernel_regularizer=l2(0.0001)` Y AdamW tenia `weight_decay=0.0001`. Doble fuerza de L2.
 
 **Fix:** Eliminado `kernel_regularizer` de TODAS las capas. Solo se usa `weight_decay` de AdamW (L2 decoupled).
 
@@ -59,74 +117,47 @@ Todos los `Conv2D` y `Dense` tenían `kernel_regularizer=l2(0.0001)` Y AdamW ten
 ### BUG 5: RandomContrast sobre datos z-score
 **Archivo:** `scripts/train_model.py`
 
-`layers.RandomContrast(0.2)` espera datos en [0,1]. Nuestros datos están normalizados z-score (media~0, rango [-3,3]).
+`layers.RandomContrast(0.2)` espera datos en [0,1]. Nuestros datos estan normalizados z-score (media~0, rango [-3,3]).
 
 **Fix:** Eliminado `RandomContrast` del pipeline de augmentation online.
 
-### BUG 6: Doble augmentación (offline 30x + online Keras layers)
+### BUG 6: Doble augmentacion (offline 30x + online Keras layers)
 **Archivo:** `scripts/train_model.py`
 
-El dataset ya estaba augmentado 30x offline, y luego `train_model.py` aplicaba OTRA ronda online → "augmentación de augmentaciones".
+El dataset ya estaba augmentado 30x offline, y luego `train_model.py` aplicaba OTRA ronda online.
 
 **Fix:** `use_augmentation=False` por defecto cuando se entrena con dataset ya augmentado.
 
 ### BUG 7: ReduceLROnPlateau conflicta con AdamW
 **Archivo:** `scripts/train_model.py`
 
-ReduceLROnPlateau modifica el LR externamente. Con AdamW, esto desbalancea la relación gradiente/weight_decay de forma no controlada.
+ReduceLROnPlateau modifica el LR externamente. Con AdamW, desbalancea la relacion gradiente/weight_decay.
 
-**Fix:** ReduceLROnPlateau eliminado. Se usa `CosineDecay` schedule directamente en el optimizador (ya estaba implementado pero no se usaba).
+**Fix:** ReduceLROnPlateau eliminado. Se usa `CosineDecay` schedule integrado en el optimizador.
 
-### BUG 8: Excepciones silenciosas en predicción y carga de modelo
+### BUG 8: Excepciones silenciosas en prediccion y carga de modelo
 **Archivo:** `app.py`
 
-`predecir_con_modelo_cnn` tenía `except Exception` que devolvía `{"ok": False}` sin loguear el error. `cargar_modelo` fallaba silenciosamente a `mini_model_best.keras` sin notificar.
+`except Exception` devolvia `{"ok": False}` sin loguear el error.
 
-**Fix:** Logging completo de errores con traceback. Se registra qué modelo se cargó.
+**Fix:** Logging completo de errores con traceback.
 
 ---
 
-## Bugs MEDIUM (Afectaban calidad/precisión)
+## Bugs MEDIUM (Afectaban calidad/precision)
 
-### BUG 9: Bare `except:` en Earth Engine init
-**Archivo:** `scripts/download_dataset.py`  
-Capturaba SystemExit/KeyboardInterrupt. → `except Exception:`
-
-### BUG 10: Hardcoded GEE project ID
-**Archivos:** `download_dataset.py`, `app.py`  
-ID `alpine-air-469115-f0` hardcodeado en 2 archivos. → Centralizado en `config.py` como `GEE_PROJECT`.
-
-### BUG 11: Augmentaciones producen float64
-**Archivo:** `scripts/augment_full_dataset.py`  
-`transform.rotate/resize` retornan float64 → duplica tamaño en disco. → `.astype(np.float32)`.
-
-### BUG 12: Todas las imágenes cargadas en RAM
-**Archivo:** `scripts/prepare_dataset.py`  
-~2,635 × 224×224×5 × 4B ≈ **6.5 GB RAM**. Pendiente para futuras versiones con datasets grandes.
-
-### BUG 13: Distancia Euclidea en lat/lon en vez de Haversine
-**Archivo:** `app.py`  
-`d * 111.0` ignora que 1° de longitud ≠ 111 km (varía con latitud). → Implementada fórmula de Haversine.
-
-### BUG 14: Curva ROC sintética en página de métricas
-**Archivo:** `app.py`  
-La curva ROC se generaba con fórmula matemática en vez de usar datos reales de `evaluation_metrics.json`. → Se cargan datos reales si están disponibles, con fallback a la aproximación.
-
-### BUG 15: Métricas hardcodeadas en reporte y UI
-**Archivo:** `app.py`  
-"Accuracy: 68.43%", "ROC AUC: 0.8198" estaban hard-coded y no se actualizarían al reentrenar. → Se leen dinámicamente de `cargar_metricas()`.
-
-### BUG 16: Keywords de geotermia incompletas en create_labels_file
-**Archivo:** `scripts/prepare_dataset.py`  
-Faltaban 'cumbal', 'sotara', 'tolima', etc. → Inferencia basada en directorio parent (`positive/` vs `negative/`) con keywords ampliadas como fallback.
-
-### BUG 17: BatchNorm faltante en shortcut del bloque residual
-**Archivo:** `models/cnn_geotermia.py`  
-El shortcut 1×1 Conv no tenía BatchNorm → escalas diferentes entre ramas. → Agregada BN al shortcut.
-
-### BUG 18: `training=False` hardcodeado en Transfer Learning
-**Archivo:** `models/cnn_geotermia.py`  
-Con `freeze_base=False`, las capas BN no actualizaban estadísticas. → `training=not freeze_base`.
+| # | Bug | Fix |
+|---|-----|-----|
+| 9 | Bare `except:` en Earth Engine init | → `except Exception:` |
+| 10 | Hardcoded GEE project ID en 2 archivos | → Centralizado en `config.py` |
+| 11 | Augmentaciones producen float64 (doble tamaño) | → `.astype(np.float32)` |
+| 12 | Todas las imagenes cargadas en RAM (~6.5 GB) | → Particionado por lotes (500 imgs/parte) |
+| 13 | Distancia Euclidea en lat/lon en vez de Haversine | → Formula de Haversine |
+| 14 | Curva ROC sintetica en UI | → Datos reales de evaluation_metrics.json |
+| 15 | Metricas hardcodeadas en UI | → Lectura dinamica de `cargar_metricas()` |
+| 16 | Keywords de geotermia incompletas en labels | → Inferencia por directorio parent |
+| 17 | BatchNorm faltante en shortcut del bloque residual | → BN agregada al shortcut |
+| 18 | `training=False` hardcodeado en Transfer Learning | → `training=not freeze_base` |
 
 ---
 
@@ -135,15 +166,15 @@ Con `freeze_base=False`, las capas BN no actualizaban estadísticas. → `traini
 | # | Bug | Fix |
 |---|-----|-----|
 | 19 | Doc dice "Normalizacion: 0-1 (Rescaling)" | → "Z-score por banda" |
-| 20 | "5,518 imágenes" en UI | → "~2,635 imágenes" |
+| 20 | "5,518 imagenes" en UI | → Valor real del dataset |
 | 21 | Hardcoded `logs/` relativo a CWD | → `PROJECT_ROOT / 'logs'` |
 | 22 | `config.labels_csv` apunta a ruta no usada | Informativo |
-| 23 | `augment_noise` no clampeaba al rango válido | → `np.clip` |
+| 23 | `augment_noise` no clampeaba al rango valido | → `np.clip` |
 | 24 | Dimensiones incorrectas en tabla de arquitectura | Informativo |
 | 25 | Sin retry logic en descargas EE | → Retry con backoff exponencial (3 intentos) |
-| 26 | R² Score para clasificación binaria | → MCC (Matthews Correlation Coefficient) |
+| 26 | R2 Score para clasificacion binaria | → MCC (Matthews Correlation Coefficient) |
 | 27 | Transfer Learning usaba Adam en vez de AdamW | → Consistencia con modelo custom |
-| 28 | Métricas `None` mostraban "0.0000" | → Mostraban "N/A" |
+| 28 | Metricas `None` mostraban "0.0000" | → "N/A" |
 
 ---
 
@@ -151,157 +182,76 @@ Con `freeze_base=False`, las capas BN no actualizaban estadísticas. → `traini
 
 | Archivo | Bugs corregidos | Cambios principales |
 |---------|:---------------:|---------------------|
-| `models/cnn_geotermia.py` | 2, 4, 17, 18, 27 | Sin Rescaling, sin kernel_regularizer, BN en shortcut, CosineDecay, transfer fix |
-| `scripts/prepare_dataset.py` | 1, 3, 16 | NoData filtering, GroupShuffleSplit, labels por directorio |
+| `models/cnn_geotermia.py` | 2, 4, 17, 18, 27 | Sin Rescaling, sin kernel_regularizer, BN en shortcut |
+| `scripts/prepare_dataset.py` | 1, 3, 12, 16 | NoData filtering, GroupShuffleSplit, particionado FAT32 |
 | `scripts/augment_full_dataset.py` | 1, 11, 23 | NoData filtering, float32, clip en ruido |
-| `scripts/train_model.py` | 5, 6, 7, 3* | Sin RandomContrast, augmentation=False, sin ReduceLROnPlateau, layers import |
-| `scripts/evaluate_model.py` | 26, 28 | MCC en vez de R², manejo de None |
-| `scripts/download_dataset.py` | 9, 10, 21, 25 | except Exception, GEE_PROJECT, PROJECT_ROOT/logs, retry 3x |
+| `scripts/train_model.py` | 5, 6, 7 | Sin RandomContrast, augmentation=False, CosineDecay, part-aware generator |
+| `scripts/evaluate_model.py` | 26, 28 | MCC en vez de R2, partitioned data loader |
+| `scripts/download_dataset.py` | 9, 10, 21, 25 | except Exception, GEE_PROJECT, retry 3x, 200 imagenes |
 | `scripts/predict.py` | 1 | NoData filtering |
-| `app.py` | 1, 8, 10, 13, 14, 15, 19, 20 | NoData, logging, Haversine, ROC real, métricas dinámicas |
-| `config.py` | 10 | Agregado GEE_PROJECT |
+| `app.py` | 1, 8, 10, 13, 14, 15, 19, 20 | NoData, logging, Haversine, metricas dinamicas, Sliding Window |
+| `config.py` | 10 | GEE_PROJECT, NUM_BANDS=7, 7 BAND_NAMES |
+
+---
+
+## Mejoras Implementadas en v2
+
+Ademas de los 28 bugs, se implementaron las siguientes mejoras (previamente en MEJORAS_MODELO.md):
+
+| Mejora | Estado | Impacto |
+|--------|:------:|---------|
+| SpatialDropout2D | Implementada | Mas efectivo para datos espaciales |
+| AdamW (weight_decay=1e-4) | Implementada | L2 desacoplado, mejor generalizacion |
+| Label Smoothing (0.1) | Implementada | Reduce sobreconfianza |
+| PR-AUC como metrica | Implementada | Mejor monitoreo en datos desbalanceados |
+| F1Score nativo | Implementada | Monitoreo directo precision-recall |
+| CosineDecay LR | Implementada | Decay suave sinusoidal |
+| Class Weights | Implementada | Compensa desbalance de clases |
+| Sliding Window Inferencia | Implementada | Preserva escala real (~90m/px) |
+| Expansion a 200 imagenes | Implementada | 2.35x mas datos originales |
+| 7 bandas (temp + ndvi) | Implementada | Mas informacion espectral |
+| Particionado FAT32 | Implementada | Compatible con USB, no desborda RAM |
+| Part-aware training | Implementada | Carga 1 particion a la vez |
+
+### Mejoras Futuras (opcionales)
+
+| Mejora | Impacto esperado | Prioridad |
+|--------|------------------|-----------|
+| Mixup/CutMix augmentation | Medio | Baja (ya tenemos 91.45%) |
+| Attention Mechanism | Medio | Baja |
+| Focal Loss | Medio | Baja (recall ya es 86%) |
+| Grad-CAM (interpretabilidad) | Bajo (para tesis) | Media |
+| Transfer Learning (EfficientNet) | Alto | Baja (modelo custom ya es bueno) |
+| Mas datos (>500 originales) | Alto | Futura version |
 
 ---
 
 ## Espacio en Disco
 
-### Situación actual (D:\geotermia_datos — USB 15 GB)
+### Estado actual (D:\geotermia_datos — USB 15 GB, FAT32)
 
-| Directorio | Tamaño | Detalle |
-|------------|-------:|---------|
-| raw/ | 2.5 MB | 85 imágenes originales (~30 KB/img) |
-| augmented/ | 1,021.7 MB | 2,635 imágenes (~397 KB/img, float64 en v1) |
-| processed/ | 2,521.9 MB | 6 archivos .npy + split_info.json |
-| **Total usado** | **3,460 MB** | |
-| **Libre** | **11,500 MB** | |
-
-### Estimaciones para v2
-
-Con el fix de float64→float32 (BUG 11), las imágenes augmentadas serán ~50% más pequeñas:
-
-| Escenario | Originales | Augmentadas | Aug. (MB) | Processed (MB) | Total (GB) | ¿Cabe en USB? |
-|-----------|:----------:|:-----------:|----------:|--------------:|----------:|:-:|
-| **Actual v2** | 85 | ~2,635 | ~510 | ~2,520 | ~3.0 | ✅ |
-| **150 originales** | 150 | ~4,650 | ~920 | ~4,460 | ~5.4 | ✅ |
-| **200 originales** | 200 | ~6,200 | ~1,230 | ~5,940 | ~7.2 | ✅ |
-| **300 originales** | 300 | ~9,300 | ~1,845 | ~8,910 | ~10.8 | ⚠️ Justo |
-
-**Recomendación:** Con 200 originales (~7.2 GB) queda margen cómodo en la USB de 15 GB.
+| Directorio | Tamaño aprox. | Detalle |
+|------------|:------------:|---------|
+| raw/ | ~6 MB | 200 imagenes originales (.tif) |
+| augmented/ | ~1.2 GB | 6,200 imagenes (float32) |
+| processed/ | ~5.9 GB | 14 archivos .npy particionados |
+| **Total usado** | **~7.1 GB** | |
+| **Libre** | **~7.9 GB** | |
 
 ---
 
-## Cantidad de Imágenes — Recomendación
+## Compatibilidad
 
-### ¿Cuántas imágenes originales se necesitan?
+El modelo v2 **NO es compatible** con los `.npy` de v1 porque:
+1. Los `.npy` de v1 se generaron sin filtrar NoData.
+2. El modelo v2 no tiene `Rescaling(1./255)`.
+3. El split v1 tenia data leakage.
+4. v2 usa 200 imagenes (vs 85) con GroupShuffleSplit.
 
-| Objetivo | Mínimo | Recomendado | Referencia |
-|----------|:------:|:-----------:|-----------|
-| Prototipo académico | 85 (actual) | — | OmniGeo 2024: 76 imágenes |
-| Tesis profesional | 150 | 200 | Balance costo/calidad |
-| Producción | 500+ | 1,000+ | Requiere GPU y almacenamiento |
-
-### ¿Se pueden descargar más?
-
-**Sí.** El script `download_dataset.py` puede extenderse fácilmente:
-1. ASTER GED (AG100_003) es un mosaico global → cualquier punto de Colombia tiene datos
-2. Se pueden agregar más coordenadas a `geothermal_zones` y `control_zones`
-3. Colombia tiene **7 zonas geotérmicas de interés** (SGC) y **docenas de volcanes**
-
-**Zonas adicionales sugeridas para positivos (label=1):**
-- Volcán Tolima (múltiples puntos)
-- Volcán Cerro Machín (alto riesgo volcánico)
-- Volcán Doña Juana
-- Volcán Las Ánimas
-- Complejo Volcánico Cerro Bravo
-- Fuentes termales de Coconuco, Termales de Santa Rosa, Herveo
-
-**Zonas adicionales sugeridas para negativos (label=0):**
-- Llanos Orientales (Villavicencio, Yopal, Arauca)
-- Costa Caribe (Barranquilla, Santa Marta, Montería)
-- Selva amazónica (Leticia, Mitú)
-- Altiplano Boyacense (múltiples puntos adicionales)
-
-### Plan recomendado: 200 imágenes
-- 110 positivos (zonas geotérmicas y volcánicas, múltiples puntos por zona)
-- 90 negativos (zonas de control diversas geográficamente)
-- Con augmentación 30x → ~6,200 imágenes totales
-- Espacio estimado: ~7.2 GB (cabe en USB de 15 GB)
+Se re-ejecuto todo el pipeline desde descarga.
 
 ---
 
-## Métricas v1 (Baseline — rama main)
-
-| Métrica | Valor |
-|---------|-------|
-| Accuracy | 68.43% |
-| Precision | 86.32% |
-| Recall | 48.10% |
-| F1-Score | 61.77% |
-| ROC AUC | 0.8198 |
-
-**Nota:** Estas métricas están **infladas** por el data leakage (BUG 3). El rendimiento real era probablemente peor.
-
-## Métricas objetivo v2 (después de reentrenar)
-
-| Métrica | Objetivo | Razón |
-|---------|----------|-------|
-| Accuracy | >75% | Datos limpios + modelo no sobre-regularizado |
-| Precision | >80% | Mantener baja tasa de falsos positivos |
-| Recall | >65% | NoData limpio reduce falsos negativos drásticamente |
-| F1-Score | >72% | Balance precision/recall |
-| ROC AUC | >0.85 | Mejor separación de clases |
-| MCC | >0.50 | Correlación real entre predicción y realidad |
-
----
-
-## Pasos para Completar v2
-
-### Realizados ✅
-- [x] Auditoría completa del código (28 bugs encontrados)
-- [x] Corrección de los 28 bugs en rama `development`
-- [x] GroupShuffleSplit implementado para evitar data leakage
-- [x] Doble L2 eliminada (solo weight_decay de AdamW)
-- [x] CosineDecay schedule integrado
-- [x] Augmentación online deshabilitada (offline es suficiente)
-- [x] Haversine implementada para distancias geográficas
-- [x] Métricas dinámicas en la UI (no hardcoded)
-- [x] Retry con backoff en descargas GEE
-- [x] R² reemplazado por MCC
-- [x] CHANGELOG_V2.md completo con todos los bugs
-
-### Pendientes (requieren ejecución)
-- [ ] (Opcional) Descargar más imágenes para llegar a ~200 originales
-- [ ] Re-ejecutar augmentación: `python scripts/augment_full_dataset.py`
-- [ ] Re-ejecutar preparación: `python scripts/prepare_dataset.py`
-- [ ] Re-entrenar modelo: `python scripts/train_model.py`
-- [ ] Evaluar con `python scripts/evaluate_model.py`
-- [ ] Comparar métricas v1 vs v2
-- [ ] Ejecutar las 4 predicciones de prueba y comparar
-- [ ] Merge a main cuando las métricas mejoren
-
----
-
-## Notas Técnicas
-
-### Sobre GroupShuffleSplit
-El split agrupa por imagen original. Si `labels.csv` tiene columna `original_image`, se usa directamente. Si no, se infiere eliminando sufijos de augmentación conocidos del nombre del archivo. Se verifica automáticamente que no hay solapamiento entre splits.
-
-### Sobre CosineDecay
-Se estima `decay_steps = 100 epochs × 60 steps/epoch ≈ 6,000`. Si se cambia significativamente el número de imágenes, ajustar en `cnn_geotermia.py`.
-
-### Sobre Haversine
-La fórmula de Haversine calcula distancias geodésicas reales en km, corrigiendo el error de ~2-5% de la aproximación Euclidea lat/lon × 111 en latitudes colombianas (1°N - 12°N).
-
-### Compatibilidad
-⚠️ **El modelo v2 NO es compatible con los `.npy` de v1** porque:
-1. Los `.npy` de v1 se generaron sin filtrar NoData
-2. El modelo v2 no tiene `Rescaling(1./255)`
-3. El split v1 tiene data leakage
-
-Se debe re-ejecutar todo el pipeline desde augmentación.
-
----
-
-*Documento actualizado: 18 de febrero de 2026*  
-*Rama: development*  
-*Autores: Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano, Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martín*
+*Documento actualizado: 25 de febrero de 2026*
+*Rama: development*
+*Autores: Cristian Camilo Vega Sanchez, Daniel Santiago Arevalo Rubiano, Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martin*
