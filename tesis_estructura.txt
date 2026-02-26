@@ -1,0 +1,271 @@
+﻿[002|Normal] Universidad de San Buenaventura┬á
+[003|Normal] ÔÇïÔÇïFacultad de Ingenier├¡a (Bogot├í)ÔÇï┬á
+[004|Normal] ÔÇïÔÇïIngenier├¡a de SistemasÔÇï┬á┬á
+[005|Normal] ÔÇïÔÇïBogot├í D.C., ColombiaÔÇï┬á
+[006|Normal] ÔÇïÔÇï2025ÔÇï ┬á
+[008|Normal] Modelo Predictivo Basado en Aprendizaje Autom├ítico y Redes Neuronales Convolucionales (CNN) para la Identificaci├│n de Zonas de Potencial Geot├®rmico en Colombia┬á
+[013|Normal] Daniel Santiago Arevalo Rubiano ┬á
+[014|Normal] Cristian Camilo Vega Sanchez ┬á
+[015|Normal] Yuliet Katerin Espitia Ayala
+[016|Normal] Laura Sophie Rivera Martin
+[018|Normal] ÔÇïÔÇï
+[024|Normal] Asesor: Yeison Eduardo Conejo Sandoval┬á
+[034|Normal] Bibliotecas Universidad de San Buenaventura
+[035|Normal] Biblioteca Fray Alberto Montealegre O.F.M. - Bogot├í.
+[036|Normal] Biblioteca Fray Arturo Calle Restrepo O.F.M. - Medell├¡n, Bello, Armenia, Ibagu├®.
+[037|Normal] Departamento de Biblioteca - Cali.
+[038|Normal] Biblioteca Central Fray Antonio de Marchena ÔÇô Cartagena.
+[041|Normal] Universidad de San Buenaventura Colombia - www.usb.edu.co
+[042|Normal] Bogot├í - www.usbbog.edu.co
+[043|Normal] Medell├¡n - www.usbmed.edu.co
+[044|Normal] Cali - www.usbcali.edu.co
+[045|Normal] Cartagena - www.usbctg.edu.co
+[046|Normal] Editorial Bonaventuriana - www.editorialbonaventuriana.usb.edu.co
+[047|Normal] Revistas cient├¡ficas ÔÇô www.revistas.usb.edu.co
+[056|Normal] Dedicatoria
+[058|Normal] 	Texto de dedicatoria centrado.	
+[069|Normal] Agradecimientos
+[071|Normal] Texto de agradecimientos centrado.
+[090|Normal] Lista de tablas
+[092|table of figures] Tabla 1  Resultados del test PBQ-SF (Personality Belief Questionnaire Short Form)	19
+[093|table of figures] Tabla 2 Caracter├¡sticas demogr├íficas y tipo de tratamiento de hemodi├ílisis y di├ílisis peritoneal con la adherencia (SMAQ) 	20
+[094|table of figures] Tabla 3 Categor├¡as de la investigaci├│n	21
+[119|Normal] Lista de figuras
+[121|table of figures] Figura 1 Portada Normas APA s├®ptima edici├│n 2020 en ingl├®s	22
+[122|table of figures] Figura 2 Logo Repositorio Institucional Universidad de San Buenaventura	22
+[145|Heading 1] Resumen
+[146|Normal] Este proyecto propone el desarrollo de un modelo predictivo basado en Aprendizaje Profundo (Deep Learning), utilizando redes neuronales convolucionales (CNN), las cuales patrones espaciales, como bord
+[148|Normal] Geotermia, Deep Learning, Redes Neuronales Convolucionales (CNN), Apache Spark, Linux, Energ├¡a Renovable, Modelos Predictivos.
+[150|Heading 1] Abstract
+[152|Normal] This project proposes the development of a predictive model based on Deep Learning, utilizing Convolutional Neural Networks (CNN) for the identification of regions with geothermal potential in Colombi
+[155|Normal] Keywords: Geothermal Energy, Deep Learning, Convolutional Neural Networks (CNN), Apache Spark, Linux, Renewable Energy, Predictive Models.
+[167|Heading 1] Introducci├│n
+[169|Normal] Este trabajo de grado propone el desarrollo de un modelo predictivo basado en Deep Learning para la identificaci├│n de zonas con alto potencial geot├®rmico en Colombia. El objetivo es utilizar redes neu
+[171|Normal] La demanda de energ├¡a en Colombia sigue en aumento segun el ..., mientras que las fuentes de energ├¡a convencionales presentan retos de sostenibilidad. La energ├¡a geot├®rmica es una alternativa viable, 
+[173|Normal] El objetivo principal de este proyecto es desarrollar un modelo predictivo basado en Machine Learning que permita identificar las zonas con mayor potencial geot├®rmico en Colombia, utilizando im├ígenes 
+[174|Normal] ┬┐C├│mo pueden las t├®cnicas de Aprendizaje Autom├ítico (Machine Learning) optimizar la identificaci├│n de zonas geot├®rmicas en Colombia? ┬┐Qu├® algoritmos de aprendizaje autom├ítico son los m├ís adecuados par
+[176|Normal] Este estudio busca aplicar herramientas de Aprendizaje Autom├ítico (Machine Learning) para mejorar la identificaci├│n de zonas aptas para la generaci├│n geot├®rmica, optimizando los esfuerzos de exploraci
+[182|Heading 1]  Planteamiento del problema
+[184|Normal] En este proyecto, el problema central radica en la falta de modelos predictivos eficientes para identificar zonas con alto potencial geot├®rmico en Colombia. Aunque el pa├¡s se encuentra en una regi├│n f
+[185|Normal] La demanda de energ├¡a en Colombia sigue en aumento, y las fuentes tradicionales de energ├¡a, como la hidroel├®ctrica y las termoel├®ctricas, enfrentan retos de sostenibilidad debido a los efectos del cam
+[186|Normal] Por lo tanto, el problema que aborda este estudio es c├│mo mejorar la identificaci├│n de zonas con potencial geot├®rmico en Colombia utilizando machine learning y redes neuronales convolucionales (CNN), 
+[188|Normal] La geotermia en Colombia ha sido objeto de diversas investigaciones que buscan aprovechar el potencial energ├®tico del pa├¡s. Un estudio relevante sobre la identificaci├│n de nuevas ├íreas para la explora
+[189|Normal] 1.1 Antecedentes
+[192|Normal] 
+1. Energ├¡a Geot├®rmica en Colombia
+[193|Normal] Colombia, ubicada en el Cintur├│n de Fuego del Pac├¡fico, posee un vasto potencial para el aprovechamiento de la energ├¡a geot├®rmica. Seg├║n Salazar, Mu├▒oz y Ospino (2017), aunque el pa├¡s presenta un ento
+[194|Normal] El estudio de la estructura t├®rmica de la litosfera colombiana es clave para entender el potencial geot├®rmico. Mej├¡a, Rayo y Echeverri (2024) realizaron modelados num├®ricos para evaluar el gradiente g
+[195|Normal] Adem├ís, la implementaci├│n de modelos de aprendizaje autom├ítico est├í comenzando a usarse para predecir el gradiente geot├®rmico en Colombia. Vargas et al. (2024) utilizaron modelos de machine learning p
+[196|Heading 4] 2. M├®todos Predictivos y Deep Learning en Geotermia
+[197|Normal] La inteligencia artificial y en particular el Deep Learning con Redes Neuronales Convolucionales (CNN), es una herramienta poderosa para identificar patrones en grandes vol├║menes de datos geoespaciale
+[198|Normal] En este contexto, FANNG-MPC ofrece un enfoque interesante mediante el uso de computaci├│n multiparte segura para inferencia predictiva con redes neuronales, lo que podr├¡a integrarse en modelos para pre
+[199|Heading 4] 3. Herramientas y Tecnolog├¡as para el An├ílisis Geot├®rmico
+[200|Normal] El uso de plataformas como Apache Spark para el procesamiento distribuido de grandes vol├║menes de datos geoespaciales y geol├│gicos es esencial. Adem├ís, los modelos predictivos basados en aprendizaje a
+[201|Heading 4] 4. Desaf├¡os y Oportunidades para la Implementaci├│n de Geotermia en Colombia
+[202|Normal] Uno de los principales desaf├¡os en la implementaci├│n de energ├¡a geot├®rmica en Colombia es la falta de un marco regulatorio claro y los altos costos asociados con la exploraci├│n geot├®rmica. Sin embargo
+[203|Normal] Adem├ís, el trabajo de Vargas et al. (2024) sobre el uso de modelos de machine learning para predecir el gradiente geot├®rmico podr├¡a contribuir significativamente a la identificaci├│n de zonas ├│ptimas p
+[204|Heading 1] Justificaci├│n
+[206|Normal] El presente estudio se enfoca en la creaci├│n de un modelo predictivo basado en machine learning para la identificaci├│n de zonas con alto potencial geot├®rmico en Colombia. Este tema es relevante debido
+[207|Normal] La geotermia ha sido reconocida como una fuente energ├®tica limpia y renovable, con un vasto potencial en regiones como la Cordillera Andina y el Cintur├│n de Fuego del Pac├¡fico (Alfaro, 2015). No obsta
+[208|Normal] La elecci├│n de este tema responde a la necesidad urgente de encontrar alternativas para diversificar la matriz energ├®tica de Colombia y reducir la dependencia de fuentes como las hidroel├®ctricas, cuya
+[209|Normal] Este proyecto es significativo no solo para el desarrollo del sector energ├®tico en Colombia, sino tambi├®n para la formaci├│n en el uso de herramientas avanzadas de machine learning en la industria de l
+[210|Normal] En cuanto a los beneficiarios, este estudio tiene un impacto directo en los gestores de recursos energ├®ticos y las autoridades gubernamentales encargadas de la planificaci├│n energ├®tica, quienes podr├ín
+[211|Normal] Este proyecto tambi├®n representa una contribuci├│n a la ciencia al ofrecer una herramienta predictiva innovadora que combina deep learning y redes neuronales convolucionales (CNN) en el an├ílisis de dat
+[213|Heading 2] Alcance
+[214|Normal] El presente proyecto abarca el dise├▒o, implementaci├│n y validaci├│n de un modelo predictivo basado en redes neuronales convolucionales (CNN) para la identificaci├│n de zonas de potencial geot├®rmico en C
+[215|Normal] El estudio se desarrolla en un nivel exploratorio y experimental, enfocado principalmente en la fase de an├ílisis y modelado de datos, sin incluir la perforaci├│n ni la explotaci├│n directa de recursos g
+[216|Normal] En t├®rminos temporales, el alcance comprende desde la recolecci├│n, depuraci├│n y procesamiento de datos geoespaciales hasta la evaluaci├│n del desempe├▒o del modelo CNN, considerando m├®tricas como precis
+[217|Normal] El proyecto tambi├®n delimita su enfoque en la predicci├│n del gradiente t├®rmico y la detecci├│n de zonas favorables para la exploraci├│n geot├®rmica, sin incluir la estimaci├│n econ├│mica, el impacto ambien
+[218|Normal] Finalmente, este estudio sienta las bases para proyectos posteriores de mayor alcance, orientados a integrar los resultados del modelo con sistemas de informaci├│n geogr├ífica (SIG) y herramientas de to
+[220|List Paragraph] Objetivos
+[222|Heading 2] 3.1 Objetivo general
+[223|Normal] Desarrollar un modelo predictivo basado en Machine Learning que permita identificar zonas con alto potencial geot├®rmico en Colombia, utilizando im├ígenes del Servicio Geol├│gico Colombiano y datos geoes
+[225|Heading 2] 3.2 Objetivos espec├¡ficos
+[226|Normal] (solamente un verbo para cada bjetivo)
+[227|Normal] Recopilar y procesar datos geol├│gicos y geoespaciales relevantes del Servicio Geol├│gico Colombiano, asegurando la calidad y precisi├│n de la informaci├│n utilizada para entrenar el modelo.
+[228|Normal] Seleccionar y entrenar algoritmos de machine learning, espec├¡ficamente redes neuronales convolucionales (CNN), para la detecci├│n de patrones en los datos geot├®rmicos.
+[229|Normal] Evaluar la efectividad del modelo predictivo mediante m├®tricas de rendimiento, como precisi├│n, recall y el coeficiente de determinaci├│n R┬▓, para asegurar su aplicabilidad y robustez en la identificaci
+[230|Normal] Proponer estrategias para la implementaci├│n del modelo en el sector energ├®tico colombiano, incluyendo su integraci├│n con las pol├¡ticas energ├®ticas nacionales y su uso por parte de las autoridades resp
+[233|Heading 1] Problema de investigaci├│n
+[234|Normal] El problema de investigaci├│n que aborda este proyecto es la falta de modelos predictivos eficientes para la identificaci├│n de zonas con alto potencial geot├®rmico en Colombia. A pesar de que el pa├¡s po
+[235|Normal] Actualmente, no existen herramientas predictivas que utilicen de manera eficiente datos geoespaciales y geol├│gicos para identificar r├ípidamente las zonas m├ís prometedoras para la explotaci├│n geot├®rmic
+[236|Normal] Por lo tanto, el problema de investigaci├│n de este proyecto es desarrollar un modelo predictivo basado en machine learning que permita identificar con mayor precisi├│n y eficiencia las zonas geot├®rmica
+[248|Heading 1] Hip├│tesis
+[250|Normal] La hip├│tesis en este proyecto se basa en la suposici├│n de que el uso de t├®cnicas de Machine Learning y redes neuronales convolucionales (CNN) puede mejorar la precisi├│n en la identificaci├│n de zonas c
+[252|Heading 2] 5.1 Hip├│tesis de trabajo
+[254|Normal] Se plantea que la implementaci├│n de un modelo predictivo basado en deep learning permitir├í identificar zonas con alto potencial geot├®rmico en Colombia con mayor precisi├│n que los m├®todos tradicionales
+[256|Heading 2] 5.2 Hip├│tesis estad├¡stica
+[258|Normal] Evaluar la efectividad del modelo predictivo basado en machine learning (CNN) en comparaci├│n con los m├®todos tradicionales de identificaci├│n de zonas geot├®rmicas. Se buscar├í determinar si el modelo pr
+[260|Heading 3] 5.2.1 Hip├│tesis nula
+[262|Normal] Establece que el modelo predictivo basado en machine learning (CNN) no presenta una mejora significativa en la precisi├│n al identificar zonas con potencial geot├®rmico en Colombia en comparaci├│n con lo
+[264|Normal] 5.2.1.1 Hip├│tesis alterna.  El modelo predictivo basado en machine learning (CNN) tiene un desempe├▒o significativamente superior en t├®rminos de precisi├│n al identificar zonas con alto potencial geot├®r
+[266|Normal] 5.2.1.1.1 Variables. la variable independiente es el modelo predictivo basado en machine learning (CNN), el cual se utiliza para procesar y analizar datos geoespaciales y geol├│gicos con el fin de iden
+[279|Heading 1] Marco te├│rico
+[281|Heading 2] 6.1 Geotermia y su Aplicaci├│n en Generaci├│n de Energ├¡a
+[282|Normal] La energ├¡a geot├®rmica se refiere al aprovechamiento del calor interno de la Tierra para generar electricidad o calor ├║til. En Colombia, la geotermia se presenta como una alternativa viable para divers
+[283|Normal] De acuerdo con un informe del Servicio Geol├│gico Colombiano, las manifestaciones hidrotermales y los gradientes t├®rmicos en ciertas regiones del pa├¡s sugieren que la geotermia podr├¡a convertirse en un
+[284|Heading 2] 6.2 Machine Learning en Modelos Predictivos Geot├®rmicos
+[285|Normal] La aplicaci├│n de Machine Learning en geotermia ha demostrado ser efectiva en diversas ├íreas, como la identificaci├│n de gradientes t├®rmicos y la predicci├│n de zonas con alto potencial geot├®rmico. Utili
+[286|Normal] Estudios recientes han mostrado que el uso de redes neuronales convolucionales permite mejorar significativamente la identificaci├│n de ├íreas con potencial geot├®rmico. En particular, un estudio realiza
+[287|Heading 2] 6.3 Importancia de la Geotermia en la Transici├│n Energ├®tica de Colombia
+[288|Normal] La geotermia no solo contribuye a la diversificaci├│n de la matriz energ├®tica de Colombia, sino que tambi├®n juega un papel crucial en la transici├│n energ├®tica hacia fuentes m├ís limpias y sostenibles. A
+[289|Normal] Un estudio de Gonz├ílez et al. (2020) sugiere que la implementaci├│n de proyectos geot├®rmicos podr├¡a reducir significativamente la dependencia de fuentes no renovables, adem├ís de ofrecer una energ├¡a bas
+[290|Heading 2] 6.4 Desaf├¡os en la Exploraci├│n Geot├®rmica
+[291|Normal] A pesar de los avances en el uso de machine learning para la exploraci├│n geot├®rmica, existen varios desaf├¡os a nivel tecnol├│gico y econ├│mico. El costo elevado de los estudios de exploraci├│n geot├®rmica
+[292|Normal] 7. Metodolog├¡a
+[293|Normal] La metodolog├¡a de este proyecto se basa en un enfoque mixto, que combina m├®todos cualitativos y cuantitativos con el objetivo de abordar de manera integral el problema de la identificaci├│n de zonas co
+[294|Heading 2] Enfoque Cuantitativo
+[295|Normal] El enfoque cuantitativo ser├í el principal motor de la investigaci├│n, ya que el objetivo principal es construir un modelo predictivo basado en machine learning. Se utilizar├ín redes neuronales convoluci
+[296|Normal] Para evaluar el rendimiento del modelo, se emplear├ín m├®tricas cuantitativas tales como:
+[297|List Paragraph] Precisi├│n: para medir la exactitud del modelo al identificar correctamente las zonas con potencial geot├®rmico.
+[298|List Paragraph] Recall: para evaluar cu├íntas de las zonas realmente geot├®rmicas fueron identificadas por el modelo.
+[299|List Paragraph] F1-score: como una medida balanceada entre precisi├│n y recall.
+[300|List Paragraph] Coeficiente de determinaci├│n R┬▓: para evaluar la cantidad de variabilidad explicada por el modelo.
+[301|Normal] Estas m├®tricas permitir├ín realizar una evaluaci├│n objetiva y estad├¡stica del rendimiento del modelo y su capacidad de predicci├│n en relaci├│n con las zonas geot├®rmicas en Colombia.
+[302|Heading 2] Enfoque Cualitativo
+[303|Normal] El enfoque cualitativo complementa el enfoque cuantitativo al proporcionar una interpretaci├│n m├ís profunda de los resultados obtenidos. Aunque el an├ílisis de datos num├®ricos es crucial para el entrena
+[304|List Paragraph] Interpretar las correlaciones y patrones que el modelo predice, como las relaciones entre las caracter├¡sticas geol├│gicas de las zonas (fallas, tipos de roca, gradientes t├®rmicos) y el potencial geot├®r
+[305|List Paragraph] Explorar las implicaciones geol├│gicas detr├ís de las predicciones del modelo, como las caracter├¡sticas de las ├íreas con alta densidad geot├®rmica, y su posible relaci├│n con los eventos tect├│nicos y volc
+[306|List Paragraph] Identificar variables adicionales que puedan influir en los resultados del modelo pero que no fueron expl├¡citamente incluidas en los datos iniciales.
+[307|Heading 3] M├®todos y T├®cnicas Utilizadas
+[308|List Paragraph] Scrum: El proyecto se llevar├í a cabo utilizando el modelo ├ígil Scrum, que facilitar├í la organizaci├│n del trabajo en ciclos iterativos y colaborativos, llamados "sprints". Este enfoque permite ajustes 
+[309|List Paragraph] KDD (Knowledge Discovery in Databases): Se aplicar├í el proceso de KDD, que incluye varias fases como la selecci├│n de los datos, su preprocesamiento, la miner├¡a de datos y la evaluaci├│n del descubrimie
+[310|List Paragraph] CRISP-DM (Cross-Industry Standard Process for Data Mining): El proceso CRISP-DM ser├í utilizado para guiar las diferentes fases del proyecto. Este modelo est├índar de miner├¡a de datos incluye pasos como
+[311|List Paragraph] Six Sigma: Se implementar├í el enfoque Six Sigma para asegurar que el modelo cumpla con altos est├índares de calidad y eficiencia. Utilizando la metodolog├¡a DMAIC (Definir, Medir, Analizar, Mejorar, Con
+[312|Heading 3] Proceso General de Investigaci├│n
+[313|List Paragraph] Recopilaci├│n de Datos: Obtenci├│n de datos del Servicio Geol├│gico Colombiano y otras fuentes secundarias sobre gradientes t├®rmicos, actividad volc├ínica y caracter├¡sticas geol├│gicas.
+[314|List Paragraph] Preprocesamiento de Datos: Limpieza y transformaci├│n de los datos para que sean aptos para el an├ílisis con CNN y otros algoritmos de machine learning.
+[315|List Paragraph] Entrenamiento del Modelo: Utilizaci├│n de algoritmos de machine learning para entrenar el modelo utilizando los datos preprocesados.
+[316|List Paragraph] Evaluaci├│n y Validaci├│n: Evaluaci├│n del modelo utilizando m├®tricas como precisi├│n, recall y F1-score, adem├ís de validaci├│n mediante comparaci├│n con datos geot├®rmicos reales.
+[317|List Paragraph] Implementaci├│n de Resultados: El modelo final ser├í utilizado para identificar nuevas zonas geot├®rmicas y proporcionar├í una herramienta predictiva para la toma de decisiones en la exploraci├│n geot├®rmic
+[319|Heading 1] 8 Resultados
+[321|Normal] En los resultados se comunican los hallazgos y descubrimientos del estudio. Se incluyen tablas, figuras, diagramas y dem├ís material demostrativo. Al narrar descriptivamente una figura, tabla, etc., en
+[323|Caption] Tabla 1 
+Resultados del test PBQ-SF (Personality Belief Questionnaire Short Form)
+[324|No Spacing] * Las medias y las desviaciones de esta prueba fueron obtenidas en poblaci├│n normal (no cl├¡nica).
+[325|No Spacing] Fuente. (Ram├¡rez H. & Guzm├ín, 2011). 
+[328|Normal] Tabla 2
+Caracter├¡sticas demogr├íficas y tipo de tratamiento de hemodi├ílisis y di├ílisis peritoneal con la adherencia (SMAQ) 
+[331|Normal] Tabla 3
+Categor├¡as de la investigaci├│n
+[332|Normal] Nota. Adaptado de Ruiz Rojas (2014).
+[336|Caption] Figura 1
+Portada Normas APA s├®ptima edici├│n 2020 en ingl├®s
+[338|Normal] Nota. Fuente https://bit.ly/2IyrZao (American Psychological Association, 2020).
+[340|Caption] Figura 2
+Logo Repositorio Institucional Universidad de San Buenaventura
+[342|Normal] Nota. Fuente http://bibliotecadigital.usb.edu.co/. Plataforma de acceso abierto en la que se preservan, recuperan y difunden los documentos en texto completo de la producci├│n acad├®mica e intelectual B
+[344|Normal] 9 Discusi├│n
+[346|Normal] 	La discusi├│n es la interpretaci├│n cr├¡tica y el an├ílisis de los resultados, que surgen de las preguntas de investigaci├│n.
+[348|Normal] 10 Conclusiones
+[350|Normal] Son las interpretaciones finales que recopilan los datos de la investigaci├│n, describe lo que se obtuvo, qu├® se logr├│ y cu├íles son los resultados. Guardan relaci├│n directa con lo que se mencion├│ en el
+[361|Normal] 11 Recomendaciones
+[363|Normal] 	Las recomendaciones son las futuras y posibles l├¡neas de investigaci├│n que llevar├ín a resolver problemas relacionados con la presente investigaci├│n. 
+[391|Heading 1] Referencias
+[392|Normal] Gonz├ílez, M., G├│mez, J., & P├®rez, A. (2020). Desaf├¡os de la energ├¡a geot├®rmica en Colombia: Hacia la diversificaci├│n energ├®tica. Revista de Energ├¡as Renovables, 11(3), 134-145.
+[393|Normal] Gonz├ílez, J., Serrano, A., & Mu├▒oz, E. (2019). Exploraci├│n geot├®rmica en Colombia: An├ílisis de recursos y potencial energ├®tico. Servicio Geol├│gico Colombiano.
+[394|Normal] Mu├▒oz, Y., & P├®rez, A. (2021). Aplicaci├│n de redes neuronales para la identificaci├│n de zonas geot├®rmicas en Colombia. Journal of Geothermal Energy, 23(5), 567-578.
+[395|Normal] Rodr├¡guez, S., G├│mez, F., & L├│pez, C. (2022). Uso de redes neuronales convolucionales en la identificaci├│n de zonas geot├®rmicas en Colombia. Geothermal Science Review, 9(2), 45-58.
+[396|Normal] Serrano, M. (2018). La geotermia como alternativa para la matriz energ├®tica colombiana. Revista de Energ├¡as Alternativas, 14(2), 112-120.
+[397|Normal] Alfaro, C. (2015). Improvement of perception of the geothermal energy as a potential source of electrical energy in Colombia. Retrieved from https://pangea.stanford.edu/ERE/db/WGC/papers/WGC/2015/0100
+[398|Normal] Mu├▒oz, Y., Guerrero, J., & Ospino, A. (2014). Evaluation of a hybrid system of renewable electricity generation for a remote area of Colombia using homer software. Tecciencia, 9(17), 45-54. https://do
+[399|Normal] Salazar, S. S., Mu├▒oz, Y., & Ospino, A. (2017). Analysis of geothermal energy as an alternative source for electricity in Colombia. Geotherm Energy, 5(27). https://doi.org/10.1186/s40517-017-0084-x
+[400|Normal] Mej├¡a-Fragoso, J. C., Fl├│rez, M. A., & Bernal-Olaya, R. (2024). Predicting the geothermal gradient in Colombia: A machine learning approach. Geothermics, 122, 103074. https://doi.org/10.1016/j.geother
+[401|Normal] Ram├¡rez, D., & Londo├▒o, J. (2017). Field performance evaluation of ORC geothermal power plants using radial outflow turbines. Energy Procedia, 129, 607ÔÇô614.
+[402|Normal] Montoya, D., Rodr├¡guez, A., & Romero, A. (2022). Aprovechamiento energ├®tico sostenible de un recurso geotermal: Caso sala de dosificaci├│n de la planta. Ingenier├¡a, 27(1), 12ÔÇô28.
+[403|Normal] Zieman, L., Iba├▒ez-Mejia, M., Rooney, A. D., Bloch, E., Pardo, N., Schoene, B., & Szymanowski, D. (2023). To sink, or not to sink: The thermal and density structure of the modern northern Andean arc c
+[404|Normal] Mora-Galindo, E. A., Molano Mendoza, J. C., & Morales, M. J. (2023). Genesis and evolution of pegmatites in eastern Colombia: Insights from mineral chemistry. Earth Sciences Research Journal, 27(3), 2
+[405|Normal] Moretti, I., Mora, C., Zamora, W., Valendia, M., Mayorga, M., Rodr├¡guez, G., & Rodr├¡guez, M. (2009). Petroleum system variations in the Llanos Basin (Colombia). Presented at the X Simposio Bolivariano
+[406|Normal] Tamin, O., Moung, E. G., Dargham, J. A., Abdul Karim, S. A., Osman Ibrahim, A., Adam, N., & Osman, H. A. (2025). RGB and RGNIR image dataset for machine learning in plastic waste detection. Data in Br
+[407|Normal] Rodr├¡guez, P. M., & Gonz├ílez, D. R. (2015). Analysis of geothermal energy as an alternative source for electricity in Colombia. Geotherm Energy, 5, 27. https://doi.org/10.1016/j.geothermics.2015.03.00
+[408|Normal] Alfaro, S., & Cepeda, L. (2009). Geothermal resources in Latin America: Focus on Colombia. Proceedings World Geothermal Congress, Antalya, Turkey, 13-22.
+[409|Normal] G├│mez, M., & Tapia, E. (2020). The thermal structure of the Colombian lithosphere: A regional and basin-scale analysis. Tectonophysics, 885, 230413. https://doi.org/10.1016/j.tecto.2020.230413
+[410|Normal] Franco, R., & Larios, L. (2023). Multi-criteria evaluation and multi-method analysis for appropriately selecting renewable energy sources in Colombia. MethodsX, 14, 103248. https://doi.org/10.1016/j.m
+[411|Normal] Pimentel, G., & Hamza, V. (2010). Geothermal gradients of the Amazon region in northern Brazil. Geothermics, 39(5), 298ÔÇô310. https://doi.org/10.1016/j.geothermics.2010.01.002
+[412|Normal] Mej├¡a, E., & D├¡az, S. (2018). The potential of geothermal energy in Colombia. Geothermal Journal, 10(2), 45-67.
+[413|Normal] S├ínchez, J., & Rodr├¡guez, F. (2021). The role of geothermal energy in ColombiaÔÇÖs future energy mix. Energy Policy, 49, 101-115. https://doi.org/10.1016/j.enpol.2021.05.016
+[417|Normal (Web)] American Psychological Association. (2020). Publication Manual of the American Psychological Association (7a ed.). American Psychological Association.
+[418|Normal (Web)] Arango, J. L. (2000). Enfermedades respiratorias del reci├®n nacido. En J. A. Correa, J. F. G├│mez, & R. Posada (Eds.), Fundamentos de pediatr├¡a: generalidades y neonatolog├¡a (pp. 463ÔÇô467). Fondo Editor
+[419|Normal (Web)] Baker, D. W., Gazmararian, J. A., Williams, M. V, Scott, T., Parker, R. M., Green, D., Ren, J., & Peel, J. (2002). Functional Health Literacy and the Risk of Hospital Admission Among Medicare Managed 
+[420|Normal (Web)] Biblioteca Universidad de San Buenaventura [@BiblioUSB]. (2016, mayo 3). Consulta Biblioteca Digital USB Colombia http://bibliotecadigital.usb.edu.co/ acceso a m├ís de 2.600 documentos en texto complet
+[421|Normal (Web)] El Espectador. (2012). Tutelas por un acetaminof├®n: tratamientos, medicamentos y cirug├¡as, las mayores causas de reclamo. El 67,81% de los casos correspond├¡an a servicios incluidos en el plan de benef
+[422|Normal (Web)] Fundaci├│n del Espa├▒ol Urgente. (2012). Fund├®u BBVA: c├│mo diferenciar ┬½si no┬╗ y ┬½sino┬╗. https://bit.ly/3oBTGP9
+[423|Normal (Web)] Gonz├ílez P├®rez, Y., Rosell Le├│n, Y., Piedra Salom├│n, Y., Leal Labrada, O., & Mar├¡n Milan├®s, F. (2006). Los valores del profesional de la informaci├│n ante el reto de la introducci├│n de las nuevas tecno
+[424|Normal (Web)] Hooper, T. (2010). El Discurso del Rey [The King┬┤s Speech]. UK Film Council; See Saw Films; Bedlam Productions.
+[425|Normal (Web)] Institute of Electrical and Electronics Engineers. (2006). IEEE Std P802.15.4/D6: Approved Draft Revision for IEEE Standard for Information technology-Telecommunications and information exchange betwe
+[426|Normal (Web)] International Business Machine. (2020). SPSS (Versi├│n 27.0) [software]. IBM.
+[427|Normal (Web)] Ram├¡rez H., A., & Guzm├ín, P. (s.f.). Sistemas participativos de garant├¡a SPG en Bogot├í: la apuesta del proceso organizativo Familia de la Tierra. https://bit.ly/3mfvktD
+[428|Normal (Web)] Rioja, G. (2008). ┬┐Judicializaci├│n de la salud? el caso de las personas sordas [conferencia]. XIII Congreso de la Caja de Abogados de la Provincia de Buenos Aires, Buenos Aires, Argentina.
+[429|Normal (Web)] Ruiz Rojas, G. A. (2014). Hacia la comprensi├│n de la ret├│rica como contenido formativo para la configuraci├│n de un sujeto deliberativo [tesis de maestr├¡a, Universidad de San Buenaventura Medell├¡n]. Re
+[431|Normal] Anexos
+[433|Normal] En los anexos se incluye material complementario que apoya la documentaci├│n investigativa, tales como consentimientos informados, entrevistas, material fotogr├ífico, etc. Evite incluir material que pue
+[434|Normal] Los siguientes anexos son trucos y recomendaciones que surgen constantemente en la elaboraci├│n de un documento en Word.
+[436|Normal] Anexo 1. Gestor de citas y referencias de Microsoft Word 
+[438|Normal] Ingresar las fuentes: Referencias > Administrar fuentes > Nuevo:
+[439|Normal] Insertar cita en el texto: Referencias > Insertar cita > Clic en fuente seleccionada:
+[440|Normal] Cita insertada dentro del texto:
+[442|P├írr.APA] Algunas experiencias significativas se han descrito mediante la pedagog├¡a en hospitales con ni├▒os en edad preescolar (Alonso et al., 2006).
+[444|Normal] Insertar referencias (bibliograf├¡a): Referencias > Bibliograf├¡a > Referencias
+[445|Normal] Secci├│n Referencias insertada:
+[452|Normal] Anexo 2. Citas y referencias de material legal (leyes, decretos, sentencias, etc.)
+[454|Normal] Uno de los aspectos que m├ís puede causar confusi├│n en Normas APA es lo referente a la citaci├│n de material legal y jur├¡dico; de hecho, la misma American Psychological Association refiere al uso del ma
+[460|Normal] Anexo 3. Ortograf├¡a y gram├ítica
+[462|Normal] La ortograf├¡a y la gram├ítica hacen parte fundamental del trabajo de grado; al finalizar la redacci├│n de tu escrito, realiza una revisi├│n ortogr├ífica de todo el documento. En todo caso, siempre ser├í re
+[464|List Paragraph] ÔÇ£CambiarÔÇØ, si consideras que efectivamente hab├¡a un error, ejemplo (mas, sin tilde):
+[466|List Paragraph] ÔÇ£OmitirÔÇØ, si a pesar de la sugerencia consideras que est├í correctamente, ejemplo (desadaptativos):
+[468|List Paragraph] ÔÇ£Omitir todoÔÇØ si deseas ignorar la sugerencia de esa palabra u oraci├│n en todo el texto.
+[469|List Paragraph] ÔÇ£AgregarÔÇØ si deseas incluir esa palabra en el diccionario en futuras revisiones.
+[471|Normal] 	Ten precauci├│n en aceptar cambios sugeridos, pues Microsoft Word no tiene la capacidad completa de interpretar con precisi├│n algunos aspectos de la redacci├│n o gram├ítica en lengua espa├▒ola.
+[477|Normal] Anexo 4. Buscar, reemplazar y eliminar espacios (o palabras)
+[479|Normal] Uno de los errores m├ís comunes al redactar un texto es incluir dobles, triples o cu├ídruples espacios, que en esencia son casi imperceptibles pero que afectan la distribuci├│n del documento. Para elimin
+[481|Normal] Word notificar├í cu├íntos espacios dobles se eliminaron y se han reemplazado por un espacio.
+[483|Normal] Haz clic en ÔÇ£Reemplazar todosÔÇØ para eliminar dobles espacios que quedan, por ejemplo, de triples o cu├ídruples espacios anteriores, hasta que aparezca este mensaje:
+[486|Normal] Anexo 5. Atajos de teclado ├║tiles en Microsoft Word
+[488|Normal] Ctrl +
+[491|Normal] A= Abrir
+[492|Normal] B= Buscar
+[493|Normal] C= Copiar
+[494|Normal] D= Alinear derecha
+[495|Normal] E= Seleccionar todo
+[496|Normal] G= Guardar
+[497|Normal] H= Sangr├¡a
+[498|Normal] I= Ir a p├ígina
+[499|Normal] J= Justificar
+[500|Normal] K= Cursiva
+[501|Normal] L= Reemplazar
+[502|Normal] M= Formato
+[503|Normal] N= Negrilla
+[504|Normal] O= Disminuir tama├▒o
+[505|Normal] P= Imprimir
+[506|Normal] Q= Alinear izquierda
+[507|Normal] R= Cerrar documento
+[508|Normal] S= Subrayado
+[509|Normal] T= Centrar
+[510|Normal] U= Nuevo documento
+[511|Normal] V= Pegar
+[512|Normal] X=Cortar
+[513|Normal] Y= Rehacer
+[514|Normal] Z= Deshacer
+[516|Normal] Lista completa de atajos https://bit.ly/3oHliCj
+[531|Normal] Anexo 6. Sin├│nimos y ant├│nimos 
+[533|Normal] Constantemente surgen inconvenientes al redactar una oraci├│n, al no tener la palabra adecuada, un sin├│nimo o un ant├│nimo. Microsoft Word apoya estas inquietudes, as├¡:
+[539|Normal] Anexo 7. Copiar y pegar sin formato
+[541|Normal] En ocasiones copiamos y pegamos objetos o texto desde p├íginas web u otras fuentes hacia Word con el conocido Ctrl + C y Ctrl + V; sin embargo, se conservan colores, tipos de letras, tablas, y otros fo
+[545|Normal] Anexo 8. Comparar dos documentos
+[547|Normal] Frecuentemente tenemos inconvenientes al tener m├ís de una versi├│n de un mismo trabajo escrito y se desean conocer los cambios hechos en el documento 1 respecto del documento 2. Realiza estos pasos: Re
+[549|Normal] Busca la ruta en tu dispositivo donde se encuentra el documento original (izquierda) y luego el mismo procedimiento con el documento revisado (derecha). > clic en Aceptar.
+[551|Normal] Posteriormente aparece el informe con la cantidad de revisiones hechas en el documento:
+[554|Normal] Anexo 9. Control de cambios
+[556|Normal] Es una de las funciones m├ís ├║tiles, especialmente cuando se desea vigilar, revisar y aceptar cualquier cambio en un documento. Supongamos la interacci├│n entre un estudiante que elabora la tesis y su a
+[558|Normal] Modo asesor: el asesor corrige los errores; es visible lo que se pretende eliminar con tachado guion medio (color rojo) y la sugerencia con guion bajo (color verde):
+[560|Normal] Modo estudiante: estudiante recibe archivo con sugerencias (el bot├│n ÔÇ£Control de cambiosÔÇØ debe estar activo), clic en ÔÇ£SiguienteÔÇØ y tiene la opci├│n de ÔÇ£AceptarÔÇØ o ÔÇ£RechazarÔÇØ una a una las sugerencias 
+[562|Normal] Anexo 10. Insertar salto de p├ígina
+[564|Normal] Existe una sencilla funci├│n llamada ÔÇ£Salto de p├íginaÔÇØ que ahorra tiempo en la estructura del texto, cuando se requiere iniciar en una nueva p├ígina en blanco, sin necesidad de insertar ÔÇ£EnterÔÇØ una y ot
+[567|Normal] Anexo 11. Recortar y abreviar direcciones web largas
+[569|Normal] Eventualmente utilizamos p├íginas web, im├ígenes, documentos en l├¡nea, entre otros, y es necesario citarlas o mencionarlas en el texto; sin embargo, esos enlaces son supremamente largos, lo que le resta
+[570|Normal] Largo: https://www.youtube.com/watch?reload=9&v=tRH59E1aybE&feature=youtu.be
+[571|Normal] Corto: https://bit.ly/3abhsgE
+[572|Normal] Utiliza una herramienta en l├¡nea para hacer de este enlace mucho m├ís corto. Existe gran variedad de ellos, recomendamos algunos.
+[574|Normal] https://cutt.ly/		https://bitly.com/	 	https://tiny.cc/		https://tinyurl.com/
+[576|Normal] Ejemplo realizado con Bitly https://bitly.com/
+[578|P├írr.APA] Copiar y pega la URL larga en la casilla Shorten your link > Clic en Shorten > Posteriormente aparece la nueva URL corta > Clic en Copy > P├®gala en el lugar del texto que la necesites.

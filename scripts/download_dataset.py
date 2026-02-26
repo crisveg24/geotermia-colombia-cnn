@@ -1,3 +1,5 @@
+# Copyright (c) 2025-2026 Vega Sánchez · Arévalo Rubiano · Espitia Ayala · Rivera Martín
+# Universidad de San Buenaventura — Bogotá | github.com/crisveg24/geotermia-colombia-cnn
 """
 Script para Descargar Dataset Completo de Imágenes ASTER para Detección de Potencial Geotérmico
 ========================================================================================

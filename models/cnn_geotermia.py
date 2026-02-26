@@ -1,3 +1,5 @@
+# Copyright (c) 2025-2026 Vega Sánchez · Arévalo Rubiano · Espitia Ayala · Rivera Martín
+# Universidad de San Buenaventura — Bogotá | github.com/crisveg24/geotermia-colombia-cnn
 """
 CNN Architecture for Geothermal Potential Classification
 =========================================================
@@ -26,6 +28,13 @@ Universidad de San Buenaventura - Bogotá
 Programa: Ingeniería de Sistemas (Pregrado)
 Fecha: 2025-2026
 """
+
+__author__      = "Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano, Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martín"
+__institution__ = "Universidad de San Buenaventura — Bogotá | Ingeniería de Sistemas"
+__advisor__     = "Prof. Yeison Eduardo Conejo Sandoval"
+__copyright__   = "Copyright (c) 2025-2026"
+__repository__  = "https://github.com/crisveg24/geotermia-colombia-cnn"
+__license__     = "MIT"
 
 import tensorflow as tf
 from tensorflow import keras
@@ -260,7 +269,7 @@ class GeotermiaCNN:
             metrics = ['accuracy']
         
         # Crear modelo
-        model = models.Model(inputs=inputs, outputs=outputs, name='GeotermiaCNN')
+        model = models.Model(inputs=inputs, outputs=outputs, name='GeotermiaCNN_USB_Bogota_Vega_Arevalo_Espitia_Rivera_2026')
         
         # AdamW: Mejor regularización que Adam estándar (weight decay correcto)
         # v2: Usar CosineDecay schedule para LR en vez de ReduceLROnPlateau.
