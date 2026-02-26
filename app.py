@@ -961,6 +961,8 @@ def crear_mapa_heatmap(zonas, predicciones_hist=None):
     """Mapa con capa de calor basada en predicciones realizadas."""
     m = folium.Map(location=[4.57, -74.30], zoom_start=6, tiles="CartoDB positron")
 
+    # Grupo de zonas conocidas
+    fg_zonas = folium.FeatureGroup(name="Zonas conocidas")
     colores = {"Alto": "red", "Medio": "orange"}
     for z in zonas:
         c = colores.get(z["potencial"], "blue")
@@ -976,11 +978,13 @@ def crear_mapa_heatmap(zonas, predicciones_hist=None):
             ),
             tooltip=z["nombre"], color=c, fill=True, fillColor=c, fillOpacity=0.7,
             weight=2,
-        ).add_to(m)
+        ).add_to(fg_zonas)
+    fg_zonas.add_to(m)
 
     # Capa de calor con predicciones
     if predicciones_hist:
         heat_data = []
+        fg_markers = folium.FeatureGroup(name="Predicciones (marcadores)")
         for h in predicciones_hist:
             heat_data.append([h["lat"], h["lon"], h["valor"]])
             # Marcador por cada prediccion
@@ -999,15 +1003,21 @@ def crear_mapa_heatmap(zonas, predicciones_hist=None):
                     f"<span style='font-size:11px;color:#666'>{h.get('zona', '')}</span></div>",
                     max_width=180,
                 ),
-            ).add_to(m)
+            ).add_to(fg_markers)
+        fg_markers.add_to(m)
 
-        if len(heat_data) >= 2:
+        # Crear heatmap (funciona desde 1 punto)
+        if len(heat_data) >= 1:
+            fg_heat = folium.FeatureGroup(name="Mapa de calor")
             HeatMap(
                 heat_data,
-                min_opacity=0.3, max_val=1.0,
-                radius=30, blur=25,
-                gradient={0.2: '#1565c0', 0.4: '#42a5f5', 0.6: '#ffca28', 0.8: '#ff6d00', 1.0: '#d32f2f'},
-            ).add_to(m)
+                min_opacity=0.4, max_val=1.0,
+                radius=45, blur=35,
+                gradient={0.0: '#1565c0', 0.25: '#42a5f5', 0.5: '#ffca28', 0.75: '#ff6d00', 1.0: '#d32f2f'},
+            ).add_to(fg_heat)
+            fg_heat.add_to(m)
+
+    folium.LayerControl(position="topright", collapsed=False).add_to(m)
 
     legend = (
         '<div style="position:fixed;bottom:30px;left:30px;z-index:9999;'
@@ -1307,21 +1317,30 @@ def pagina_prediccion():
 
         # Actualizar coordenadas si hubo clic
         if map_data and map_data.get("last_clicked"):
-            st.session_state["pred_lat"] = round(map_data["last_clicked"]["lat"], 4)
-            st.session_state["pred_lon"] = round(map_data["last_clicked"]["lng"], 4)
+            clicked_lat = round(map_data["last_clicked"]["lat"], 4)
+            clicked_lon = round(map_data["last_clicked"]["lng"], 4)
+            # Solo re-ejecutar si las coordenadas cambiaron
+            if (clicked_lat != st.session_state.get("pred_lat") or
+                    clicked_lon != st.session_state.get("pred_lon")):
+                st.session_state["pred_lat"] = clicked_lat
+                st.session_state["pred_lon"] = clicked_lon
+                # Sincronizar los widgets de number_input
+                st.session_state["input_lat_mapa"] = clicked_lat
+                st.session_state["input_lon_mapa"] = clicked_lon
+                st.rerun()
 
         # Coordenadas editables (se sincronizan con clic en el mapa)
         sc1, sc2, sc3 = st.columns([1, 1, 1])
         with sc1:
             latitud = st.number_input(
                 "Latitud:", -4.0, 12.0,
-                st.session_state["pred_lat"], 0.0001, format="%.4f",
+                value=st.session_state["pred_lat"], step=0.0001, format="%.4f",
                 key="input_lat_mapa",
             )
         with sc2:
             longitud = st.number_input(
                 "Longitud:", -82.0, -66.0,
-                st.session_state["pred_lon"], 0.0001, format="%.4f",
+                value=st.session_state["pred_lon"], step=0.0001, format="%.4f",
                 key="input_lon_mapa",
             )
         with sc3:
@@ -1331,6 +1350,7 @@ def pagina_prediccion():
                 "🔬 Analizar Potencial", type="primary", width="stretch",
                 key="btn_mapa",
             )
+        # Sincronizar number_input → session state
         st.session_state["pred_lat"] = latitud
         st.session_state["pred_lon"] = longitud
 
@@ -1830,7 +1850,7 @@ def pagina_prediccion():
                 )
 
         # ---- Mapa de calor (heatmap) ----
-        if st.session_state.get("pred_historial") and len(st.session_state["pred_historial"]) >= 2:
+        if st.session_state.get("pred_historial") and len(st.session_state["pred_historial"]) >= 1:
             st.write("")
             with st.expander("🔥 Mapa de calor de predicciones realizadas"):
                 st.markdown(
