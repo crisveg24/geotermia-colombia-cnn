@@ -189,7 +189,7 @@ ReduceLROnPlateau modifica el LR externamente. Con AdamW, desbalancea la relacio
 | `scripts/evaluate_model.py` | 26, 28 | MCC en vez de R2, partitioned data loader |
 | `scripts/download_dataset.py` | 9, 10, 21, 25 | except Exception, GEE_PROJECT, retry 3x, 200 imagenes |
 | `scripts/predict.py` | 1 | NoData filtering |
-| `app.py` | 1, 8, 10, 13, 14, 15, 19, 20 | NoData, logging, Haversine, metricas dinamicas, Sliding Window |
+| `app.py` | 1, 8, 10, 13, 14, 15, 19, 20 | NoData, logging, Haversine, metricas dinamicas, heatmap, mapa interactivo |
 | `config.py` | 10 | GEE_PROJECT, NUM_BANDS=7, 7 BAND_NAMES |
 
 ---
@@ -207,7 +207,7 @@ Ademas de los 28 bugs, se implementaron las siguientes mejoras (previamente en M
 | F1Score nativo | Implementada | Monitoreo directo precision-recall |
 | CosineDecay LR | Implementada | Decay suave sinusoidal |
 | Class Weights | Implementada | Compensa desbalance de clases |
-| Sliding Window Inferencia | Implementada | Preserva escala real (~90m/px) |
+| ~~Sliding Window Inferencia~~ | Eliminada | No necesaria: imagenes siempre ~111x111 px (buffer=5000m, scale=90m) |
 | Expansion a 200 imagenes | Implementada | 2.35x mas datos originales |
 | 7 bandas (temp + ndvi) | Implementada | Mas informacion espectral |
 | Particionado FAT32 | Implementada | Compatible con USB, no desborda RAM |
@@ -223,6 +223,14 @@ Ademas de los 28 bugs, se implementaron las siguientes mejoras (previamente en M
 | Grad-CAM (interpretabilidad) | Bajo (para tesis) | Media |
 | Transfer Learning (EfficientNet) | Alto | Baja (modelo custom ya es bueno) |
 | Mas datos (>500 originales) | Alto | Futura version |
+
+### Cambios Post-Auditoria
+
+| Commit | Tipo | Descripcion |
+|--------|------|-------------|
+| `e85630c` | feat | Mejorar seccion prediccion Streamlit (mapa con capas, historial con selector, descargas) |
+| `e580d92` | fix | Corregir clic en mapa (sync session_state) y heatmap (FeatureGroups, radio, min=1) |
+| `2a6aaf3` | refactor | Eliminar Sliding Window de predict.py — restaurar resize bicubico alineado con prepare_dataset.py |
 
 ---
 

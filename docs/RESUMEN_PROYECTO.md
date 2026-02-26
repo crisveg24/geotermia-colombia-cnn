@@ -21,7 +21,7 @@
 | Evaluacion v2 test | 100% | Accuracy 91.45%, ROC AUC 0.983, F1 91.61% |
 | Interfaz grafica | 100% | Streamlit con Folium, Plotly — metricas v2 integradas |
 | Auditoria de codigo | 100% | 28 bugs corregidos (ver CHANGELOG_V2.md) |
-| Sliding Window | 100% | Inferencia preserva escala real (~90m/px) |
+| Prediccion CLI | 100% | predict.py con resize bicubico alineado a entrenamiento |
 
 ---
 
@@ -75,7 +75,8 @@ Real Pos          77         475
 - `app.py` con 5 paginas: Inicio, Prediccion por coordenadas, Metricas, Arquitectura, Acerca de.
 - Mapas interactivos con Folium, graficos con Plotly.
 - Metricas v2 integradas (lectura dinamica de `evaluation_metrics.json`).
-- Sliding Window para prediccion a escala real.
+- Mapa de calor (heatmap) con FeatureGroups togglables y LayerControl.
+- Seleccion de zona por clic en mapa con sincronizacion de coordenadas.
 - Todas las deprecaciones de Streamlit 1.54 corregidas (`width="stretch"`).
 
 ---
