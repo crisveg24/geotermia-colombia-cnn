@@ -8,7 +8,8 @@ Calcula todas las métricas requeridas para la tesis:
 - Accuracy, Precision, Recall, F1-Score
 - Matriz de Confusión
 - Curva ROC y AUC
-- Coeficiente R²
+- Matthews Correlation Coefficient (MCC)
+- Intervalos de confianza Bootstrap (95%)
 
 Autores: Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano,
          Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martín
@@ -27,6 +28,7 @@ from sklearn.metrics import (
     confusion_matrix, classification_report, roc_curve, auc,
     roc_auc_score, matthews_corrcoef
 )
+from sklearn.utils import resample
 import json
 import logging
 
@@ -233,6 +235,82 @@ class ModelEvaluator:
 
         return metrics
 
+    def calculate_confidence_intervals(
+        self, n_bootstrap: int = 2000, ci_level: float = 0.95
+    ) -> dict:
+        """
+        Calcula intervalos de confianza Bootstrap para todas las métricas.
+
+        Usa remuestreo con reemplazo del conjunto de test para estimar la
+        variabilidad de cada métrica. Esto permite reportar, por ejemplo:
+        "Accuracy = 91.45% (IC 95%: 88.2% – 94.1%)"
+
+        Args:
+            n_bootstrap: Número de iteraciones de bootstrap (≥1000 recomendado)
+            ci_level: Nivel de confianza (0.95 = 95%)
+
+        Returns:
+            dict con {metrica: {lower, upper, mean, std}} para cada métrica
+        """
+        logger.info(f"\nCalculando intervalos de confianza (bootstrap ×{n_bootstrap})...")
+
+        metric_fns = {
+            'accuracy': lambda yt, yp, ypr: accuracy_score(yt, yp),
+            'precision': lambda yt, yp, ypr: precision_score(yt, yp, zero_division=0),
+            'recall': lambda yt, yp, ypr: recall_score(yt, yp, zero_division=0),
+            'f1_score': lambda yt, yp, ypr: f1_score(yt, yp, zero_division=0),
+            'mcc': lambda yt, yp, ypr: matthews_corrcoef(yt, yp),
+        }
+
+        # ROC AUC necesita probabilidades y al menos 2 clases
+        def _roc_auc_safe(yt, yp, ypr):
+            if len(np.unique(yt)) < 2:
+                return np.nan
+            return roc_auc_score(yt, ypr)
+
+        metric_fns['roc_auc'] = _roc_auc_safe
+
+        accum = {name: [] for name in metric_fns}
+        n = len(self.y_test)
+
+        for i in range(n_bootstrap):
+            indices = resample(
+                np.arange(n), n_samples=n, replace=True, random_state=i
+            )
+            yt_b = self.y_test[indices]
+            yp_b = self.y_pred[indices]
+            ypr_b = self.y_pred_proba[indices]
+
+            # Omitir muestras bootstrap sin ambas clases
+            if len(np.unique(yt_b)) < 2:
+                continue
+
+            for name, fn in metric_fns.items():
+                try:
+                    val = fn(yt_b, yp_b, ypr_b)
+                    if not np.isnan(val):
+                        accum[name].append(val)
+                except Exception:
+                    pass
+
+        alpha = 1 - ci_level
+        ci = {}
+        for name, values in accum.items():
+            if values:
+                arr = np.array(values)
+                ci[name] = {
+                    'lower': float(np.percentile(arr, alpha / 2 * 100)),
+                    'upper': float(np.percentile(arr, (1 - alpha / 2) * 100)),
+                    'mean': float(np.mean(arr)),
+                    'std': float(np.std(arr)),
+                }
+                logger.info(
+                    f"  {name}: {ci[name]['mean']:.4f} "
+                    f"(IC {ci_level*100:.0f}%: {ci[name]['lower']:.4f} – {ci[name]['upper']:.4f})"
+                )
+
+        return ci
+
     def save_metrics(self, metrics: dict, filename: str = 'evaluation_metrics.json'):
         """
         Guarda las métricas en formato JSON.
@@ -248,46 +326,43 @@ class ModelEvaluator:
 
         logger.info(f"\nMétricas guardadas: {output_path}")
 
-    def save_metrics_table(self, metrics: dict, filename: str = 'metrics_table.csv'):
+    def save_metrics_table(self, metrics: dict, filename: str = 'metrics_table.csv',
+                          confidence_intervals: dict = None):
         """
         Guarda las métricas principales en formato CSV (para la tesis).
 
         Args:
         metrics: Diccionario de métricas
         filename: Nombre del archivo
+        confidence_intervals: Intervalos de confianza (bootstrap)
         """
         # v2: Manejar métricas None correctamente (BUG 28)
         def _fmt(val, fmt=".4f"):
             return f"{val:{fmt}}" if val is not None else "N/A"
         def _pct(val):
             return f"{val*100:.2f}%" if val is not None else "N/A"
+        def _ci_str(name, ci_dict):
+            if ci_dict and name in ci_dict:
+                lo = ci_dict[name]['lower']
+                hi = ci_dict[name]['upper']
+                return f"[{lo:.4f} – {hi:.4f}]"
+            return "—"
+
+        metric_names = [
+            'Accuracy', 'Precision', 'Recall', 'F1-Score',
+            'ROC AUC', 'MCC'
+        ]
+        metric_keys = [
+            'accuracy', 'precision', 'recall', 'f1_score',
+            'roc_auc', 'mcc'
+        ]
 
         # Crear DataFrame para la tabla de la tesis
         df_metrics = pd.DataFrame({
-            'Métrica': [
-            'Accuracy',
-            'Precision',
-            'Recall',
-            'F1-Score',
-            'ROC AUC',
-            'MCC'
-            ],
-            'Valor': [
-            _fmt(metrics.get('accuracy')),
-            _fmt(metrics.get('precision')),
-            _fmt(metrics.get('recall')),
-            _fmt(metrics.get('f1_score')),
-            _fmt(metrics.get('roc_auc')),
-            _fmt(metrics.get('mcc')),
-            ],
-            'Porcentaje': [
-            _pct(metrics.get('accuracy')),
-            _pct(metrics.get('precision')),
-            _pct(metrics.get('recall')),
-            _pct(metrics.get('f1_score')),
-            _pct(metrics.get('roc_auc')),
-            _pct(metrics.get('mcc')),
-            ]
+            'Métrica': metric_names,
+            'Valor': [_fmt(metrics.get(k)) for k in metric_keys],
+            'Porcentaje': [_pct(metrics.get(k)) for k in metric_keys],
+            'IC 95%': [_ci_str(k, confidence_intervals) for k in metric_keys],
         })
 
         output_path = self.results_path / filename
@@ -322,9 +397,13 @@ class ModelEvaluator:
         # 4. Calcular métricas
         metrics = self.calculate_metrics()
 
-        # 5. Guardar resultados
+        # 5. Calcular intervalos de confianza (bootstrap)
+        ci = self.calculate_confidence_intervals(n_bootstrap=2000, ci_level=0.95)
+        metrics['confidence_intervals'] = ci
+
+        # 6. Guardar resultados
         self.save_metrics(metrics)
-        self.save_metrics_table(metrics)
+        self.save_metrics_table(metrics, confidence_intervals=ci)
 
         logger.info("\n" + "="*70)
         logger.info("EVALUACIÓN COMPLETADA")
