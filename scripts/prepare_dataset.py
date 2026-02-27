@@ -296,6 +296,13 @@ class GeoDataPreparator:
         v3: Procesamiento memory-efficient — el split se calcula sobre
         metadatos (no imágenes en RAM) y los .npy se construyen por lotes.
 
+        v3.1: El agrupamiento para GroupShuffleSplit se hace por **zona
+        geográfica base** (volcán / ciudad), no por imagen individual.
+        Esto evita que tiles cercanos contaminados (grid 9-tiles) se
+        repartan entre train y test, lo cual inflaría artificialmente
+        las métricas.  Ejemplo: "Nevado_del_Ruiz_NE_rotation_90" →
+        grupo = "Nevado_del_Ruiz".
+
         Returns:
         Diccionario con arrays de train, validation y test
         """
@@ -328,7 +335,16 @@ class GeoDataPreparator:
                 else:
                     continue
 
-            # Extraer grupo (imagen original)
+            # Extraer grupo = ZONA GEOGRÁFICA BASE (no imagen individual).
+            # Esto agrupa todos los tiles (grid 9-tiles) y augmentaciones
+            # de una misma zona volcánica/control en el mismo split,
+            # evitando data leakage espacial.
+            #
+            # Cadena de limpieza:
+            #   "Nevado_del_Ruiz_NE_rotation_90.tif"
+            #   → stem: "Nevado_del_Ruiz_NE_rotation_90"
+            #   → sin augmentation suffix: "Nevado_del_Ruiz_NE"
+            #   → sin grid suffix: "Nevado_del_Ruiz"  ← grupo final
             if 'original_image' in labels_df.columns:
                 group = row['original_image']
             else:
@@ -349,6 +365,16 @@ class GeoDataPreparator:
                         group = group[:-len(suffix)]
                         break
 
+                # Paso 2: quitar sufijo de grilla (9-tiles)
+                grid_suffixes = [
+                    '_center', '_N', '_S', '_E', '_W',
+                    '_NE', '_NW', '_SE', '_SW',
+                ]
+                for suffix in grid_suffixes:
+                    if group.endswith(suffix):
+                        group = group[:-len(suffix)]
+                        break
+
             valid_rows.append((file_path, label, filename, group))
 
         n_total = len(valid_rows)
@@ -359,10 +385,12 @@ class GeoDataPreparator:
         logger.info(f"Imagenes validas: {n_total}")
         logger.info(f"Clase 0: {(labels_arr == 0).sum()}")
         logger.info(f"Clase 1: {(labels_arr == 1).sum()}")
-        logger.info(f"Imagenes originales unicas: {len(np.unique(groups_arr))}")
+        logger.info(f"Zonas geograficas unicas (grupos): {len(np.unique(groups_arr))}")
 
         # 3. Dividir INDICES en train/val/test con GroupShuffleSplit
-        logger.info("\nDividiendo dataset (GroupShuffleSplit por imagen original)...")
+        #    Agrupamiento por zona geográfica → todos los tiles y
+        #    augmentaciones de un mismo volcán/zona caen juntos.
+        logger.info("\nDividiendo dataset (GroupShuffleSplit por zona geografica)...")
 
         all_indices = np.arange(n_total)
         gss_test = GroupShuffleSplit(

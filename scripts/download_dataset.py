@@ -1196,48 +1196,114 @@ class GeotermalDatasetDownloader:
         self, 
         max_positive: int = 50,
         max_negative: int = 50,
-        delay: float = 2.0
+        delay: float = 2.0,
+        checkpoint_every: int = 25
         ) -> Tuple[int, int]:
         """
         Descargar todas las zonas geotérmicas y de control.
+
+        Incluye mecanismos de robustez para descargas grandes (>2000 imgs):
+        - Checkpoint periódico de metadata (resume si se interrumpe)
+        - Rate-limiting adaptativo (respeta 6000 req/min de GEE)
+        - Pausa automática cada 500 imágenes (evita throttling)
+        - Skip automático de imágenes ya descargadas
 
         Args:
         max_positive: Número máximo de imágenes positivas
         max_negative: Número máximo de imágenes negativas
         delay: Tiempo de espera entre descargas (segundos)
+        checkpoint_every: Guardar metadata cada N imágenes
 
         Returns:
         Tupla (num_positivas, num_negativas) descargadas exitosamente
         """
         logger.info("="*80)
         logger.info("INICIANDO DESCARGA DE DATASET COMPLETO")
+        logger.info(f"Objetivo: {max_positive} positivas + {max_negative} negativas = {max_positive + max_negative}")
         logger.info("="*80)
 
         positive_count = 0
         negative_count = 0
+        total_downloaded = 0
+        total_skipped = 0
+        consecutive_errors = 0
+        MAX_CONSECUTIVE_ERRORS = 10  # Pausa larga si hay muchos errores seguidos
+
+        def _download_batch(zones_dict, label, max_count, desc):
+            """Descarga un lote de zonas con control de errores y checkpoints."""
+            nonlocal total_downloaded, total_skipped, consecutive_errors
+            count = 0
+            items = list(zones_dict.items())[:max_count]
+            total = len(items)
+
+            for i, (name, coords) in enumerate(items, 1):
+                # Progreso
+                if i % 50 == 0 or i == 1:
+                    logger.info(f"[{desc}] Progreso: {i}/{total} "
+                                f"(descargadas: {count}, omitidas: {total_skipped})")
+
+                # Verificar si ya existe (skip rápido)
+                output_subdir = self.positive_dir if label == 1 else self.negative_dir
+                output_path = output_subdir / f"{name}.tif"
+                if output_path.exists() and output_path.stat().st_size > 0:
+                    total_skipped += 1
+                    count += 1
+                    consecutive_errors = 0
+                    continue
+
+                # Descargar
+                success = self.download_image(name, coords, label=label)
+                if success:
+                    count += 1
+                    total_downloaded += 1
+                    consecutive_errors = 0
+                else:
+                    consecutive_errors += 1
+
+                # Pausa si hay muchos errores consecutivos (posible throttling)
+                if consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
+                    logger.warning(
+                        f"⚠ {consecutive_errors} errores consecutivos. "
+                        f"Pausa de 60s para evitar throttling de GEE..."
+                    )
+                    time.sleep(60)
+                    consecutive_errors = 0
+
+                # Checkpoint periódico
+                if total_downloaded > 0 and total_downloaded % checkpoint_every == 0:
+                    self.save_metadata()
+                    logger.info(f"  💾 Checkpoint guardado ({total_downloaded} descargadas)")
+
+                # Pausa larga cada 500 imágenes para no saturar la API
+                if total_downloaded > 0 and total_downloaded % 500 == 0:
+                    logger.info(f"  ⏸ Pausa de 30s (cada 500 descargas)...")
+                    time.sleep(30)
+
+                # Delay normal entre descargas
+                time.sleep(delay)
+
+            return count
 
         # Descargar zonas geotérmicas (positivas)
         logger.info(f"\nDescargando zonas CON potencial geotérmico (máximo {max_positive})...")
-        for name, coords in list(self.geothermal_zones.items())[:max_positive]:
-            if self.download_image(name, coords, label=1):
-                positive_count += 1
-            time.sleep(delay) # Evitar sobrecargar la API
-
+        positive_count = _download_batch(
+            self.geothermal_zones, label=1, max_count=max_positive, desc="POSITIVAS"
+        )
         logger.info(f"\nZonas geotérmicas descargadas: {positive_count}/{max_positive}")
 
         # Descargar zonas de control (negativas)
         logger.info(f"\nDescargando zonas SIN potencial geotérmico (máximo {max_negative})...")
-        for name, coords in list(self.control_zones.items())[:max_negative]:
-            if self.download_image(name, coords, label=0):
-                negative_count += 1
-            time.sleep(delay) # Evitar sobrecargar la API
-
+        negative_count = _download_batch(
+            self.control_zones, label=0, max_count=max_negative, desc="NEGATIVAS"
+        )
         logger.info(f"\nZonas de control descargadas: {negative_count}/{max_negative}")
 
         # Actualizar metadata
         self.metadata['positive_images'] = positive_count
         self.metadata['negative_images'] = negative_count
         self.metadata['total_images'] = positive_count + negative_count
+
+        logger.info(f"\nResumen: {total_downloaded} nuevas, {total_skipped} ya existían")
 
         return positive_count, negative_count
 
