@@ -255,12 +255,21 @@ class GeoDataPreparator:
             elif 'negative' in str(file_path.parent).lower():
                 label = 0
             else:
-                # Fallback: keywords ampliadas con todas las zonas de download_dataset.py
+                # Fallback: keywords ampliadas (Colombia + región andina)
                 geothermal_keywords = [
-                    'ruiz', 'purace', 'galeras', 'paipa', 'iza', 
+                    'ruiz', 'purace', 'galeras', 'paipa', 'iza',
                     'azufral', 'volcan', 'thermal', 'hot_spring',
                     'cumbal', 'sotara', 'tolima', 'manizales',
                     'santa_rosa', 'herveo', 'coconuco', 'villa_maria',
+                    # Región andina (EC, PE, CL)
+                    'cotopaxi', 'chimborazo', 'tungurahua', 'reventador',
+                    'pichincha', 'sangay', 'cayambe', 'antisana',
+                    'misti', 'ubinas', 'sabancaya', 'ampato',
+                    'huaynaputina', 'tutupaca', 'yucamane', 'coropuna',
+                    'villarrica', 'llaima', 'osorno', 'calbuco',
+                    'puyehue', 'lonquimay', 'copahue', 'nevados',
+                    'chachani', 'irruputuncu', 'guallatiri', 'lascar',
+                    'termas', 'calientes', 'churin',
                 ]
 
                 label = 0 # Por defecto: sin potencial

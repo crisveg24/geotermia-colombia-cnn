@@ -417,7 +417,7 @@ def main():
     total_orig = pos_orig + neg_orig
 
     # Configuración
-    NUM_AUG_PER_IMAGE = 30
+    NUM_AUG_PER_IMAGE = cfg.NUM_AUGMENTATIONS
     logger.info("Configuracion:")
     logger.info(f" - Imagenes originales: {total_orig} ({pos_orig} positivas + {neg_orig} negativas)")
     logger.info(f" - Augmentaciones por imagen: {NUM_AUG_PER_IMAGE}")

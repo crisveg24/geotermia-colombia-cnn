@@ -23,6 +23,8 @@ import logging
 import sys
 from datetime import datetime
 from typing import Dict, List, Tuple
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 import ee
 import geemap
 import pandas as pd
@@ -1196,107 +1198,108 @@ class GeotermalDatasetDownloader:
         self, 
         max_positive: int = 50,
         max_negative: int = 50,
-        delay: float = 2.0,
-        checkpoint_every: int = 25
+        delay: float = 0.5,
+        checkpoint_every: int = 50,
+        max_workers: int = 3
         ) -> Tuple[int, int]:
         """
-        Descargar todas las zonas geotérmicas y de control.
+        Descargar todas las zonas geotérmicas y de control en paralelo.
 
-        Incluye mecanismos de robustez para descargas grandes (>2000 imgs):
-        - Checkpoint periódico de metadata (resume si se interrumpe)
-        - Rate-limiting adaptativo (respeta 6000 req/min de GEE)
-        - Pausa automática cada 500 imágenes (evita throttling)
-        - Skip automático de imágenes ya descargadas
+        Usa ThreadPoolExecutor con max_workers hilos para descargar varias
+        imágenes simultáneamente, respetando las cuotas de GEE (6000 req/min).
+        Con 3 hilos y delay 0.5s → ~6 req/s = 360 req/min (6% de la cuota).
 
         Args:
         max_positive: Número máximo de imágenes positivas
         max_negative: Número máximo de imágenes negativas
-        delay: Tiempo de espera entre descargas (segundos)
-        checkpoint_every: Guardar metadata cada N imágenes
+        delay: Tiempo de espera entre envío de trabajos (segundos)
+        checkpoint_every: Guardar metadata cada N imágenes nuevas
+        max_workers: Número de hilos de descarga concurrentes
 
         Returns:
         Tupla (num_positivas, num_negativas) descargadas exitosamente
         """
         logger.info("="*80)
-        logger.info("INICIANDO DESCARGA DE DATASET COMPLETO")
-        logger.info(f"Objetivo: {max_positive} positivas + {max_negative} negativas = {max_positive + max_negative}")
+        logger.info("INICIANDO DESCARGA DE DATASET COMPLETO (PARALELA)")
+        logger.info(f"Objetivo: {max_positive} positivas + {max_negative} negativas "
+                     f"= {max_positive + max_negative}")
+        logger.info(f"Workers: {max_workers} | Delay: {delay}s")
         logger.info("="*80)
 
-        positive_count = 0
-        negative_count = 0
+        # Lock para acceso seguro a metadata desde múltiples hilos
+        _lock = threading.Lock()
         total_downloaded = 0
         total_skipped = 0
-        consecutive_errors = 0
-        MAX_CONSECUTIVE_ERRORS = 10  # Pausa larga si hay muchos errores seguidos
 
-        def _download_batch(zones_dict, label, max_count, desc):
-            """Descarga un lote de zonas con control de errores y checkpoints."""
-            nonlocal total_downloaded, total_skipped, consecutive_errors
-            count = 0
+        def _download_batch_parallel(zones_dict, label, max_count, desc):
+            """Descarga un lote de zonas usando ThreadPoolExecutor."""
+            nonlocal total_downloaded, total_skipped
+
             items = list(zones_dict.items())[:max_count]
             total = len(items)
+            count = 0
+            errors = 0
 
-            for i, (name, coords) in enumerate(items, 1):
-                # Progreso
-                if i % 50 == 0 or i == 1:
-                    logger.info(f"[{desc}] Progreso: {i}/{total} "
-                                f"(descargadas: {count}, omitidas: {total_skipped})")
+            logger.info(f"\n[{desc}] Iniciando {total} descargas ({max_workers} hilos)...")
 
-                # Verificar si ya existe (skip rápido)
-                output_subdir = self.positive_dir if label == 1 else self.negative_dir
-                output_path = output_subdir / f"{name}.tif"
-                if output_path.exists() and output_path.stat().st_size > 0:
-                    total_skipped += 1
-                    count += 1
-                    consecutive_errors = 0
-                    continue
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = {}
+                for i, (name, coords) in enumerate(items):
+                    # Verificar si ya existe (skip rápido SIN enviar al pool)
+                    output_subdir = self.positive_dir if label == 1 else self.negative_dir
+                    output_path = output_subdir / f"{name}.tif"
+                    if output_path.exists() and output_path.stat().st_size > 0:
+                        with _lock:
+                            total_skipped += 1
+                            count += 1
+                        continue
 
-                # Descargar
-                success = self.download_image(name, coords, label=label)
-                if success:
-                    count += 1
-                    total_downloaded += 1
-                    consecutive_errors = 0
-                else:
-                    consecutive_errors += 1
+                    future = executor.submit(self.download_image, name, coords, label)
+                    futures[future] = name
 
-                # Pausa si hay muchos errores consecutivos (posible throttling)
-                if consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
-                    logger.warning(
-                        f"⚠ {consecutive_errors} errores consecutivos. "
-                        f"Pausa de 60s para evitar throttling de GEE..."
-                    )
-                    time.sleep(60)
-                    consecutive_errors = 0
+                    # Delay entre envíos (rate limiting)
+                    time.sleep(delay)
 
-                # Checkpoint periódico
-                if total_downloaded > 0 and total_downloaded % checkpoint_every == 0:
-                    self.save_metadata()
-                    logger.info(f"  💾 Checkpoint guardado ({total_downloaded} descargadas)")
+                    # Progreso cada 100 envíos
+                    if (i + 1) % 100 == 0:
+                        logger.info(f"  [{desc}] Enviados: {i+1}/{total}")
 
-                # Pausa larga cada 500 imágenes para no saturar la API
-                if total_downloaded > 0 and total_downloaded % 500 == 0:
-                    logger.info(f"  ⏸ Pausa de 30s (cada 500 descargas)...")
-                    time.sleep(30)
+                # Recoger resultados
+                for future in as_completed(futures):
+                    name = futures[future]
+                    try:
+                        success = future.result()
+                        if success:
+                            with _lock:
+                                count += 1
+                                total_downloaded += 1
+                        else:
+                            errors += 1
+                    except Exception as e:
+                        logger.error(f"Error en future {name}: {e}")
+                        errors += 1
 
-                # Delay normal entre descargas
-                time.sleep(delay)
+                    # Checkpoint periódico
+                    with _lock:
+                        if total_downloaded > 0 and total_downloaded % checkpoint_every == 0:
+                            self.save_metadata()
+                            logger.info(f"  Checkpoint ({total_downloaded} nuevas descargadas)")
 
+            logger.info(f"[{desc}] Completado: {count} ok, {errors} errores, "
+                        f"{total_skipped} ya existían")
             return count
 
-        # Descargar zonas geotérmicas (positivas)
-        logger.info(f"\nDescargando zonas CON potencial geotérmico (máximo {max_positive})...")
-        positive_count = _download_batch(
+        # Descargar positivas
+        logger.info(f"\nDescargando zonas CON potencial ({max_positive})...")
+        positive_count = _download_batch_parallel(
             self.geothermal_zones, label=1, max_count=max_positive, desc="POSITIVAS"
         )
-        logger.info(f"\nZonas geotérmicas descargadas: {positive_count}/{max_positive}")
 
-        # Descargar zonas de control (negativas)
-        logger.info(f"\nDescargando zonas SIN potencial geotérmico (máximo {max_negative})...")
-        negative_count = _download_batch(
+        # Descargar negativas
+        logger.info(f"\nDescargando zonas SIN potencial ({max_negative})...")
+        negative_count = _download_batch_parallel(
             self.control_zones, label=0, max_count=max_negative, desc="NEGATIVAS"
         )
-        logger.info(f"\nZonas de control descargadas: {negative_count}/{max_negative}")
 
         # Actualizar metadata
         self.metadata['positive_images'] = positive_count
@@ -1389,12 +1392,13 @@ def main():
         logger.info("Descarga cancelada por el usuario")
         return
 
-    # Descargar dataset
+    # Descargar dataset (paralelo, 3 hilos, delay 0.5s)
     start_time = time.time()
     pos_count, neg_count = downloader.download_all_zones(
         max_positive=MAX_POSITIVE,
         max_negative=MAX_NEGATIVE,
-        delay=2.0
+        delay=0.5,
+        max_workers=3
     )
     end_time = time.time()
 
