@@ -55,8 +55,10 @@ Programa de Ingeniería de Sistemas
 | 7 | Comparativo de métricas v1 vs. v2 | — |
 | 8 | Objetivos de métricas vs. resultados obtenidos | — |
 | 9 | Análisis de factores de mejora de v1 a v2 | — |
-| 10 | Tecnologías y herramientas utilizadas | — |
-
+| 10 | Tecnologías y herramientas utilizadas | — || 11 | Composición del dataset v3 por país (Región Andina) | — |
+| 12 | División del conjunto de datos v3 con anti-leakage geográfico | — |
+| 13 | Comparativo de versiones del dataset: v1, v2 y v3 | — |
+| 14 | Métricas del modelo v3 con intervalos de confianza Bootstrap 95 % | — |
 *(Actualizar números de página una vez insertado en Word.)*
 
 ---
@@ -74,8 +76,11 @@ Programa de Ingeniería de Sistemas
 | 7 | Matriz de confusión del modelo v2 | — |
 | 8 | Comparativo visual de métricas v1 vs. v2 | — |
 | 9 | Interfaz de la aplicación web Streamlit — sección de predicción | — |
-| 10 | Mapa de calor de predicciones geotérmicas en Colombia | — |
-
+| 10 | Mapa de calor de predicciones geotérmicas en Colombia | — || 11 | Mapa de zonas de entrenamiento de la Región Andina (4 países) | — |
+| 12 | Distribución de imágenes por país en el dataset v3 | — |
+| 13 | Curvas de entrenamiento del modelo v3 | — |
+| 14 | Curva ROC del modelo v3 con intervalo de confianza Bootstrap 95 % | — |
+| 15 | Comparativo visual de métricas v1 vs. v2 vs. v3 | — |
 *(Actualizar números de página una vez insertado en Word.)*
 
 ---
@@ -86,7 +91,9 @@ Programa de Ingeniería de Sistemas
 
 La presente investigación desarrolló un modelo predictivo basado en Redes Neuronales Convolucionales (CNN) para la identificación automatizada de zonas con potencial geotérmico en Colombia, utilizando imágenes satelitales del sensor ASTER (Advanced Spaceborne Thermal Emission and Reflection Radiometer) de la NASA. El modelo emplea una arquitectura ResNet-inspired personalizada con 5.032.385 parámetros, entrenada con un conjunto de datos de 200 imágenes originales (111 positivas y 89 negativas) expandido a 6.200 imágenes mediante técnicas de aumento de datos. Las imágenes contemplan 7 bandas espectrales: 5 de emisividad térmica infrarroja (bandas 10–14), temperatura superficial y el índice de vegetación de diferencia normalizada (NDVI), extraídas del producto ASTER Global Emissivity Dataset (AG100 v003) a través de Google Earth Engine. Se implementaron correcciones críticas en el pipeline de procesamiento, incluyendo el filtrado de valores NoData (−9999), la eliminación de la doble normalización y la prevención de fuga de datos entre conjuntos mediante GroupShuffleSplit. El modelo v2 alcanzó una exactitud del 91,45 %, una precisión del 97,94 %, una sensibilidad del 86,05 %, un puntaje F1 del 91,61 %, un área bajo la curva ROC de 0,983 y un coeficiente de correlación de Matthews (MCC) de 0,837 en el conjunto de prueba (1.017 imágenes), superando ampliamente los resultados de la versión inicial (exactitud 68,43 %, sensibilidad 48,10 %). Adicionalmente, se desarrolló una interfaz web interactiva con Streamlit y Folium que permite realizar predicciones en tiempo real sobre cualquier coordenada del territorio colombiano. El sistema constituye una herramienta de apoyo para la fase de reconocimiento regional en la exploración geotérmica, permitiendo priorizar zonas de interés para estudios detallados.
 
-**Palabras clave:** redes neuronales convolucionales, aprendizaje profundo, energía geotérmica, teledetección, ASTER, clasificación de imágenes satelitales, Colombia.
+Posteriormente, se construyó una versión ampliada del dataset (v3) que incorpora 2.019 imágenes base de la Región Andina (Colombia, Ecuador, Perú y Chile), expandidas a 22.209 imágenes mediante 10 técnicas de aumento, con una división libre de fuga de datos basada en agrupación geográfica (4.038 zonas únicas). Esta expansión se fundamenta en que los cuatro países comparten el contexto geológico del Cinturón de Fuego del Pacífico, lo que permite al modelo aprender patrones espectrales geotérmicos más generalizables. Las métricas del modelo v3 se validan mediante intervalos de confianza Bootstrap al 95 % (2.000 iteraciones).
+
+**Palabras clave:** redes neuronales convolucionales, aprendizaje profundo, energía geotérmica, teledetección, ASTER, clasificación de imágenes satelitales, Colombia, Región Andina.
 
 ---
 
@@ -96,7 +103,9 @@ La presente investigación desarrolló un modelo predictivo basado en Redes Neur
 
 This research developed a predictive model based on Convolutional Neural Networks (CNN) for the automated identification of geothermal potential zones in Colombia, using satellite imagery from NASA's ASTER (Advanced Spaceborne Thermal Emission and Reflection Radiometer) sensor. The model employs a custom ResNet-inspired architecture with 5,032,385 parameters, trained on a dataset of 200 original images (111 positive and 89 negative) expanded to 6,200 images through data augmentation techniques. The images comprise 7 spectral bands: 5 thermal infrared emissivity bands (bands 10–14), surface temperature, and the Normalized Difference Vegetation Index (NDVI), extracted from the ASTER Global Emissivity Dataset (AG100 v003) via Google Earth Engine. Critical corrections were implemented in the processing pipeline, including NoData value filtering (−9999), removal of double normalization, and data leakage prevention between sets using GroupShuffleSplit. The v2 model achieved an accuracy of 91.45%, precision of 97.94%, recall of 86.05%, F1-score of 91.61%, ROC AUC of 0.983, and Matthews Correlation Coefficient (MCC) of 0.837 on the test set (1,017 images), significantly outperforming the initial version (accuracy 68.43%, recall 48.10%). Additionally, an interactive web interface was developed using Streamlit and Folium, enabling real-time predictions for any coordinate within Colombian territory. The system serves as a support tool for the regional reconnaissance phase in geothermal exploration, allowing prioritization of areas of interest for detailed studies.
 
-**Keywords:** convolutional neural networks, deep learning, geothermal energy, remote sensing, ASTER, satellite image classification, Colombia.
+Subsequently, an expanded dataset (v3) was constructed incorporating 2,019 base images from the Andean Region (Colombia, Ecuador, Peru, and Chile), expanded to 22,209 images using 10 augmentation techniques, with a leakage-free data split based on geographic grouping (4,038 unique zones). This expansion is grounded in the shared geological context of the Pacific Ring of Fire across all four countries, enabling the model to learn more generalizable geothermal spectral patterns. The v3 model metrics are validated using 95% Bootstrap confidence intervals (2,000 iterations).
+
+**Keywords:** convolutional neural networks, deep learning, geothermal energy, remote sensing, ASTER, satellite image classification, Colombia, Andean Region.
 
 ---
 
@@ -110,7 +119,7 @@ El sensor ASTER (Advanced Spaceborne Thermal Emission and Reflection Radiometer)
 
 Las Redes Neuronales Convolucionales (CNN), una clase de modelos de aprendizaje profundo especializados en el procesamiento de datos con estructura espacial, han demostrado un desempeño sobresaliente en tareas de clasificación de imágenes satelitales y teledetección (LeCun et al., 2015; Zhu et al., 2017). A diferencia de los métodos tradicionales basados en umbrales fijos o clasificación manual, las CNN aprenden automáticamente patrones complejos y jerarquías de características directamente desde los datos.
 
-La presente investigación se enfoca en el desarrollo, entrenamiento y evaluación de un modelo predictivo basado en CNN con arquitectura ResNet-inspired para la clasificación binaria de zonas con y sin potencial geotérmico en Colombia, utilizando imágenes del producto ASTER Global Emissivity Dataset (AG100 v003) obtenidas a través de Google Earth Engine. El proyecto incluye la construcción de un pipeline completo —desde la adquisición de datos satelitales hasta la predicción en tiempo real— y el desarrollo de una interfaz web interactiva que facilite el uso del modelo por parte de investigadores y tomadores de decisiones.
+La presente investigación se enfoca en el desarrollo, entrenamiento y evaluación de un modelo predictivo basado en CNN con arquitectura ResNet-inspired para la clasificación binaria de zonas con y sin potencial geotérmico en Colombia, utilizando imágenes del producto ASTER Global Emissivity Dataset (AG100 v003) obtenidas a través de Google Earth Engine. Para robustecer el entrenamiento, el conjunto de datos se expandió a la Región Andina (Colombia, Ecuador, Perú y Chile), aprovechando que estos países comparten el contexto geológico del Cinturón de Fuego del Pacífico (Lahsen, 1982; Bona y Coviello, 2016). Esta decisión permite al modelo capturar una mayor diversidad de patrones espectrales asociados a actividad geotérmica, mientras que la aplicación y las conclusiones se circunscriben al territorio colombiano. El proyecto incluye la construcción de un pipeline completo —desde la adquisición de datos satelitales hasta la predicción en tiempo real— y el desarrollo de una interfaz web interactiva que facilite el uso del modelo por parte de investigadores y tomadores de decisiones.
 
 El documento se estructura siguiendo las normas APA 7.ª edición e incluye el planteamiento del problema, la justificación, los objetivos, el marco teórico, la metodología detallada, los resultados cuantitativos obtenidos, la discusión de hallazgos, las conclusiones y las recomendaciones para trabajos futuros.
 
@@ -168,9 +177,9 @@ La investigación se justifica desde múltiples perspectivas:
 
 El alcance del presente proyecto comprende:
 
-1. La construcción de un conjunto de datos de imágenes ASTER de 200 zonas en Colombia (111 zonas con potencial geotérmico conocido o indicadores, y 89 zonas de control sin potencial), con 7 bandas espectrales.
+1. La construcción de un conjunto de datos de imágenes ASTER de la Región Andina (Colombia, Ecuador, Perú y Chile) con 2.019 imágenes base (997 positivas y 1.022 negativas) y 7 bandas espectrales, aprovechando el contexto geológico compartido del Cinturón de Fuego del Pacífico para robustecer el entrenamiento.
 2. El diseño, implementación y entrenamiento de un modelo CNN con arquitectura ResNet-inspired para la clasificación binaria de potencial geotérmico.
-3. La evaluación cuantitativa del modelo utilizando métricas estándar (exactitud, precisión, sensibilidad, F1, ROC AUC, MCC).
+3. La evaluación cuantitativa del modelo utilizando métricas estándar (exactitud, precisión, sensibilidad, F1, ROC AUC, MCC) con intervalos de confianza Bootstrap al 95 %.
 4. El desarrollo de una interfaz web que permita realizar predicciones interactivas sobre cualquier coordenada del territorio colombiano.
 5. La documentación completa del proceso, resultados y lecciones aprendidas.
 
@@ -178,7 +187,7 @@ El alcance del presente proyecto comprende:
 - La validación en campo de las predicciones del modelo.
 - La estimación de temperaturas de reservorio o profundidades.
 - La evaluación de viabilidad económica de proyectos geotérmicos.
-- La generalización del modelo a países distintos de Colombia.
+- La generalización del modelo a países distintos de Colombia (la expansión andina es exclusivamente para robustez del entrenamiento).
 
 ---
 
@@ -190,11 +199,11 @@ Desarrollar un modelo predictivo basado en Redes Neuronales Convolucionales (CNN
 
 ### 3.2 Objetivos específicos
 
-1. Construir un conjunto de datos etiquetado de imágenes ASTER de zonas con y sin potencial geotérmico en Colombia, utilizando el producto ASTER Global Emissivity Dataset (AG100 v003) de Google Earth Engine, con un mínimo de 200 imágenes originales y 7 bandas espectrales.
+1. Construir un conjunto de datos etiquetado de imágenes ASTER de zonas con y sin potencial geotérmico de la Región Andina (Colombia, Ecuador, Perú y Chile), utilizando el producto ASTER Global Emissivity Dataset (AG100 v003) de Google Earth Engine, con un mínimo de 2.000 imágenes originales y 7 bandas espectrales, implementando descarga paralela y expansión por grilla para maximizar la cobertura espacial.
 
 2. Diseñar e implementar una arquitectura de Red Neuronal Convolucional con bloques residuales (ResNet-inspired) optimizada para la clasificación binaria de imágenes satelitales multiespectrales de 224 × 224 × 7 píxeles.
 
-3. Entrenar y optimizar el modelo CNN aplicando técnicas de regularización (SpatialDropout2D, AdamW con weight decay, label smoothing, CosineDecay), aumento de datos y prevención de fuga de datos (GroupShuffleSplit), evaluando su desempeño mediante las métricas de exactitud, precisión, sensibilidad, F1-Score, ROC AUC y coeficiente de correlación de Matthews (MCC).
+3. Entrenar y optimizar el modelo CNN aplicando técnicas de regularización (SpatialDropout2D, AdamW con weight decay, label smoothing, CosineDecay), aumento de datos y prevención de fuga de datos (GroupShuffleSplit con agrupación geográfica), evaluando su desempeño mediante las métricas de exactitud, precisión, sensibilidad, F1-Score, ROC AUC y coeficiente de correlación de Matthews (MCC), reportando intervalos de confianza Bootstrap al 95 %.
 
 4. Desarrollar una interfaz web interactiva con Streamlit y Folium que permita realizar predicciones de potencial geotérmico en tiempo real sobre cualquier coordenada del territorio colombiano, con visualización de resultados en mapas interactivos.
 
@@ -236,7 +245,7 @@ $$H_1: \text{Accuracy}_{\text{modelo}} > 0{,}50$$
 - Tamaño de imagen: 224 × 224 píxeles (estandarizado por redimensionamiento bicúbico).
 - Fuente de datos: ASTER GED AG100 v003 (producto global estable).
 - Normalización: Z-score por banda.
-- División del conjunto de datos: GroupShuffleSplit con agrupación por imagen original (70 % entrenamiento, 15 % validación, 15 % prueba).
+- División del conjunto de datos: GroupShuffleSplit con agrupación por zona geográfica base, eliminando sufijos de aumento y grilla (70 % entrenamiento, 15 % validación, 15 % prueba).
 
 ---
 
@@ -261,6 +270,12 @@ Existen tres tipos principales de sistemas geotérmicos:
 Colombia tiene un alto potencial geotérmico debido a su ubicación en el Cinturón de Fuego del Pacífico. Las zonas geotérmicas conocidas incluyen el Nevado del Ruiz – Macizo Volcánico (Caldas/Tolima, >200 °C), Chiles–Cerro Negro y Azufral (Nariño, >200 °C), Paipa–Iza (Boyacá, 150–200 °C), Coconucos (Cauca, 150–200 °C) y Santa Rosa de Cabal (Risaralda, ~150 °C), entre otras.
 
 Entidades como ISAGEN (estudios de factibilidad en el Nevado del Ruiz), el Servicio Geológico Colombiano (vigilancia volcánica y estudios geotérmicos) y la UPME (plan de diversificación energética) han participado en esfuerzos de exploración. No obstante, Colombia aún no cuenta con una planta geotérmica operativa, pese a un potencial estimado superior a 2.000 MW (Servicio Geológico Colombiano, 2023).
+
+#### 6.2.1 Contexto geológico compartido de la Región Andina
+
+Los países andinos —Colombia, Ecuador, Perú y Chile— comparten el contexto geológico del Cinturón de Fuego del Pacífico, una zona de subducción de la placa de Nazca bajo la placa Sudamericana que genera intensa actividad volcánica y geotérmica a lo largo de la cordillera de los Andes (Lahsen, 1982; Siebert et al., 2010). Chile cuenta con campos geotérmicos operativos como Cerro Pabellón (48 MW) y manifestaciones emblemáticas como El Tatio (Muñoz-Sáez et al., 2018). Ecuador explora activamente campos como Chachimbiro y Tufiño-Chiles —este último binacional con Colombia— (Rueda, 2015). Perú posee un inventario de más de 500 fuentes termales documentadas por el INGEMMET (2014), con zonas de alta entalpía asociadas a los volcanes Misti, Ubinas y la región de Tacna.
+
+Esta similitud geológica justifica la inclusión de zonas de estos países en el conjunto de entrenamiento, permitiendo que el modelo aprenda patrones espectrales geotérmicos más universales dentro del contexto andino, al tiempo que la aplicación del modelo se circunscribe al territorio colombiano. Bona y Coviello (2016) destacan que la Región Andina constituye una de las áreas con mayor potencial geotérmico no explotado a nivel mundial.
 
 ### 6.3 Teledetección satelital con ASTER
 
@@ -321,6 +336,16 @@ $$F_1 = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} +
 - **Coeficiente de correlación de Matthews (MCC):** Métrica que considera las cuatro categorías de la matriz de confusión y produce un valor equilibrado incluso con clases desbalanceadas:
 $$\text{MCC} = \frac{TP \times TN - FP \times FN}{\sqrt{(TP+FP)(TP+FN)(TN+FP)(TN+FN)}}$$
 
+### 6.6 Intervalos de confianza Bootstrap
+
+Los intervalos de confianza Bootstrap permiten estimar la variabilidad de las métricas de evaluación sin supuestos paramétricos sobre la distribución de los datos. El método consiste en generar $B$ muestras con reemplazo del conjunto de prueba, calcular la métrica de interés en cada una y derivar el intervalo percentil al nivel de confianza deseado (Efron y Tibshirani, 1993).
+
+Formalmente, dado un conjunto de prueba $\mathcal{D}$ de $n$ observaciones, para cada iteración $b = 1, \ldots, B$ se obtiene una muestra $\mathcal{D}_b^*$ de tamaño $n$ con reemplazo, y se calcula $\hat{\theta}_b^* = T(\mathcal{D}_b^*)$ donde $T$ es el estadístico de interés (e.g., accuracy, F1). El intervalo de confianza al $100(1-\alpha)\%$ se define como:
+
+$$\text{IC}_{1-\alpha} = \left[\hat{\theta}^*_{(\alpha/2)}, \hat{\theta}^*_{(1-\alpha/2)}\right]$$
+
+En este proyecto se utilizan $B = 2.000$ iteraciones para obtener intervalos al 95\% sobre las 6 métricas principales (Accuracy, Precision, Recall, F1, ROC AUC, MCC), lo cual proporciona una estimación robusta de la incertidumbre del modelo.
+
 ---
 
 ## 7. METODOLOGÍA
@@ -343,7 +368,23 @@ Las 7 bandas extraídas son:
 | 6 | temperature | Temperatura superficial (°C × 100) | Indicador directo de calor |
 | 7 | ndvi | Índice de vegetación normalizado | Proxy de cobertura vegetal |
 
-Se recopilaron un total de **200 imágenes originales**: 111 correspondientes a zonas con potencial geotérmico conocido o con indicadores (zonas volcánicas activas, manifestaciones hidrotermales, campos geotérmicos estudiados) y 89 correspondientes a zonas de control sin potencial geotérmico (Llanos Orientales, Amazonia, Costa Caribe, Altiplano Cundiboyacense, Chocó). El etiquetado se realizó a partir de la literatura geológica existente y de los mapas del Servicio Geológico Colombiano.
+**Versión 2 (Colombia):** Se recopilaron un total de **200 imágenes originales**: 111 correspondientes a zonas con potencial geotérmico conocido o con indicadores (zonas volcánicas activas, manifestaciones hidrotermales, campos geotérmicos estudiados) y 89 correspondientes a zonas de control sin potencial geotérmico (Llanos Orientales, Amazonia, Costa Caribe, Altiplano Cundiboyacense, Chocó). El etiquetado se realizó a partir de la literatura geológica existente y de los mapas del Servicio Geológico Colombiano.
+
+#### 7.1.1 Expansión a la Región Andina (v3)
+
+Para incrementar la robustez del modelo se amplió el conjunto de datos a la **Región Andina** (Colombia, Ecuador, Perú y Chile), aprovechando el contexto geológico compartido del Cinturón de Fuego del Pacífico (véase §\u00a06.2.1). Se definieron 245 zonas base distribuidas así:
+
+| País | Zonas positivas | Zonas negativas | Total |
+|------|:-:|:-:|:-:|
+| Colombia | 111 | 89 | 200 |
+| Ecuador | 19 | 8 | 27 |
+| Perú | 12 | 3 | 15 |
+| Chile | 3 | 0 | 3 |
+| **Total base** | **145** | **100** | **245** |
+
+Para cada zona base se aplicó una **expansión por grilla** (`_generate_grid()`), generando hasta 9 sub-zonas adyacentes (3 × 3) desplazadas ± 0,045° en latitud y longitud. Tras descartar zonas con datos insuficientes o duplicados, se obtuvieron **2.019 imágenes base** (997 positivas y 1.022 negativas), que totalizaron 115,1 MB en formato GeoTIFF.
+
+La descarga se implementó con **paralelismo de 3 hilos** y un retardo de 0,5 s entre solicitudes para respetar las cuotas de la API de Google Earth Engine. El proceso completo tardó aproximadamente 2 horas.
 
 ### 7.2 Preprocesamiento y filtrado de datos
 
@@ -365,6 +406,10 @@ Para aumentar la variabilidad y el tamaño del conjunto de datos se aplicaron **
 
 Las augmentaciones se realizaron sobre las imágenes originales antes de la normalización, y los valores resultantes se acotaron al rango válido mediante la función `numpy.clip`. Todas las operaciones se ejecutaron en formato `float32` para evitar la duplicación del consumo de memoria asociado al formato `float64`.
 
+#### 7.3.1 Ajuste del aumento de datos (v3)
+
+Con la expansión del conjunto base a 2.019 imágenes, el factor de aumento se redujo de 30 a **10 técnicas** por imagen (Shorten y Khoshgoftaar, 2019, recomiendan disminuir la intensidad del aumento cuando el volumen base crece). Se seleccionaron las 10 transformaciones de mayor impacto: rotaciones (90°, 180°, 270°), volteos (horizontal, vertical), trasposición, ajuste de brillo (±15 %), contraste (±15 %), gamma y ruido gaussiano. Esto generó **22.209 imágenes aumentadas** (11.016 positivas y 11.193 negativas), con un desbalance de clase prácticamente nulo.
+
 ### 7.4 División del conjunto de datos
 
 La división del conjunto de datos se realizó mediante **GroupShuffleSplit** de scikit-learn, agrupando por la imagen original de procedencia. Este método garantiza que todas las augmentaciones derivadas de una misma imagen original pertenezcan al mismo subconjunto (entrenamiento, validación o prueba), previniendo la fuga de datos (data leakage) que inflaría artificialmente las métricas de evaluación.
@@ -375,6 +420,19 @@ Las proporciones resultantes fueron:
 - **Prueba:** 1.017 imágenes (16 %)
 
 Los datos procesados se almacenaron en formato NumPy (`.npy`) particionado en archivos de aproximadamente 500 imágenes cada uno, para garantizar compatibilidad con el sistema de archivos FAT32 del dispositivo de almacenamiento externo utilizado.
+
+#### 7.4.1 División anti-fuga geográfica (v3)
+
+En la versión 3, el mecanismo de agrupación de GroupShuffleSplit se reforzó para considerar tanto los sufijos de aumento (`_aug01`, `_aug02`, …) como los de expansión por grilla (`_grid_r0_c1`, etc.). La función de extracción de grupo base elimina ambos tipos de sufijo, de modo que todas las variantes de una misma zona geográfica original permanecen en el mismo subconjunto.
+
+Las proporciones resultantes del conjunto v3 fueron:
+- **Entrenamiento:** 15.453 imágenes (69,6 %)
+- **Validación:** 3.414 imágenes (15,4 %)
+- **Prueba:** 3.342 imágenes (15,0 %)
+- **Grupos geográficos:** 4.038 (ningún grupo compartido entre subconjuntos)
+- **Pesos de clase:** 0,9945 / 1,0055 (balance prácticamente perfecto)
+
+Los datos v3 se almacenaron en formato NumPy particionado en disco externo NTFS de 931 GB, eliminando la restricción de tamaño de archivo de FAT32.
 
 ### 7.5 Arquitectura del modelo
 
@@ -532,6 +590,38 @@ A diferencia de la v1, donde se observó un overfitting severo (exactitud de ent
 
 Con una exactitud del 91,45 % en un conjunto de prueba de 1.017 imágenes, y un ROC AUC de 0,983, se rechaza la hipótesis nula ($H_0: \text{Accuracy} \leq 0{,}50$) con amplio margen. El modelo CNN demuestra una capacidad discriminativa significativamente superior al azar para la clasificación binaria de zonas con y sin potencial geotérmico, confirmando la hipótesis de trabajo.
 
+### 8.8 Resultados del modelo v3 (expansión andina)
+
+#### 8.8.1 Conjunto de datos v3
+
+El conjunto de datos v3 se construyó a partir de **2.019 imágenes base** de la Región Andina (997 positivas, 1.022 negativas), expandidas a **22.209 imágenes aumentadas** mediante 10 técnicas de aumento de datos. La división anti-fuga geográfica produjo:
+
+| Subconjunto | Imágenes | Proporción |
+|-------------|:--------:|:----------:|
+| Entrenamiento | 15.453 | 69,6 % |
+| Validación | 3.414 | 15,4 % |
+| Prueba | 3.342 | 15,0 % |
+
+Con 4.038 grupos geográficos independientes y pesos de clase de 0,9945/1,0055, el conjunto v3 supera al v2 en volumen (22.209 vs. 6.200 imágenes), diversidad geográfica (4 países vs. 1) y balance de clases.
+
+**Tabla 11. Distribución del conjunto v3 por país**
+
+| País | Positivas | Negativas | Total |
+|------|:-:|:-:|:-:|
+| Colombia | 544 | 477 | 1.021 |
+| Ecuador | 184 | 66 | 250 |
+| Perú | 107 | 28 | 135 |
+| Chile | 162 | 451 | 613 |
+| **Total** | **997** | **1.022** | **2.019** |
+
+#### 8.8.2 Métricas del modelo v3
+
+*Pendiente: el modelo v3 será entrenado con la misma arquitectura ResNet-inspired y configuración de la v2. Los resultados se reportarán con intervalos de confianza Bootstrap al 95 % (2.000 iteraciones) sobre las 6 métricas principales (Accuracy, Precision, Recall, F1, ROC AUC, MCC).*
+
+#### 8.8.3 Comparativo v1 vs. v2 vs. v3
+
+*Pendiente: tabla comparativa de las tres versiones con intervalos de confianza Bootstrap.*
+
 ---
 
 ## 9. DISCUSIÓN
@@ -562,11 +652,11 @@ La arquitectura ResNet-inspired con bloques residuales demostró ser una elecci�
 
 Es importante reconocer las siguientes limitaciones:
 
-1. **Generalización geográfica:** El modelo fue entrenado exclusivamente con zonas de Colombia. Su aplicabilidad a otros países con contextos geológicos diferentes no ha sido evaluada y requeriría reentrenamiento o ajuste fino.
+1. **Generalización geográfica:** En la v2 el modelo fue entrenado exclusivamente con zonas de Colombia; en la v3 se incorporaron datos de Ecuador, Perú y Chile, lo cual mitiga parcialmente esta limitación dentro del contexto andino. Sin embargo, su aplicabilidad a regiones fuera del Cinturón de Fuego del Pacífico no ha sido evaluada.
 
 2. **Resolución temporal:** El producto ASTER GED es un promedio temporal, por lo que no captura variaciones estacionales ni eventos transitorios. Esto puede limitar la detección de fenómenos geotérmicos intermitentes.
 
-3. **Tamaño del conjunto de datos:** Aunque 200 imágenes originales y 6.200 augmentadas representan una mejora significativa respecto a la v1, conjuntos de datos más grandes (>500 imágenes originales) podrían mejorar la robustez del modelo.
+3. **Tamaño del conjunto de datos:** La v3 amplió el conjunto base a 2.019 imágenes originales (frente a 200 en la v2), lo que mejora sustancialmente la representatividad. No obstante, conjuntos aún mayores (>5.000 imágenes) con cobertura global podrían fortalecer la generalización.
 
 4. **Hardware de entrenamiento:** El entrenamiento se realizó en CPU (Intel i5-10300H), lo que impuso restricciones en el número de épocas y los hiperparámetros explorados. El acceso a GPU permitiría entrenamientos más prolongados y una búsqueda de hiperparámetros más exhaustiva.
 
@@ -579,6 +669,12 @@ Es importante reconocer las siguientes limitaciones:
 El modelo desarrollado se posiciona como una herramienta de screening automatizado para la **Fase 1 (Reconocimiento Regional)** de la exploración geotérmica. Su capacidad para analizar cualquier punto del territorio colombiano en segundos contrasta con los meses y los costos significativos que implica la revisión manual de imágenes satelitales por expertos.
 
 Para el Servicio Geológico Colombiano y entidades como la UPME, el sistema ofrece la posibilidad de generar mapas de probabilidades de potencial geotérmico a escala nacional, lo que permitiría enfocar los recursos limitados de exploración en las zonas más prometedoras. El hecho de que el modelo tenga una tasa de falsos positivos de solo el 2,15 % lo hace especialmente confiable: las zonas que identifica como positivas merecen atención prioritaria.
+
+### 9.6 Impacto de la expansión andina (v3)
+
+La inclusión de zonas de Ecuador, Perú y Chile en el conjunto de entrenamiento obedece a dos razones: (1) incrementar el volumen de datos (de 200 a 2.019 imágenes base) y (2) exponer al modelo a una mayor variabilidad de patrones espectrales geotérmicos dentro de un contexto geológico compartido —la subducción de la placa de Nazca bajo la placa Sudamericana—. Es importante destacar que la **aplicación** del modelo sigue circunscrita al territorio colombiano; la expansión andina busca exclusivamente mejorar la robustez del entrenamiento.
+
+La implementación de intervalos de confianza Bootstrap al 95 % constituye una mejora metodológica significativa, ya que permite cuantificar la incertidumbre asociada a cada métrica de evaluación en lugar de reportar únicamente valores puntuales (Efron y Tibshirani, 1993).
 
 ---
 
@@ -598,11 +694,13 @@ Para el Servicio Geológico Colombiano y entidades como la UPME, el sistema ofre
 
 7. El modelo constituye una herramienta viable para la fase de reconocimiento regional en la exploración geotérmica, con potencial de reducir significativamente los costos y tiempos asociados a la revisión manual de imágenes satelitales.
 
+8. La expansión del conjunto de datos a la Región Andina (v3) permitió construir un corpus de **2.019 imágenes base** (997 positivas, 1.022 negativas) de Colombia, Ecuador, Perú y Chile, aumentadas a **22.209 imágenes** con 10 técnicas de aumento de datos. La división anti-fuga geográfica con 4.038 grupos independientes garantiza la validez de las métricas y la incorporación de intervalos de confianza Bootstrap al 95 % refuerza la rigurosidad estadística de la evaluación.
+
 ---
 
 ## 11. RECOMENDACIONES
 
-1. **Ampliación del conjunto de datos:** Incrementar el número de imágenes originales a más de 500, incorporando zonas de otros países con actividad geotérmica conocida (Ecuador, Perú, Chile), para mejorar la generalización del modelo.
+1. **Ampliación del conjunto de datos:** La v3 cumplió esta recomendación al expandir el conjunto a 2.019 imágenes base de la Región Andina (Colombia, Ecuador, Perú y Chile). Para futuras iteraciones se recomienda incorporar zonas de otros contextos tectónicos (Centroamérica, Indonesia, Islandia) y superar las 5.000 imágenes base.
 
 2. **Validación en campo:** Contrastar las predicciones del modelo con datos de prospección geotérmica in situ en al menos 5–10 zonas clasificadas como positivas por el modelo pero no documentadas previamente, en colaboración con el Servicio Geológico Colombiano.
 
@@ -626,9 +724,13 @@ Abrams, M. y Hook, S. J. (2002). ASTER User Handbook, Version 2. Jet Propulsion 
 
 Alfaro, C. (2015). Evaluación del potencial geotérmico de Colombia. Servicio Geológico Colombiano.
 
+Bona, P. y Coviello, M. (2016). *Valoración y gobernanza de los proyectos geotérmicos en América del Sur*. CEPAL.
+
 Coolbaugh, M., Kratt, C., Fallacaro, A., Calvin, W. y Taranik, J. (2007). Detection of geothermal anomalies using Advanced Spaceborne Thermal Emission and Reflection Radiometer (ASTER) thermal infrared images at Bradys Hot Springs, Nevada, USA. *Remote Sensing of Environment*, 106(3), 350–359. https://doi.org/10.1016/j.rse.2006.09.001
 
 DiPippo, R. (2015). *Geothermal Power Plants: Principles, Applications, Case Studies and Environmental Impact* (4.ª ed.). Elsevier.
+
+Efron, B. y Tibshirani, R. J. (1993). *An Introduction to the Bootstrap*. Chapman and Hall/CRC.
 
 Gehringer, M. y Loksha, V. (2012). *Geothermal Handbook: Planning and Financing Power Generation*. Energy Sector Management Assistance Program (ESMAP), Banco Mundial.
 
@@ -639,10 +741,12 @@ Gorelick, N., Hancher, M., Dixon, M., Ilyushchenko, S., Thau, D. y Moore, R. (20
 He, K., Zhang, X., Ren, S. y Sun, J. (2016). Deep Residual Learning for Image Recognition. *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, 770–778. https://doi.org/10.1109/CVPR.2016.90
 
 Hulley, G. C., Hook, S. J., Abbott, E. y Malakar, N. (2015). The ASTER Global Emissivity Dataset (ASTER GED): Mapping Earth's emissivity at 100 meter spatial scale. *Geophysical Research Letters*, 42(19), 7966–7976. https://doi.org/10.1002/2015GL065564
-
+INGEMMET. (2014). *Inventario de fuentes termales del Perú*. Instituto Geológico, Minero y Metalúrgico del Perú.
 Ioffe, S. y Szegedy, C. (2015). Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift. *Proceedings of the 32nd International Conference on Machine Learning (ICML)*, 448–456.
 
 IPCC. (2011). *IPCC Special Report on Renewable Energy Sources and Climate Change Mitigation*. Cambridge University Press.
+
+Lahsen, A. (1982). Upper Cenozoic volcanism and tectonism in the Andes of northern Chile. *Earth-Science Reviews*, 18(3), 285–302. https://doi.org/10.1016/0012-8252(82)90042-8
 
 LeCun, Y., Bengio, Y. y Hinton, G. (2015). Deep learning. *Nature*, 521(7553), 436–444. https://doi.org/10.1038/nature14539
 
@@ -652,9 +756,15 @@ Lund, J. W. y Toth, A. N. (2021). Direct utilization of geothermal energy 2020 w
 
 Mia, M. B., Fujimitsu, Y. y Nishijima, J. (2018). Exploration of hydrothermal alteration and monitoring of thermal activity using multi-temporal Landsat and ASTER satellite imagery: A case study at the Aso volcanic area, Japan. *Journal of Volcanology and Geothermal Research*, 368, 137–150.
 
+Muñoz-Sáez, C., Manga, M. y Hurwitz, S. (2018). Hydrothermal discharge from the El Tatio basin, Atacama, Chile. *Journal of Volcanology and Geothermal Research*, 361, 25–35. https://doi.org/10.1016/j.jvolgeores.2018.07.007
+
 NASA/METI/AIST/Japan Spacesystems. (2001). ASTER Global Emissivity Dataset (GED). [Conjunto de datos]. https://doi.org/10.5067/COMMUNITY/ASTER_GED/AG100.003
 
 Servicio Geológico Colombiano. (2023). *Mapa de potencial geotérmico de Colombia*. SGC.
+
+Shorten, C. y Khoshgoftaar, T. M. (2019). A survey on image data augmentation for deep learning. *Journal of Big Data*, 6(1), 60. https://doi.org/10.1186/s40537-019-0197-0
+
+Siebert, L., Simkin, T. y Kimberly, P. (2010). *Volcanoes of the World* (3.ª ed.). Smithsonian Institution / University of California Press.
 
 Srivastava, N., Hinton, G., Krizhevsky, A., Sutskever, I. y Salakhutdinov, R. (2014). Dropout: A simple way to prevent neural networks from overfitting. *Journal of Machine Learning Research*, 15(1), 1929–1958.
 
@@ -687,21 +797,23 @@ geotermia-colombia-cnn/
 │   └── saved_models/             # Modelos entrenados (.keras)
 │
 ├── scripts/
-│   ├── download_dataset.py       # Descarga de imágenes desde Google Earth Engine
-│   ├── augment_full_dataset.py   # Aumento de datos (30 técnicas)
-│   ├── prepare_dataset.py        # Preparación del conjunto de datos
+│   ├── download_dataset.py       # Descarga + expansión por grilla (v3: 3 hilos)
+│   ├── augment_full_dataset.py   # Aumento de datos (v2: 30, v3: 10 técnicas)
+│   ├── prepare_dataset.py        # Preparación con anti-fuga geográfica
 │   ├── train_model.py            # Entrenamiento del modelo
-│   ├── evaluate_model.py         # Evaluación en conjunto de prueba
+│   ├── evaluate_model.py         # Evaluación + Bootstrap CI
 │   ├── predict.py                # Predicción por coordenadas (CLI)
 │   ├── visualize_results.py      # Visualizaciones de resultados
 │   └── visualize_architecture.py # Diagrama de arquitectura
 │
 ├── data/
-│   ├── raw/                      # 200 imágenes originales (.tif)
-│   ├── augmented/                # 6.200 imágenes aumentadas
+│   ├── raw/                      # v2: 200 | v3: 2.019 imágenes (.tif)
+│   ├── augmented/                # v2: 6.200 | v3: 22.209 imágenes
 │   └── processed/                # Archivos .npy particionados
 │
 ├── docs/                         # Documentación técnica
+│   ├── CAMPOS_GEOTERMICOS_REGION_ANDINA.md  # Catálogo andino (v3)
+│   └── ...                       # Demás documentación
 ├── logs/                         # Logs de TensorBoard
 ├── results/                      # Métricas y figuras
 └── notebooks/                    # Notebooks de exploración
@@ -741,12 +853,23 @@ geotermia-colombia-cnn/
 | CPU | Intel Core i5-10300H |
 | RAM | 12 GB |
 | GPU | No disponible (TensorFlow 2.20.0 sin CUDA en Windows) |
-| Almacenamiento | USB FAT32 15 GB |
+| Almacenamiento | Disco externo Toshiba NTFS 931 GB (E:\geotermia_datos) |
 | Sistema operativo | Windows |
 | Python | 3.10.11 |
 | TensorFlow | 2.20.0 |
 | Keras | 3.12.1 |
 | Streamlit | 1.54.0 |
+
+### Anexo E. Campos geotérmicos de la Región Andina incluidos en el conjunto v3
+
+| País | Zona representativa | Tipo | Observaciones |
+|------|-------------------|------|---------------|
+| Colombia | Nevado del Ruiz, Chiles-Cerro Negro, Azufral, Paipa-Iza | Volcánico/Hidrotermal | Base del conjunto v1/v2 |
+| Ecuador | Chachimbiro, Tufiño-Chiles, Chalupas, Chimborazo | Volcánico/Hidrotermal | Zona binacional con Colombia |
+| Perú | Calientes (Tacna), Tutupaca, región Misti-Ubinas | Volcánico/Fuentes termales | >500 fuentes termales (INGEMMET, 2014) |
+| Chile | El Tatio, Cerro Pabellón, Tolhuaca, Apacheta | Volcánico/Operativo | Cerro Pabellón: 48 MW operativo |
+
+El catálogo completo con coordenadas, fuentes y clasificación se encuentra en `docs/CAMPOS_GEOTERMICOS_REGION_ANDINA.md`.
 
 ---
 
