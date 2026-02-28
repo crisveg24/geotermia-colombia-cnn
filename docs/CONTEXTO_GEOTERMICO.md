@@ -184,26 +184,27 @@ Nuestro modelo CNN opera en la **Fase 1 (Reconocimiento regional)** como una her
 **Escenario de uso:**
 > El Servicio Geológico Colombiano quiere identificar nuevas zonas con potencial geotérmico fuera de las áreas volcánicas conocidas. Usando la CNN, puede escanear sistemáticamente regiones del territorio colombiano y obtener un mapa de probabilidades que le permita **enfocar los recursos limitados de exploración en las zonas más prometedoras**.
 
-### 5.4 Logros del modelo v2 (versión actual) y limitaciones residuales
+### 5.4 Logros del modelo v2 y evolución a v3
 
 El modelo v1 era un **prototipo académico** con limitaciones significativas (accuracy 68.43%, recall 48.10%, solo 85 imágenes). Todas fueron abordadas en la versión v2:
 
-| Aspecto | v1 (Baseline) | v2 (Actual) |
-|---------|---------------|--------------|
-| **Accuracy** | 68.43% | **91.45%** |
-| **Recall** | 48.10% | **86.05%** |
-| **F1-Score** | 61.77% | **91.61%** |
-| **ROC AUC** | 0.8198 | **0.9830** |
-| **Dataset** | 85 imágenes (5 bandas) | 200 imágenes (7 bandas) |
-| **Filtrado NoData** | No | Sí |
-| **Split** | Aleatorio (data leakage) | GroupShuffleSplit |
+| Aspecto | v1 (Baseline) | v2 (Actual) | v3 (En curso) |
+|---------|---------------|--------------|----------------|
+| **Accuracy** | 68.43% | **91.45%** | *Pendiente* |
+| **Recall** | 48.10% | **86.05%** | *Pendiente* |
+| **F1-Score** | 61.77% | **91.61%** | *Pendiente* |
+| **ROC AUC** | 0.8198 | **0.9830** | *Pendiente* |
+| **Dataset** | 85 imágenes (5 bandas) | 200 imágenes (7 bandas) | **2,019 imágenes (7 bandas, 4 países)** |
+| **Filtrado NoData** | No | Sí | Sí |
+| **Split** | Aleatorio (data leakage) | GroupShuffleSplit | GroupShuffleSplit (anti-leakage geográfico) |
+
+**Mejora clave de v3:** El dataset ahora incluye zonas de la **Región Andina** (Colombia, Ecuador, Perú y Chile), lo que aborda la limitación de generalización geográfica. Todos los países comparten el contexto geológico del **Cinturón de Fuego del Pacífico**. Ver [CAMPOS_GEOTERMICOS_REGION_ANDINA.md](CAMPOS_GEOTERMICOS_REGION_ANDINA.md) para el catálogo completo.
 
 **Limitaciones residuales** (alcance académico del proyecto):
 
-- **Generalización:** Entrenado solo en Colombia; puede no funcionar en otros contextos geológicos.
 - **Resolución temporal:** ASTER GED es un producto promediado; no captura variaciones temporales.
-- **Entrenamiento CPU:** Limitado a 22 épocas con CosineDecay; GPU podría mejorar más.
-- **Validación por zona específica:** Predicciones individuales por zona pendientes de re-ejecutar con v2.
+- **Entrenamiento CPU:** Limitado por hardware disponible (12 GB RAM, sin GPU); GPU podría mejorar más.
+- **Aplicación:** El modelo se aplica a Colombia; la expansión andina es para robustez del entrenamiento.
 
 Estas limitaciones están documentadas en detalle en [PREDICCIONES_PRUEBA.md](PREDICCIONES_PRUEBA.md) y [CHANGELOG_V2.md](CHANGELOG_V2.md).
 
@@ -227,6 +228,7 @@ ENERGÍA GEOTÉRMICA
        │
        ├── ¿Qué hace nuestra CNN?
        │     ├── Analiza imágenes ASTER (7 bandas: 5 TIR emisividad + Temperatura + NDVI)
+       │     ├── Entrenado con 2,019 imágenes de Región Andina (CO+EC+PE+CL)
        │     ├── Identifica patrones térmicos y espectrales de potencial geotérmico
        │     └── Produce probabilidad (0–100%) por zona — v2: 91.45% accuracy
        │

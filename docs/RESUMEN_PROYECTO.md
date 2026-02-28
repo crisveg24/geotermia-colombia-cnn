@@ -1,10 +1,10 @@
-# RESUMEN DEL PROYECTO — CNN Geotermia Colombia (v2)
+# RESUMEN DEL PROYECTO — CNN Geotermia Colombia (v3)
 
 **Proyecto:** Sistema CNN para Identificacion de Zonas Geotermicas en Colombia
 **Institucion:** Universidad de San Buenaventura - Bogota
 **Fecha de inicio:** Noviembre 2025
-**Ultima actualizacion:** 25 de febrero de 2026
-**Rama activa:** `development`
+**Ultima actualizacion:** 27 de febrero de 2026
+**Rama activa:** `v3`
 **Repositorio:** https://github.com/crisveg24/geotermia-colombia-cnn
 
 ---
@@ -13,12 +13,15 @@
 
 | Componente | Progreso | Notas |
 |-----------|----------|-------|
-| Documentacion tecnica | 100% | Todos los docs en `docs/` actualizados a v2 |
-| Scripts de pipeline | 100% | Descarga, augmentacion, preparacion, entrenamiento, evaluacion |
-| Dataset original | 100% | 200 imagenes ASTER (111 positivas + 89 negativas) |
-| Dataset augmentado | 100% | 6,200 imagenes (~31x factor de aumento) |
+| Documentacion tecnica | 100% | Todos los docs en `docs/` actualizados a v3 |
+| Scripts de pipeline | 100% | Descarga paralela, augmentacion, preparacion, entrenamiento, evaluacion |
+| Dataset v2 (Colombia) | 100% | 200 imagenes ASTER (111 positivas + 89 negativas) |
+| Dataset v3 (Region Andina) | 100% | 2,019 imagenes (997 positivas + 1,022 negativas, 4 paises) |
+| Dataset augmentado v3 | 100% | 22,209 imagenes (x10 variaciones por imagen) |
+| Dataset preparado v3 | 100% | Train 15,453 / Val 3,414 / Test 3,342 (anti-leakage geografico) |
 | Entrenamiento v2 | 100% | 22 epocas, mejor epoca 8 (val_acc 94.17%) |
 | Evaluacion v2 test | 100% | Accuracy 91.45%, ROC AUC 0.983, F1 91.61% |
+| Entrenamiento v3 | Pendiente | Siguiente paso del pipeline |
 | Interfaz grafica | 100% | Streamlit con Folium, Plotly — metricas v2 integradas |
 | Auditoria de codigo | 100% | 28 bugs corregidos (ver CHANGELOG_V2.md) |
 | Prediccion CLI | 100% | predict.py con resize bicubico alineado a entrenamiento |
@@ -27,14 +30,25 @@
 
 ## 2. Logros de la Version 2
 
-### 2.1 Expansion del Dataset
-- **200 imagenes ASTER** descargadas desde Google Earth Engine (NASA/ASTER_GED/AG100_003).
-- **111 positivas** de zonas volcanicas/geotermicas de Colombia.
-- **89 negativas** de zonas de control (Llanos, Amazonia, Costa Caribe, Altiplano, Choco).
-- **6,200 imagenes** tras augmentacion (3,441 positivas + 2,759 negativas).
-- **7 bandas**: emissivity_band10, emissivity_band11, emissivity_band12, emissivity_band13, emissivity_band14, temperature, ndvi.
-- **Division con GroupShuffleSplit** (sin data leakage): Train 4,223 / Val 960 / Test 1,017.
-- **Datos particionados** para FAT32: ~500 imgs por archivo .npy.
+### 2.1 Expansion del Dataset (v2 → v3: Region Andina)
+
+**v2 (solo Colombia):**
+- 200 imagenes ASTER (111 positivas + 89 negativas).
+- 6,200 imagenes tras augmentacion (x30 variaciones).
+
+**v3 (Region Andina: Colombia + Ecuador + Peru + Chile):**
+- **2,019 imagenes ASTER** descargadas desde Google Earth Engine (descarga paralela, 3 hilos).
+- **997 positivas** de zonas volcanicas/geotermicas de 4 paises andinos.
+- **1,022 negativas** de zonas de control (llanos, costa, amazonia, etc.).
+- **22,209 imagenes** tras augmentacion (x10 variaciones por imagen original).
+- **7 bandas**: emissivity_band10–14, temperature, ndvi.
+- **Division con GroupShuffleSplit** (anti-leakage geografico): Train 15,453 / Val 3,414 / Test 3,342.
+- **4,038 grupos geograficos unicos** (base zones + grid suffixes).
+- **Datos particionados** en partes de ~500 imgs: Train 31 partes, Val 7 partes, Test 7 partes.
+- **Expansion por grilla**: Cada zona base se expande en 9 tiles (center + 8 direcciones) para mayor cobertura.
+- **Balance casi perfecto**: Class weights 0.9945 (pos) / 1.0055 (neg).
+
+> Ver catalogo completo de campos geotermicos en [CAMPOS_GEOTERMICOS_REGION_ANDINA.md](CAMPOS_GEOTERMICOS_REGION_ANDINA.md).
 
 ### 2.2 Auditoria y Correccion de 28 Bugs
 Se realizo una auditoria exhaustiva que revelo 28 bugs en v1 (4 CRITICAL, 4 HIGH, 10 MEDIUM, 10 LOW). Todos corregidos. Los mas importantes:
@@ -81,22 +95,26 @@ Real Pos          77         475
 
 ---
 
-## 3. Comparativo v1 vs v2
+## 3. Comparativo v1 vs v2 vs v3
 
-| Aspecto | v1 (main) | v2 (development) |
-|---------|-----------|-------------------|
-| Imagenes originales | 85 | 200 |
-| Imagenes augmentadas | 2,635 | 6,200 |
-| Bandas | 7 (con bugs) | 7 (limpias) |
-| Split | train_test_split (con leakage) | GroupShuffleSplit (sin leakage) |
-| Normalizacion | z-score + Rescaling(1/255) | Solo z-score |
-| NoData | No filtrado (-9999) | Filtrado + interpolacion |
-| Regularizacion | L2 + AdamW (doble) | Solo AdamW weight_decay |
-| LR Schedule | ReduceLROnPlateau | CosineDecay |
-| Test Accuracy | 68.43% | **91.45%** |
-| Test Recall | 48.10% | **86.05%** |
-| ROC AUC | 0.8198 | **0.983** |
-| Parametros | 5,025,409 | 5,032,385 |
+| Aspecto | v1 (main) | v2 (development) | v3 (v3) |
+|---------|-----------|-------------------|----------|
+| Imagenes originales | 85 | 200 | **2,019** |
+| Imagenes augmentadas | 2,635 | 6,200 | **22,209** |
+| Augmentaciones/img | ~30 | ~30 | **10** |
+| Paises | Colombia | Colombia | **4 (CO+EC+PE+CL)** |
+| Bandas | 7 (con bugs) | 7 (limpias) | 7 (limpias) |
+| Split | train_test_split (con leakage) | GroupShuffleSplit (sin leakage) | GroupShuffleSplit (anti-leakage) |
+| Normalizacion | z-score + Rescaling(1/255) | Solo z-score | Solo z-score |
+| NoData | No filtrado (-9999) | Filtrado + interpolacion | Filtrado + interpolacion |
+| Regularizacion | L2 + AdamW (doble) | Solo AdamW weight_decay | Solo AdamW weight_decay |
+| LR Schedule | ReduceLROnPlateau | CosineDecay | CosineDecay |
+| Disco | USB FAT32 15 GB | USB FAT32 15 GB | **Disco externo NTFS 931 GB** |
+| Descarga | Secuencial | Secuencial | **Paralela (3 hilos)** |
+| Test Accuracy | 68.43% | **91.45%** | *Pendiente* |
+| Test Recall | 48.10% | **86.05%** | *Pendiente* |
+| ROC AUC | 0.8198 | **0.983** | *Pendiente* |
+| Parametros | 5,025,409 | 5,032,385 | 5,032,385 |
 
 ---
 
@@ -146,9 +164,9 @@ geotermia-colombia-cnn/
 |   +-- saved_models/            # Modelos entrenados (.keras)
 |
 |-- scripts/
-|   |-- download_dataset.py      # Descarga imagenes desde GEE (200 imgs, 7 bandas)
-|   |-- augment_full_dataset.py  # Augmentacion del dataset (30 tecnicas)
-|   |-- prepare_dataset.py       # Preparacion para entrenamiento (particionado FAT32)
+|   |-- download_dataset.py      # Descarga imagenes desde GEE (2,019 imgs, 3 hilos)
+|   |-- augment_full_dataset.py  # Augmentacion del dataset (10 variaciones/img)
+|   |-- prepare_dataset.py       # Preparacion con anti-leakage geografico
 |   |-- train_model.py           # Entrenamiento (part-aware generator)
 |   |-- evaluate_model.py        # Evaluacion en test set (particionado)
 |   |-- predict.py               # Prediccion con coordenadas
@@ -157,17 +175,18 @@ geotermia-colombia-cnn/
 |   +-- miniprueba/              # Pipeline de validacion (mini-dataset)
 |
 |-- data/                        # (o disco externo via GEOTERMIA_DATA_ROOT)
-|   |-- raw/                     # 200 imagenes originales + CSVs de metadata
-|   |-- augmented/               # 6,200 imagenes augmentadas
+|   |-- raw/                     # 2,019 imagenes originales + CSVs de metadata
+|   |-- augmented/               # 22,209 imagenes augmentadas
 |   +-- processed/               # .npy particionados para entrenamiento
 |
 |-- docs/                        # Documentacion tecnica
 |   |-- README.md                # Indice de documentos
 |   |-- RESUMEN_PROYECTO.md      # Este documento (vision general + bitacora)
 |   |-- MODELO_PREDICTIVO.md     # Documento tecnico principal de la tesis
+|   |-- CAMPOS_GEOTERMICOS_REGION_ANDINA.md # Catalogo geotermico (4 paises)
+|   |-- CONTEXTO_GEOTERMICO.md   # Contexto cientifico/geologico
 |   |-- ANALISIS_ENTRENAMIENTO.md# Analisis de metricas por epoca
 |   |-- GUIA_PASO_A_PASO.md      # Guia completa paso a paso
-|   |-- CONTEXTO_GEOTERMICO.md   # Contexto cientifico/geologico
 |   |-- PREDICCIONES_PRUEBA.md   # Baseline v1 + comparativa v2
 |   +-- CHANGELOG_V2.md          # Auditoria: 28 bugs + mejoras implementadas
 |
@@ -250,6 +269,20 @@ geotermia-colombia-cnn/
 - Todos los .md actualizados a datos v2.
 - Indice de docs actualizado.
 
+### Fase 16: Expansion a Region Andina — v3 (Feb 26-27, 2026)
+- **Branch `v3`** creada desde development.
+- Expansion del dataset de Colombia (200 imgs) a Region Andina (2,019 imgs, 4 paises).
+- Catalogo completo de campos geotermicos: `CAMPOS_GEOTERMICOS_REGION_ANDINA.md`.
+- Descarga paralela desde GEE: 3 hilos concurrentes, 0.5s de delay.
+- Expansion por grilla: cada zona genera 9 tiles (center + 8 direcciones).
+- `NUM_AUGMENTATIONS` ajustado de 30 a 10 (optimo para 2,019 imagenes base).
+- Augmentacion: 2,019 → 22,209 imagenes en 40.90 minutos.
+- Preparacion con **anti-leakage geografico** (GroupShuffleSplit): 4,038 grupos.
+- Splits: Train 15,453 / Val 3,414 / Test 3,342 (balance 0.9945/1.0055).
+- Almacenamiento migrado de USB FAT32 15 GB a disco externo NTFS 931 GB.
+- Documentacion completa actualizada a v3 con referencias academicas.
+- **Siguiente paso**: Entrenamiento v3 y evaluacion.
+
 ---
 
 ## 8. Hardware y Entorno
@@ -259,7 +292,8 @@ geotermia-colombia-cnn/
 | CPU | Intel i5-10300H |
 | RAM | 12 GB |
 | GPU | No disponible (TF 2.20.0 sin CUDA en Windows) |
-| Almacenamiento | USB FAT32 15 GB (`D:\geotermia_datos`) |
+| Almacenamiento v2 | USB FAT32 15 GB (`D:\geotermia_datos`) |
+| Almacenamiento v3 | Disco externo NTFS Toshiba 931 GB (`E:\geotermia_datos`) |
 | SO | Windows |
 | Python | 3.10.11 |
 | TensorFlow | 2.20.0 |
@@ -290,27 +324,31 @@ geotermia-colombia-cnn/
 
 ### Reproducibilidad
 - **Random seed:** 42 fijo en todos los scripts.
-- **GroupShuffleSplit** agrupa por imagen original (sin data leakage).
+- **GroupShuffleSplit** agrupa por zona geografica base (sin data leakage).
+  - En v3: strips de sufijos de augmentacion Y grilla (_center, _N, _S, etc.).
 - **`requirements.txt`** con versiones exactas de dependencias.
 
-### Prevencion de Overfitting (v2)
+### Prevencion de Overfitting (v2/v3)
 - SpatialDropout2D en bloques convolucionales.
 - EarlyStopping con patience=15.
-- Data Augmentation offline (30 tecnicas).
+- Data Augmentation offline (10 variaciones en v3, 30 en v2).
 - AdamW weight_decay (L2 desacoplado — sin kernel_regularizer).
 - Label Smoothing (0.1) en la funcion de perdida.
 - CosineDecay para learning rate.
 
-### Particionado de Datos (FAT32)
-- Archivos .npy divididos en partes de ~500 imagenes (~670 MB cada uno).
-- Train: 9 partes, Val: 2 partes, Test: 3 partes.
+### Particionado de Datos
+- Archivos .npy divididos en partes de ~500 imagenes.
+- v2: Train 9 partes, Val 2 partes, Test 3 partes (FAT32).
+- **v3: Train 31 partes, Val 7 partes, Test 7 partes (NTFS)**.
 - Scripts de carga con `_load_partitioned_or_single()`.
 
 ### Balance de Clases
-- 111 positivas + 89 negativas → pesos de clase calculados automaticamente.
+- v2: 111 positivas + 89 negativas.
+- **v3: 997 positivas + 1,022 negativas → 22,209 augmentadas**.
+- Class weights: 0.9945 / 1.0055 (balance casi perfecto en v3).
 - Class weights usados en `model.fit()`.
 
 ---
 
-**Ultima actualizacion:** 25 de febrero de 2026
+**Ultima actualizacion:** 27 de febrero de 2026
 **Documento fusionado de:** RESUMEN_PROYECTO.md (v1) + REGISTRO_PROCESO.md (bitacora)

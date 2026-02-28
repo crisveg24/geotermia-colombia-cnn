@@ -350,14 +350,17 @@ en regiones geológicamente estables, llanuras costeras o cuencas sedimentarias.
 | Chile | 20 |
 | **TOTAL** | **~149** → expandir a **~720 con subdivisiones** |
 
-### Dataset Final Estimado
+### Dataset Final (Real v3)
 
 | Métrica | Valor |
 |---------|-------|
-| **Imágenes originales** | ~1,400–2,000 (700-1000 pos + 700-1000 neg) |
-| **Aumentadas (×31)** | ~43,400–62,000 |
-| **Espacio en disco estimado** | ~70–102 GB |
-| **Balance** | ~50% pos / 50% neg (ideal) |
+| **Imágenes originales** | **2,019** (997 positivas + 1,022 negativas) |
+| **Aumentadas (×10)** | **22,209** (10,967 pos + 11,242 neg) |
+| **Espacio en disco (raw)** | ~115 MB |
+| **Espacio en disco (augmented)** | ~7.9 GB |
+| **Espacio en disco (processed)** | ~29.8 GB |
+| **Balance** | 49.4% pos / 50.6% neg (casi perfecto) |
+| **Grupos geográficos** | 4,038 (para GroupShuffleSplit anti-leakage) |
 
 ---
 
@@ -393,6 +396,6 @@ en regiones geológicamente estables, llanuras costeras o cuencas sedimentarias.
 
 ---
 
-> **Nota**: Las coordenadas exactas de las subdivisiones (N, S, E, W, NE, SW) se generan
-> automáticamente en `download_dataset.py` a partir del punto central, con offsets de
-> ±0.015° (~1.5 km).
+> **Nota**: Las coordenadas de las subdivisiones se generan automáticamente en
+> `download_dataset.py` mediante `_generate_grid()`, que crea 9 tiles por zona base
+> (center + N, S, E, W, NE, NW, SE, SW) con offsets de ±0.04° (~4 km).

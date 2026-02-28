@@ -260,6 +260,62 @@ Se re-ejecuto todo el pipeline desde descarga.
 
 ---
 
-*Documento actualizado: 25 de febrero de 2026*
-*Rama: development*
+*Documento actualizado: 27 de febrero de 2026*
+*Rama: v3*
 *Autores: Cristian Camilo Vega Sanchez, Daniel Santiago Arevalo Rubiano, Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martin*
+
+---
+
+## CHANGELOG v3 — Expansión a Región Andina (Feb 26-27, 2026)
+
+> Los cambios de v3 se realizan en la rama `v3`, a partir de `development`.
+
+### Cambios principales
+
+| # | Categoría | Cambio | Detalle |
+|---|-----------|--------|---------|
+| 1 | **DATASET** | Expansión a Región Andina | 200→2,019 imágenes (4 países: CO+EC+PE+CL) |
+| 2 | **DATASET** | Grilla de expansión | `_generate_grid()`: 9 tiles por zona base (center+8 dirs) |
+| 3 | **DATASET** | Augmentación reducida | 30→10 variaciones por imagen (óptimo para dataset grande) |
+| 4 | **PIPELINE** | Descarga paralela | 3 hilos concurrentes con 0.5s de delay entre descargas |
+| 5 | **PIPELINE** | Anti-leakage mejorado | GroupShuffleSplit: strips de sufijos de augmentación Y grilla |
+| 6 | **INFRA** | Disco externo NTFS | USB FAT32 15 GB → Disco externo NTFS Toshiba 931 GB |
+| 7 | **DOCS** | Catálogo geotérmico | Nuevo: `CAMPOS_GEOTERMICOS_REGION_ANDINA.md` (4 países) |
+| 8 | **DOCS** | Documentación completa | Todos los .md actualizados a v3 con referencias académicas |
+| 9 | **CONFIG** | NUM_AUGMENTATIONS | Cambiado de 5 a 10 en `config.py` |
+
+### Estadísticas del dataset v3
+
+| Métrica | v2 | v3 |
+|---------|----|----|
+| Imágenes base | 200 | **2,019** |
+| Positivas | 111 | **997** |
+| Negativas | 89 | **1,022** |
+| Augmentadas | 6,200 | **22,209** |
+| Grupos geográficos | ~200 | **4,038** |
+| Train | 4,223 | **15,453** |
+| Val | 960 | **3,414** |
+| Test | 1,017 | **3,342** |
+| Disco total | ~7.1 GB | **~38 GB** |
+| Balance (class weights) | 0.93/1.08 | **0.9945/1.0055** |
+
+### Compatibilidad v2→v3
+
+El modelo v3 **NO es compatible** con los `.npy` de v2 porque:
+1. Dataset expandido (2,019 vs 200 imágenes base).
+2. Augmentación reducida (×10 vs ×30).
+3. Nuevos grupos geográficos (4,038 vs ~200).
+4. Particionado diferente (31/7/7 vs 9/2/3 archivos).
+
+Se re-ejecutó todo el pipeline desde descarga.
+
+### Referencias académicas agregadas
+
+- Shorten & Khoshgoftaar (2019) — Data augmentation survey
+- Lahsen (1982) — Vulcanismo cenozoico en Chile
+- Muñoz-Sáez et al. (2018) — El Tatio, Chile
+- Bona & Coviello (2016) — Proyectos geotérmicos en América del Sur (CEPAL)
+- INGEMMET (2014) — Fuentes termales del Perú
+- Siebert et al. (2010) — Volcanes del Mundo (Smithsonian)
+- Gorelick et al. (2017) — Google Earth Engine
+- Efron & Tibshirani (1993) — Bootstrap

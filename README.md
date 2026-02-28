@@ -22,19 +22,25 @@ Implementación de un **modelo de Deep Learning basado en Redes Neuronales Convo
 
 > **Herramienta de screening (Fase 1 de exploración geotérmica):** Este modelo actúa como un filtro automatizado que analiza datos ASTER y produce una probabilidad (0–100%) de potencial geotérmico para cualquier punto de Colombia. Su objetivo es priorizar zonas para inversión en exploración detallada, no confirmar la existencia de recursos explotables. Ver [docs/CONTEXTO_GEOTERMICO.md](docs/CONTEXTO_GEOTERMICO.md) para fundamentos teóricos.
 
+> **Nota sobre el dataset (v3):** Para robustecer el entrenamiento, el dataset incluye zonas de la **Región Andina** (Colombia, Ecuador, Perú y Chile), ya que comparten el mismo contexto geológico del Cinturón de Fuego del Pacífico. La aplicación web y las conclusiones se limitan exclusivamente a Colombia. Ver [docs/CAMPOS_GEOTERMICOS_REGION_ANDINA.md](docs/CAMPOS_GEOTERMICOS_REGION_ANDINA.md).
+
 ### Características Principales
 
+- **Dataset Región Andina v3**: 2,019 imágenes base de 4 países (Colombia, Ecuador, Perú, Chile)
+- **22,209 imágenes** tras augmentación (×10 variaciones por imagen)
+- **Anti-leakage geográfico**: GroupShuffleSplit agrupa por zona geográfica base
+- **Descarga paralela**: 3 hilos concurrentes vía Google Earth Engine API
 - **Arquitectura CNN moderna** con bloques residuales (ResNet-inspired)
 - **Transfer Learning** con EfficientNet y ResNet50V2
 - **Mixed Precision Training** para optimizar rendimiento
 - **Data Augmentation** avanzado con SpatialDropout2D
-- **Métricas completas** (Accuracy, Precision, Recall, F1-Score, ROC AUC, PR-AUC)
-- **Visualizaciones profesionales** para análisis de resultados
+- **Métricas con Bootstrap CI 95%** (Accuracy, Precision, Recall, F1-Score, ROC AUC, MCC)
 - **Pipeline completo** desde descarga de datos hasta predicción
 - **Interfaz Web** con Streamlit para visualización interactiva
 - **Optimizador AdamW** con regularización de pesos mejorada
 - **Label Smoothing** para reducir overfitting
 - **Cosine Learning Rate Decay** para mejor convergencia
+- **Soporte disco externo**: Variable `GEOTERMIA_DATA_ROOT` para datasets grandes
 
 ---
 
@@ -75,33 +81,37 @@ La aplicación estará disponible en `http://localhost:8501`
 
 ## Zonas de Estudio
 
-El proyecto analiza zonas geotérmicas de interés en Colombia:
+El modelo se entrena con zonas de la **Región Andina** (4 países) y se aplica a **Colombia**.
 
-### Zonas de Alta Actividad Geotérmica
+### Dataset v3 — Región Andina
 
-1. **Nevado del Ruiz** (Tolima)
- - Coordenadas: -75.3222, 4.8951
- - Volcán activo con alta actividad geotérmica
+| País | Zonas positivas | Zonas negativas | Total |
+|------|:-:|:-:|:-:|
+| **Colombia** | ~375 (volcanes, termas, campos SGC) | ~89 (Llanos, Amazonía, Costa) | ~464 |
+| **Ecuador** | ~170 (Cotopaxi, Tungurahua, Chachimbiro…) | ~180 (costa, Amazonía) | ~350 |
+| **Perú** | ~160 (Misti, Ubinas, Tacna…) | ~180 (costa, sierra estable) | ~340 |
+| **Chile** | ~280 (El Tatio, Cerro Pabellón, Villarrica…) | ~575 (valle central, Patagonia) | ~855 |
+| **Total** | **997** | **1,022** | **2,019** |
 
-2. **Volcán Puracé** (Cauca)
- - Coordenadas: -76.4036, 2.3206
- - Sistema hidrotermal activo
+Cada zona se expande en una grilla de 9 tiles (center + 8 direcciones) para maximizar cobertura espacial. Ver catálogo completo en [docs/CAMPOS_GEOTERMICOS_REGION_ANDINA.md](docs/CAMPOS_GEOTERMICOS_REGION_ANDINA.md).
 
-3. **Paipa-Iza** (Boyacá)
- - Coordenadas: -73.1124, 5.7781
- - Campo geotérmico con aguas termales
+### Zonas Clave de Colombia
 
-4. **Volcán Galeras** (Nariño)
- - Volcán activo con manifestaciones geotérmicas
+1. **Nevado del Ruiz** (Tolima) — Volcán activo, campo geotérmico de alta entalpía
+2. **Volcán Puracé** (Cauca) — Campo geotérmico confirmado por SGC
+3. **Paipa-Iza** (Boyacá) — Campo de baja entalpía, aguas termales
+4. **Volcán Galeras** (Nariño) — Estratovolcán con fumarolas permanentes
+5. **Tufiño-Chiles** (Nariño) — Campo binacional Colombia-Ecuador
 
 ### Dataset Satelital
 
 **ASTER Global Emissivity Dataset (AG100) V003**
 - **Proveedor**: NASA/METI/AIST/Japan Spacesystems
-- **Resolución espacial**: 100 metros
-- **Bandas térmicas**: 10-14 (emisividad térmica infrarroja) + temperatura + NDVI
-- **Cobertura**: Global
-- **Fuente**: Google Earth Engine
+- **Resolución espacial**: 100 metros (escala 90 m/px en GEE)
+- **Bandas**: 7 (emisividad bandas 10-14 + temperatura superficial + NDVI)
+- **Buffer por zona**: 5 km de radio
+- **Cobertura**: Región Andina (Colombia, Ecuador, Perú, Chile)
+- **Fuente**: Google Earth Engine API (descarga paralela, 3 hilos)
 
 ---
 
@@ -113,17 +123,19 @@ geotermia-colombia-cnn/
 ├── app.py # Interfaz web Streamlit
 ├── config.py # Configuración centralizada de rutas
 │
-├── data/ # Datos del proyecto
+├── data/ # Datos (o GEOTERMIA_DATA_ROOT externo)
 │ ├── raw/ # Imágenes satelitales (.tif) + labels.csv
-│ ├── augmented/ # Dataset augmentado (se genera)
+│ ├── augmented/ # Dataset augmentado (×10, se genera)
 │ └── processed/ # Datos procesados (.npy, se genera)
 │
 ├── docs/ # Documentación técnica
 │ ├── RESUMEN_PROYECTO.md # Vista general, estado y monitoreo
 │ ├── MODELO_PREDICTIVO.md # Documentación técnica del modelo CNN
-│ ├── REGISTRO_PROCESO.md # Bitácora cronológica del proyecto
+│ ├── CAMPOS_GEOTERMICOS_REGION_ANDINA.md # Catálogo de campos geotérmicos (4 países)
+│ ├── CONTEXTO_GEOTERMICO.md # Fundamentos teóricos geotérmicos
 │ ├── ANALISIS_ENTRENAMIENTO.md # Análisis de métricas por época
-│ ├── MEJORAS_MODELO.md # Roadmap de optimizaciones
+│ ├── CHANGELOG_V2.md # Registro de cambios v1→v2
+│ ├── PREDICCIONES_PRUEBA.md # Predicciones y análisis
 │ └── GUIA_PASO_A_PASO.md # Guía completa paso a paso
 │
 ├── models/ # Modelos de Deep Learning
@@ -217,28 +229,72 @@ python setup.py
 
 ### Pipeline Completo
 
-#### **Paso 1: Preparar Dataset**
+> **Disco externo (opcional):** Si usas un disco externo para datos, configura antes:
+> ```bash
+> # Windows PowerShell
+> $env:GEOTERMIA_DATA_ROOT = "E:\geotermia_datos"
+> ```
+
+#### **Paso 1: Descargar Imágenes ASTER**
+
+```bash
+python scripts/download_dataset.py
+```
+
+**¿Qué hace?**
+- Descarga imágenes ASTER GED desde Google Earth Engine
+- 2,019 imágenes de la Región Andina (CO, EC, PE, CL)
+- Descarga paralela con 3 hilos concurrentes
+- Expande cada zona en grilla de 9 tiles
+- Genera `labels.csv` con metadatos
+
+**Salidas:**
+- `data/raw/*.tif` (imágenes 7 bandas, ~58 KB c/u)
+- `data/raw/labels.csv`
+
+---
+
+#### **Paso 2: Augmentar Dataset**
+
+```bash
+python scripts/augment_full_dataset.py
+```
+
+**¿Qué hace?**
+- Genera 10 variaciones por imagen (flips, rotación, brillo, noise, etc.)
+- Preserva las 7 bandas originales
+- 2,019 → 22,209 imágenes
+
+**Salidas:**
+- `data/augmented/*.tif` (~364 KB c/u, float32 sin compresión)
+- `data/augmented/labels.csv`
+
+---
+
+#### **Paso 3: Preparar Dataset**
 
 ```bash
 python scripts/prepare_dataset.py
 ```
 
 **¿Qué hace?**
-- Carga imágenes .tif desde `data/raw/`
-- Normaliza y redimensiona a 224×224
-- Crea splits train/validation/test (70/15/15)
-- Genera archivos .npy para carga rápida
+- Carga imágenes .tif desde `data/augmented/`
+- Normaliza y redimensiona a 224×224 (interpolación bicúbica)
+- Crea splits train/val/test (70/15/15) **con anti-leakage geográfico**
+- Usa GroupShuffleSplit agrupando por zona geográfica base
+- Genera archivos .npy particionados para carga incremental
 - Calcula pesos de clase para balanceo
 
 **Salidas:**
-- `data/processed/X_train.npy`
+- `data/processed/X_train_part_*.npy` (31 archivos)
 - `data/processed/y_train.npy`
-- `data/processed/X_val.npy`, `y_val.npy`
-- `data/processed/X_test.npy`, `y_test.npy`
+- `data/processed/X_val_part_*.npy` (7 archivos)
+- `data/processed/X_test_part_*.npy` (7 archivos)
+- `data/processed/class_weights.json`
 
 ---
 
-#### **Paso 2: Entrenar Modelo CNN**
+#### **Paso 4: Entrenar Modelo CNN**
 
 ```bash
 python scripts/train_model.py
@@ -264,7 +320,7 @@ tensorboard --logdir=logs
 
 ---
 
-#### **Paso 3: Evaluar Modelo**
+#### **Paso 5: Evaluar Modelo**
 
 ```bash
 python scripts/evaluate_model.py
@@ -273,15 +329,15 @@ python scripts/evaluate_model.py
 **¿Qué hace?**
 - Carga modelo entrenado
 - Realiza predicciones en conjunto de test
-- Calcula métricas completas
+- Calcula métricas con **Bootstrap CI 95%** (2,000 iteraciones)
 
 **Métricas calculadas:**
-- Accuracy (Exactitud)
-- Precision (Precisión)
-- Recall (Sensibilidad)
-- F1-Score
-- ROC AUC
-- R² Score
+- Accuracy (Exactitud) + IC 95%
+- Precision (Precisión) + IC 95%
+- Recall (Sensibilidad) + IC 95%
+- F1-Score + IC 95%
+- ROC AUC + IC 95%
+- MCC (Matthews Correlation Coefficient) + IC 95%
 - Confusion Matrix
 - Classification Report
 
@@ -291,7 +347,7 @@ python scripts/evaluate_model.py
 
 ---
 
-#### **Paso 4: Generar Visualizaciones**
+#### **Paso 6: Generar Visualizaciones**
 
 ```bash
 python scripts/visualize_results.py
@@ -311,7 +367,7 @@ python scripts/visualize_results.py
 
 ---
 
-#### **Paso 5: Hacer Predicciones**
+#### **Paso 7: Hacer Predicciones**
 
 **Predicción en una imagen:**
 ```bash
@@ -374,8 +430,8 @@ Output (1 neuron, sigmoid)
 | **AdamW** | Adam con weight decay correcto | Mejor generalización |
 | **Label Smoothing** | Suavizado de etiquetas (0.1) | Reduce overfitting |
 | **Cosine LR Decay** | Learning rate decae como coseno | Mejor convergencia |
-| **PR-AUC Métric** | AUC de Precision-Recall | Mejor para clases desbalanceadas |
-| **F1-Score directo** | Métrica F1 durante entrenamiento | Monitoreo completo |
+| **Bootstrap CI 95%** | Intervalos de confianza para métricas | Validez estadística |
+| **GroupShuffleSplit** | Anti-leakage geográfico | Sin contaminación train/test |
 
 ### Modelo con Transfer Learning (Alternativa)
 
@@ -390,26 +446,30 @@ model = create_geotermia_model(
 
 ---
 
-## Resultados Esperados
+## Resultados
 
-### Métricas de Rendimiento
+### Resultados v2 (Colombia, 200 imágenes base)
 
-| Métrica | Valor Esperado |
-|---------|----------------|
-| **Accuracy** | > 85% |
-| **Precision** | > 80% |
-| **Recall** | > 80% |
-| **F1-Score** | > 80% |
-| **ROC AUC** | > 0.90 |
+| Métrica | Valor |
+|---------|-------|
+| **Accuracy** | 91.45% |
+| **Precision** | 92.31% |
+| **Recall** | 93.75% |
+| **F1-Score** | 93.02% |
+| **ROC AUC** | 0.983 |
+
+### Resultados v3 (Región Andina, 2,019 imágenes base)
+
+> **Pendiente**: El modelo v3 aún no ha sido entrenado. Los resultados se actualizarán tras completar el entrenamiento con el dataset expandido de 22,209 imágenes.
 
 ### Visualizaciones para Tesis
 
 Todos los gráficos se generan en alta resolución (300 DPI) listos para incluir en documentos académicos:
 
-1. **Training History**: Evolución de Loss y Accuracy
+1. **Training History**: Evolución de Loss y Accuracy por época
 2. **Confusion Matrix**: Matriz de confusión con heatmap
-3. **ROC Curve**: Curva ROC con AUC score
-4. **Metrics Comparison**: Comparación visual de todas las métricas
+3. **ROC Curve**: Curva ROC con AUC score e IC 95%
+4. **Metrics Comparison**: Comparación visual con intervalos de confianza
 
 ---
 
@@ -452,12 +512,12 @@ Todos los gráficos se generan en alta resolución (300 DPI) listos para incluir
 
 El proyecto sigue el proceso **CRISP-DM** (Cross-Industry Standard Process for Data Mining), adaptado para Deep Learning:
 
-1. **Comprensión del negocio**: Identificación de la necesidad de exploración geotérmica en Colombia
-2. **Comprensión de los datos**: Análisis de imágenes ASTER y sus bandas térmicas
-3. **Preparación de datos**: Descarga, augmentación, normalización y división estratificada
-4. **Modelado**: Diseño y entrenamiento de la arquitectura CNN con bloques residuales
-5. **Evaluación**: Métricas de clasificación (Accuracy, Precision, Recall, F1, ROC-AUC)
-6. **Despliegue**: Interfaz web con Streamlit para predicción interactiva
+1. **Comprensión del negocio**: Necesidad de exploración geotérmica eficiente en Colombia
+2. **Comprensión de los datos**: Análisis de imágenes ASTER GED (7 bandas: emisividad TIR + temperatura + NDVI)
+3. **Preparación de datos**: Descarga paralela desde GEE, augmentación (×10), normalización, split con anti-leakage geográfico (GroupShuffleSplit)
+4. **Modelado**: Arquitectura CNN con bloques residuales + Transfer Learning (EfficientNet/ResNet50V2)
+5. **Evaluación**: Métricas con Bootstrap CI 95% (Accuracy, Precision, Recall, F1, ROC-AUC, MCC)
+6. **Despliegue**: Interfaz web con Streamlit para predicción interactiva sobre Colombia
 
 ---
 
@@ -485,10 +545,12 @@ Este proyecto contribuye a la **exploración geotérmica en Colombia** mediante:
 
 - **[docs/RESUMEN_PROYECTO.md](docs/RESUMEN_PROYECTO.md)**: Vista general del proyecto y guía de monitoreo
 - **[docs/MODELO_PREDICTIVO.md](docs/MODELO_PREDICTIVO.md)**: Documentación técnica completa del modelo CNN
-- **[docs/REGISTRO_PROCESO.md](docs/REGISTRO_PROCESO.md)**: Bitácora cronológica de todas las fases
+- **[docs/CAMPOS_GEOTERMICOS_REGION_ANDINA.md](docs/CAMPOS_GEOTERMICOS_REGION_ANDINA.md)**: Catálogo de campos geotérmicos (4 países)
+- **[docs/CONTEXTO_GEOTERMICO.md](docs/CONTEXTO_GEOTERMICO.md)**: Fundamentos teóricos geotérmicos
 - **[docs/GUIA_PASO_A_PASO.md](docs/GUIA_PASO_A_PASO.md)**: Guía completa paso a paso (incluye entrenamiento externo con GPU)
-- **[docs/MEJORAS_MODELO.md](docs/MEJORAS_MODELO.md)**: Roadmap de optimizaciones aplicadas y futuras
+- **[docs/CHANGELOG_V2.md](docs/CHANGELOG_V2.md)**: Registro de cambios v1→v2
 - **[docs/ANALISIS_ENTRENAMIENTO.md](docs/ANALISIS_ENTRENAMIENTO.md)**: Análisis detallado por época
+- **[docs/PREDICCIONES_PRUEBA.md](docs/PREDICCIONES_PRUEBA.md)**: Predicciones de prueba y análisis
 - **[models/README.md](models/README.md)**: Documentación de modelos
 - **[scripts/README.md](scripts/README.md)**: Guía de scripts
 - **[results/README.md](results/README.md)**: Interpretación de resultados
@@ -563,11 +625,29 @@ Se concede permiso para usar, copiar, modificar y distribuir este software...
 
 2. He, K., Zhang, X., Ren, S., & Sun, J. (2016). Deep residual learning for image recognition. *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, 770-778.
 
-3. Abedi, M. M., & Norouzi, G.-H. (2012). Integration of various geophysical data with geological and geochemical data to determine additional drilling for copper exploration. *Journal of Applied Geophysics*, 83, 35-45.
+3. Coolbaugh, M. F., Kratt, C., Fallacaro, A., Calvin, W. M., & Taranik, J. V. (2007). Detection of geothermal anomalies using Advanced Spaceborne Thermal Emission and Reflection Radiometer (ASTER) thermal infrared images at Bradys Hot Springs, Nevada, USA. *Remote Sensing of Environment*, 106(3), 350-359.
 
-4. Coolbaugh, M. F., Kratt, C., Fallacaro, A., Calvin, W. M., & Taranik, J. V. (2007). Detection of geothermal anomalies using Advanced Spaceborne Thermal Emission and Reflection Radiometer (ASTER) thermal infrared images at Bradys Hot Springs, Nevada, USA. *Remote Sensing of Environment*, 106(3), 350-359.
+4. LeCun, Y., Bengio, Y., & Hinton, G. (2015). Deep learning. *Nature*, 521(7553), 436-444.
 
-5. Lecun, Y., Bengio, Y., & Hinton, G. (2015). Deep learning. *Nature*, 521(7553), 436-444.
+5. Shorten, C., & Khoshgoftaar, T. M. (2019). A survey on image data augmentation for deep learning. *Journal of Big Data*, 6(1), 60. https://doi.org/10.1186/s40537-019-0197-0
+
+6. Lahsen, A. (1982). Upper Cenozoic volcanism and tectonism in the Andes of northern Chile. *Earth-Science Reviews*, 18(3), 285-302.
+
+7. Muñoz-Sáez, C., Manga, M., & Hurwitz, S. (2018). Hydrothermal discharge from the El Tatio basin, Atacama, Chile. *Journal of Volcanology and Geothermal Research*, 361, 25-35.
+
+8. Bona, P., & Coviello, M. (2016). *Valoración y gobernanza de los proyectos geotérmicos en América del Sur*. CEPAL.
+
+9. INGEMMET. (2014). *Inventario de fuentes termales del Perú*. Instituto Geológico, Minero y Metalúrgico del Perú.
+
+10. Siebert, L., Simkin, T., & Kimberly, P. (2010). *Volcanoes of the World* (3rd ed.). Smithsonian Institution / University of California Press.
+
+11. Alfaro, C., Ponce, P., Monsalve, M. L., & Ortiz, I. (2017). Geothermal potential of the Paipa volcano-hydrothermal system, Colombia. *Proceedings World Geothermal Congress 2015*.
+
+12. Servicio Geológico Colombiano (SGC). (2019). *Mapa de amenaza volcánica del Volcán Nevado del Ruiz*.
+
+13. Gorelick, N., Hancher, M., Dixon, M., Ilyushchenko, S., Thau, D., & Moore, R. (2017). Google Earth Engine: Planetary-scale geospatial analysis for everyone. *Remote Sensing of Environment*, 202, 18-27.
+
+14. Efron, B., & Tibshirani, R. J. (1993). *An Introduction to the Bootstrap*. Chapman and Hall/CRC.
 
 ### Dataset
 

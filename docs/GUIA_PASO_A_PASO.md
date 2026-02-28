@@ -4,7 +4,7 @@
 > el pipeline completo del proyecto: desde cero hasta un modelo entrenado y la
 > interfaz Streamlit funcionando.
 >
-> **Última actualización**: 25 de febrero de 2026 
+> **Última actualización**: 27 de febrero de 2026 
 > **Autores**: Cristian Vega, Daniel Arévalo, Yuliet Espitia, Laura Rivera 
 > **Universidad de San Buenaventura — Bogotá**
 
@@ -37,7 +37,7 @@
 | pip | 23+ | `python -m pip install --upgrade pip` |
 | Git | 2.x | Para clonar el repo |
 | Cuenta Google | — | Para Google Earth Engine |
-| Espacio disco | ~10 GB | Dataset completo + modelo |
+| Espacio disco | ~40 GB | Dataset v3 completo (~30 GB procesado + raw + augmented) |
 | GPU (opcional) | NVIDIA + CUDA 12 | Acelera el entrenamiento. Sin GPU funciona en CPU |
 
 ---
@@ -153,14 +153,14 @@ D:\geotermia_datos\ ← (o E:\, F:\, la letra que tenga tu disco)
  negative\
  labels.csv
  processed\
- X_train_part00.npy … X_train_part08.npy
- y_train_part00.npy … y_train_part08.npy
- X_val_part00.npy … X_val_part01.npy
- y_val_part00.npy … y_val_part01.npy
- X_test_part00.npy … X_test_part02.npy
- y_test_part00.npy … y_test_part02.npy
- split_info.json
-```
+   X_train_part00.npy … X_train_part30.npy
+   y_train.npy
+   X_val_part00.npy … X_val_part06.npy
+   y_val.npy
+   X_test_part00.npy … X_test_part06.npy
+   y_test.npy
+   split_info.json
+   class_weights.json
 
 **Configurar la ruta** (elige UNA de estas opciones):
 
@@ -168,10 +168,10 @@ D:\geotermia_datos\ ← (o E:\, F:\, la letra que tenga tu disco)
 
 ```powershell
 # Windows PowerShell (sesión actual)
-$env:GEOTERMIA_DATA_ROOT = "D:\geotermia_datos"
+$env:GEOTERMIA_DATA_ROOT = "E:\geotermia_datos"
 
 # Windows PowerShell (permanente para el usuario)
-[Environment]::SetEnvironmentVariable("GEOTERMIA_DATA_ROOT", "D:\geotermia_datos", "User")
+[Environment]::SetEnvironmentVariable("GEOTERMIA_DATA_ROOT", "E:\geotermia_datos", "User")
 ```
 
 ```bash
@@ -183,7 +183,7 @@ export GEOTERMIA_DATA_ROOT="/media/usuario/disco_externo/geotermia_datos"
 
 Crea un archivo `.env` en la raíz del proyecto:
 ```
-GEOTERMIA_DATA_ROOT=D:\geotermia_datos
+GEOTERMIA_DATA_ROOT=E:\geotermia_datos
 ```
 
 > Los scripts leen esta variable automáticamente desde `config.py`.
@@ -205,12 +205,12 @@ CONFIGURACIÓN DEL PROYECTO GEOTERMIA CNN
 ============================================================
  Fuente de datos : env $GEOTERMIA_DATA_ROOT
  Disco externo : SÍ
- Data root : D:\geotermia_datos
+ Data root       : E:\geotermia_datos
  
- raw/positive → 111 .tif, 0 .npy
- raw/negative → 89 .tif, 0 .npy
- augmented → 6200 .tif, 0 .npy
- processed → 0 .tif, 14 .npy (particionados)
+ raw/positive    → 997 .tif, 0 .npy
+ raw/negative    → 1022 .tif, 0 .npy
+ augmented       → 22209 .tif, 0 .npy
+ processed       → 0 .tif, 45 .npy (particionados)
 ============================================================
 ```
 
@@ -220,20 +220,20 @@ Si ya descargaste las imágenes en otro equipo:
 
 ```powershell
 # 1. Crear estructura en el disco externo
-mkdir D:\geotermia_datos\raw\positive
-mkdir D:\geotermia_datos\raw\negative
-mkdir D:\geotermia_datos\augmented\positive
-mkdir D:\geotermia_datos\augmented\negative
-mkdir D:\geotermia_datos\processed
+mkdir E:\geotermia_datos\raw\positive
+mkdir E:\geotermia_datos\raw\negative
+mkdir E:\geotermia_datos\augmented\positive
+mkdir E:\geotermia_datos\augmented\negative
+mkdir E:\geotermia_datos\processed
 
 # 2. Copiar imágenes desde el proyecto local
-xcopy /E data\raw\positive D:\geotermia_datos\raw\positive\
-xcopy /E data\raw\negative D:\geotermia_datos\raw\negative\
-copy data\raw\labels.csv D:\geotermia_datos\raw\
+xcopy /E data\raw\positive E:\geotermia_datos\raw\positive\
+xcopy /E data\raw\negative E:\geotermia_datos\raw\negative\
+copy data\raw\labels.csv E:\geotermia_datos\raw\
 
 # 3. Si ya tienes augmentados y procesados, copiarlos también
-xcopy /E data\augmented D:\geotermia_datos\augmented\
-xcopy /E data\processed D:\geotermia_datos\processed\
+xcopy /E data\augmented E:\geotermia_datos\augmented\
+xcopy /E data\processed E:\geotermia_datos\processed\
 ```
 
 ---
@@ -247,18 +247,21 @@ xcopy /E data\processed D:\geotermia_datos\processed\
 python scripts/download_dataset.py
 ```
 
-- Descarga **200 imágenes** ASTER GED (7 bandas: 5 de emisividad térmica + Temperatura + NDVI)
-- 111 zonas geotérmicas (volcanes: Ruiz, Puracé, Galeras, Paipa-Iza, Azufral, Sotará, etc.)
-- 89 zonas de control (Llanos, Amazonía, Costa Caribe, Altiplano Cundi-Boyacense, etc.)
-- Resolución: 100 m/pixel (ASTER GED AG100), radio 5 km por zona
-- Tiempo estimado: 15-30 minutos
+- Descarga **2,019 imágenes** ASTER GED (7 bandas: 5 de emisividad térmica + Temperatura + NDVI)
+- **Región Andina**: Colombia, Ecuador, Perú y Chile (véase [CAMPOS_GEOTERMICOS_REGION_ANDINA.md](CAMPOS_GEOTERMICOS_REGION_ANDINA.md))
+- 997 zonas geotérmicas + 1,022 zonas de control
+- Expansión por grilla: cada zona base genera 9 tiles (center + 8 direcciones)
+- **Descarga paralela**: 3 hilos concurrentes con 0.5s de delay
+- Resolución: 90 m/pixel (ASTER GED AG100), radio 5 km por zona
+- Tiempo estimado: 30-60 minutos
 - Requiere conexión a internet y auth de Earth Engine
 
 **Salida**:
 ```
-data/raw/positive/ ← 111 archivos .tif
-data/raw/negative/ ← 89 archivos .tif
+data/raw/positive/ ← 997 archivos .tif (~58 KB c/u)
+data/raw/negative/ ← 1,022 archivos .tif (~58 KB c/u)
 data/raw/labels.csv ← archivo de etiquetas
+Total: ~115 MB
 ```
 
 > Si configuraste `GEOTERMIA_DATA_ROOT`, las imágenes se guardarán directamente 
@@ -272,17 +275,17 @@ data/raw/labels.csv ← archivo de etiquetas
 python scripts/augment_full_dataset.py
 ```
 
-- Aplica 30 técnicas de augmentación a cada imagen
-- Genera ~31× más imágenes (original + 30 variaciones)
+- Aplica **10 variaciones** de augmentación a cada imagen
+- Genera ~11× más imágenes (original + 10 variaciones)
 - Técnicas: rotación, flip, brillo, contraste, ruido, blur, crop, combinaciones
-- Tiempo estimado: 10-20 minutos
+- Tiempo estimado: 30-50 minutos (2,019 originales)
 
-**Salida** (con 200 originales):
+**Salida** (con 2,019 originales):
 ```
 data/augmented/positive/ ← imágenes positivas augmentadas
 data/augmented/negative/ ← imágenes negativas augmentadas
 data/augmented/labels.csv
-Total: ~6,200 imágenes
+Total: ~22,209 imágenes (~7.9 GB)
 ```
 
 ---
@@ -297,24 +300,25 @@ python scripts/prepare_dataset.py
 - Redimensiona a 224×224 píxeles
 - Normaliza por banda (z-score: media=0, std=1)
 - Filtra imágenes con NoData (valores ≤ 0 en emisividad)
-- Divide en train/val/test (~68/15.5/16.5) con **GroupShuffleSplit** (las augmentaciones de una misma imagen original quedan en el mismo split)
+- Divide en train/val/test (~70/15/15) con **GroupShuffleSplit** (anti-leakage geográfico: augmentaciones Y tiles de grilla del mismo punto quedan en el mismo split)
 - Calcula pesos de clase para balanceo
-- Tiempo estimado: 5-15 minutos
+- Tiempo estimado: 15-40 minutos (22,209 imágenes)
 
-**Salida** (archivos **particionados** para compatibilidad FAT32):
+**Salida** (archivos **particionados**, ~500 imágenes por parte):
 ```
 data/processed/
- X_train_part00.npy … X_train_part08.npy ← 9 partes (~500 imgs c/u)
- y_train_part00.npy … y_train_part08.npy
- X_val_part00.npy … X_val_part01.npy ← 2 partes
- y_val_part00.npy … y_val_part01.npy
- X_test_part00.npy … X_test_part02.npy ← 3 partes
- y_test_part00.npy … y_test_part02.npy
+ X_train_part00.npy … X_train_part30.npy ← 31 partes
+ y_train.npy
+ X_val_part00.npy … X_val_part06.npy   ← 7 partes
+ y_val.npy
+ X_test_part00.npy … X_test_part06.npy  ← 7 partes
+ y_test.npy
  split_info.json ← metadatos del split
+ class_weights.json
 ```
 
-> Los archivos .npy se particionan (~500 imágenes por parte) para no exceder el
-> límite de 4 GB de FAT32. Si usas disco externo, se guardarán ahí.
+> Los archivos .npy se particionan (~500 imágenes por parte) para eficiencia
+> de carga en RAM. Total: ~30 GB procesados.
 
 ---
 
@@ -340,9 +344,12 @@ python scripts/train_model.py
 
 | Hardware | Tiempo por época | Total (~20-30 épocas con EarlyStopping) |
 |----------|-----------------|----------------------|
-| CPU (i5/i7) | ~90 seg | 30-45 min |
-| GPU GTX 1060+ | 15-30 seg | 8-15 min |
-| GPU RTX 3060+ | 5-15 seg | 3-8 min |
+| CPU (i5/i7) | ~5-8 min | 2-4 horas |
+| GPU GTX 1060+ | 30-60 seg | 15-30 min |
+| GPU RTX 3060+ | 15-30 seg | 8-15 min |
+
+> **Nota v3:** Con 22,209 imágenes (15,453 train), los tiempos por época son
+> significativamente mayores que v2 (6,200 imgs). Se recomienda GPU.
 
 ### Callbacks automáticos
 
@@ -476,7 +483,7 @@ python scripts/prepare_dataset.py
 ### Error: `No .tif files found`
 No hay imágenes descargadas. Opciones:
 1. Descarga con `python scripts/download_dataset.py`
-2. O configura el disco externo: `$env:GEOTERMIA_DATA_ROOT = "D:\geotermia_datos"`
+2. O configura el disco externo: `$env:GEOTERMIA_DATA_ROOT = "E:\geotermia_datos"`
 
 ### Las imágenes están en el disco externo pero no las encuentra
 Verifica:
@@ -484,7 +491,7 @@ Verifica:
 python config.py
 ```
 Si dice "local (data/)", la variable de entorno no está configurada.
-Asegúrate de que la letra de unidad sea correcta (D:\, E:\, F:\...).
+Asegúrate de que la letra de unidad sea correcta (E:\, D:\, F:\...).
 
 ### Error: Earth Engine `Not signed up`
 ```bash
@@ -510,18 +517,18 @@ pip install -r requirements.txt
 pip install streamlit streamlit-folium fpdf2
 
 # 2. (Opcional) Configurar disco externo
-$env:GEOTERMIA_DATA_ROOT = "D:\geotermia_datos"
+$env:GEOTERMIA_DATA_ROOT = "E:\geotermia_datos"
 
 # 3. Verificar config
 python config.py
 
 # 4. Pipeline de datos (saltar si ya tienes los .npy)
-python scripts/download_dataset.py # ~30 min, requiere internet (200 imágenes)
-python scripts/augment_full_dataset.py # ~15 min (~6,200 augmentadas)
-python scripts/prepare_dataset.py # ~10 min (particionado para FAT32)
+python scripts/download_dataset.py        # ~45 min, requiere internet (2,019 imágenes)
+python scripts/augment_full_dataset.py     # ~40 min (~22,209 augmentadas)
+python scripts/prepare_dataset.py          # ~30 min (particionado, ~30 GB)
 
 # 5. Entrenar
-python scripts/train_model.py # 15 min (GPU) / 35 min (CPU)
+python scripts/train_model.py  # 2-4 h (CPU) / 15-30 min (GPU)
 
 # 6. Interfaz
 streamlit run app.py --server.headless true
