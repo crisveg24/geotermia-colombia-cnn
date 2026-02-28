@@ -99,10 +99,10 @@ class ProjectConfig:
         self.LEARNING_RATE = 1e-3
         self.WEIGHT_DECAY = 1e-4
 
-        # Augmentación: con ~2000 imgs base, 5 aug/img dan ~12000 total
-        # (suficiente para CNN robusta sin explotar disco/RAM).
+        # Augmentación: con ~2045 imgs base, 10 aug/img dan ~22495 total
+        # Sweet spot para CNN robusta (buena cobertura de 8 tipos de aug).
         # Con <300 imgs base, subir a 30 para compensar.
-        self.NUM_AUGMENTATIONS = 5
+        self.NUM_AUGMENTATIONS = 10
         self.LABEL_SMOOTHING = 0.1
 
         # 5. Google Earth Engine (v2: centralizado, BUG 10)
