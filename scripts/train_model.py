@@ -47,6 +47,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def _read_npy_header(f, version):
+    """Wrapper compatible con NumPy 1.x y 2.x para leer headers .npy."""
+    if hasattr(np.lib.format, '_read_array_header'):
+        return np.lib.format._read_array_header(f, version)
+    if version == (1, 0):
+        return np.lib.format.read_array_header_1_0(f)
+    return np.lib.format.read_array_header_2_0(f)
+
+
 class GeotermiaCNNTrainer:
     """
     Clase para entrenar el modelo CNN de geotermia con configuración avanzada.
@@ -168,16 +177,24 @@ class GeotermiaCNNTrainer:
         Obtiene rutas de X_train particionado sin cargar en RAM.
         Si existe X_train.npy unico, retorna [path].
         """
-        single = self.processed_data_path / 'X_train.npy'
+        return self._get_split_part_paths('X_train')
+
+    def _get_split_part_paths(self, prefix: str) -> list:
+        """
+        Obtiene rutas de un split particionado sin cargar en RAM.
+        Si existe <prefix>.npy unico, retorna [path].
+        Si existen <prefix>_part*.npy, retorna lista ordenada.
+        """
+        single = self.processed_data_path / f'{prefix}.npy'
         if single.exists():
             return [single]
 
         import glob as _glob
-        pattern = str(self.processed_data_path / 'X_train_part*.npy')
+        pattern = str(self.processed_data_path / f'{prefix}_part*.npy')
         parts = sorted(_glob.glob(pattern))
         if not parts:
             raise FileNotFoundError(
-                "No se encontro X_train.npy ni X_train_part*.npy"
+                f"No se encontro {single} ni archivos {prefix}_part*.npy"
             )
         return [Path(p) for p in parts]
 
@@ -196,14 +213,15 @@ class GeotermiaCNNTrainer:
         logger.info(f"Ruta: {self.processed_data_path}")
 
         try:
-            # Train X: solo rutas a partes (no cargar 5.5 GB en RAM)
+            # Train X: solo rutas a partes (no cargar ~20 GB en RAM)
             train_parts = self._get_train_part_paths()
             y_train = self._load_partitioned_or_single('y_train')
 
-            # Val/Test: carga completa (caben en RAM)
-            X_val = self._load_partitioned_or_single('X_val')
+            # Val: también puede estar particionado (~4.7 GB)
+            val_parts = self._get_split_part_paths('X_val')
             y_val = self._load_partitioned_or_single('y_val')
-            X_test = self._load_partitioned_or_single('X_test')
+
+            # Test: cargar info pero no los datos (no se usan en train)
             y_test = self._load_partitioned_or_single('y_test')
 
             with open(self.processed_data_path / 'split_info.json', 'r') as f:
@@ -212,7 +230,7 @@ class GeotermiaCNNTrainer:
             # Auto-detectar input_shape desde header del primer part
             with open(str(train_parts[0]), 'rb') as f:
                 version = np.lib.format.read_magic(f)
-                shape_info = np.lib.format._read_array_header(f, version)
+                shape_info = _read_npy_header(f, version)
             actual_shape = shape_info[0][1:]  # (224, 224, N_bands)
             if actual_shape != self.input_shape:
                 logger.warning(
@@ -224,15 +242,14 @@ class GeotermiaCNNTrainer:
 
             logger.info(f"Datos cargados:")
             logger.info(f"  Train: {len(y_train)} imgs en {len(train_parts)} parte(s)")
-            logger.info(f"  Validation: {X_val.shape} | y: {y_val.shape}")
-            logger.info(f"  Test: {X_test.shape} | y: {y_test.shape}")
+            logger.info(f"  Validation: {len(y_val)} imgs en {len(val_parts)} parte(s)")
+            logger.info(f"  Test: {len(y_test)} imgs (no se cargan en train)")
 
             return {
                 'train_parts': train_parts,
                 'y_train': y_train,
-                'X_val': X_val,
+                'val_parts': val_parts,
                 'y_val': y_val,
-                'X_test': X_test,
                 'y_test': y_test,
                 'class_weights': split_info.get('class_weights', None)
             }
@@ -246,31 +263,44 @@ class GeotermiaCNNTrainer:
         self,
         train_parts: list,
         y_train: np.ndarray,
-        X_val: np.ndarray,
+        val_parts: list,
         y_val: np.ndarray
     ) -> tuple:
         """
         Crea generadores de datos con augmentation.
 
-        Train: generador part-aware que carga un lote (~670 MB) a la vez
-        desde USB. Shuffle a nivel de partes + shuffle dentro de cada parte.
-        Val: generador simple desde array en RAM.
+        v3.3 FIX — Estrategia I/O-eficiente:
+        El generador anterior hacía shuffle global con random access sobre
+        31 partes y un cache LRU de 2. Esto causaba evict constante
+        (~15 recargas de 670 MB por época desde USB) → cuello de botella
+        catastrófico y "épocas fantasma" donde TF esperaba datos.
+
+        Nueva estrategia:
+        1. Shuffle el orden de las partes cada época
+        2. Cargar UNA parte completa a la vez (~670 MB)
+        3. Shuffle todas las muestras DENTRO de esa parte
+        4. Yield batch a batch (no sample a sample)
+        Resultado: lectura secuencial, máximo throughput, sin thrashing.
+
+        El shuffle de partes + shuffle intra-parte da buena aleatoriedad
+        estadística sin penalizar I/O.
 
         Args:
         train_parts: Lista de rutas a X_train_part*.npy
         y_train: Labels completos de train
-        X_val, y_val: Datos de validacion (en RAM)
+        val_parts: Lista de rutas a X_val_part*.npy
+        y_val: Labels completos de validación
 
         Returns:
-        Tupla de (train_dataset, val_dataset, steps_per_epoch)
+        Tupla de (train_dataset, val_dataset, steps_per_epoch, validation_steps)
         """
-        logger.info("Creando generadores de datos (part-aware streaming)...")
+        logger.info("Creando generadores de datos (part-sequential v3.3)...")
 
-        n_val = len(X_val)
+        n_val = len(y_val)
         # Obtener input_shape del header del primer part sin cargarlo
         with open(str(train_parts[0]), 'rb') as f:
             version = np.lib.format.read_magic(f)
-            shape_info = np.lib.format._read_array_header(f, version)
+            shape_info = _read_npy_header(f, version)
         input_shape = shape_info[0][1:]  # (224, 224, 7)
         n_train = len(y_train)
 
@@ -280,31 +310,77 @@ class GeotermiaCNNTrainer:
         for p in train_parts:
             with open(str(p), 'rb') as f:
                 ver = np.lib.format.read_magic(f)
-                sh = np.lib.format._read_array_header(f, ver)
+                sh = _read_npy_header(f, ver)
             part_n = sh[0][0]
             part_offsets.append((offset, offset + part_n))
             offset += part_n
 
+        # Calcular offsets de validación
+        val_offsets = []
+        offset = 0
+        for p in val_parts:
+            with open(str(p), 'rb') as f:
+                ver = np.lib.format.read_magic(f)
+                sh = _read_npy_header(f, ver)
+            part_n = sh[0][0]
+            val_offsets.append((offset, offset + part_n))
+            offset += part_n
+
         logger.info(f"Train: {n_train} imgs, {len(train_parts)} partes, input={input_shape}")
+        logger.info(f"  Labels: clase0={int((y_train==0).sum())} clase1={int((y_train==1).sum())}")
+        logger.info(f"Val: {n_val} imgs, {len(val_parts)} partes")
 
-        # Generador de train: carga 1 parte a la vez (~670 MB)
+        # Verificar mezcla de clases en partes
+        segregated = 0
+        for pi, (s, e) in enumerate(part_offsets):
+            c0 = int((y_train[s:e] == 0).sum())
+            c1 = int((y_train[s:e] == 1).sum())
+            if c0 == 0 or c1 == 0:
+                segregated += 1
+        if segregated > 0:
+            logger.warning(f"  {segregated}/{len(train_parts)} partes tienen UNA sola clase!")
+            logger.warning("  Ejecuta el script de reshuffle para mezclar clases en cada parte.")
+        else:
+            logger.info("  ✓ Todas las partes tienen ambas clases (pre-shuffled)")
+
+        # ── Generador de train: secuencial por partes + shuffle intra-parte ──
+        # Las partes YA están pre-shuffleadas con clases mezcladas (50/50),
+        # así que la lectura secuencial parte-por-parte produce batches
+        # balanceados. Shuffle de orden de partes + shuffle intra-parte
+        # da buena aleatoriedad sin penalizar I/O.
+        bs = self.batch_size
+
         def train_gen():
-            part_order = np.arange(len(train_parts))
-            np.random.shuffle(part_order)
-            for pi in part_order:
-                X_part = np.load(str(train_parts[pi]))
-                s, e = part_offsets[pi]
-                y_part = y_train[s:e]
-                local_idx = np.arange(len(X_part))
-                np.random.shuffle(local_idx)
-                for li in local_idx:
-                    yield X_part[li], y_part[li].reshape(1).astype(np.float32)
-                del X_part
+            rng = np.random.RandomState()
+            while True:
+                # Shuffle orden de partes cada época
+                part_order = rng.permutation(len(train_parts))
 
-        # Generador de val (sin shuffle, todo en RAM)
+                for pi in part_order:
+                    X_part = np.load(str(train_parts[pi]))
+                    s, e = part_offsets[pi]
+                    y_part = y_train[s:e]
+
+                    # Shuffle intra-parte
+                    idx = rng.permutation(len(X_part))
+                    X_part = X_part[idx]
+                    y_part = y_part[idx]
+
+                    for i in range(len(X_part)):
+                        yield X_part[i], y_part[i].reshape(1).astype(np.float32)
+
+                    del X_part, y_part
+
+        # ── Generador de val: secuencial por partes, desde disco ──
         def val_gen():
-            for i in range(n_val):
-                yield X_val[i], y_val[i].reshape(1).astype(np.float32)
+            while True:
+                for vi in range(len(val_parts)):
+                    X_vpart = np.load(str(val_parts[vi]))
+                    vs, ve = val_offsets[vi]
+                    y_vpart = y_val[vs:ve]
+                    for i in range(len(X_vpart)):
+                        yield X_vpart[i], y_vpart[i].reshape(1).astype(np.float32)
+                    del X_vpart, y_vpart
 
         output_sig = (
             tf.TensorSpec(shape=input_shape, dtype=tf.float32),
@@ -314,7 +390,7 @@ class GeotermiaCNNTrainer:
         train_dataset = tf.data.Dataset.from_generator(
             train_gen, output_signature=output_sig
         )
-        train_dataset = train_dataset.batch(self.batch_size)
+        train_dataset = train_dataset.batch(bs)
 
         if self.use_augmentation:
             logger.info("Data Augmentation ACTIVADO")
@@ -335,19 +411,24 @@ class GeotermiaCNNTrainer:
         else:
             logger.info("Data Augmentation DESACTIVADO")
 
-        train_dataset = train_dataset.prefetch(tf.data.AUTOTUNE)
+        # prefetch 2 batches para solapar I/O con cómputo GPU
+        train_dataset = train_dataset.prefetch(2)
 
         # Validation dataset (sin augmentation)
         val_dataset = tf.data.Dataset.from_generator(
             val_gen, output_signature=output_sig
         )
-        val_dataset = val_dataset.batch(self.batch_size)
-        val_dataset = val_dataset.prefetch(tf.data.AUTOTUNE)
+        val_dataset = val_dataset.batch(bs)
+        val_dataset = val_dataset.prefetch(2)
 
-        # steps_per_epoch para que TF sepa cuando termina una epoca
-        steps_per_epoch = (n_train + self.batch_size - 1) // self.batch_size
+        # steps_per_epoch y validation_steps para que TF sepa cuándo
+        # termina cada época (generadores son infinitos)
+        steps_per_epoch = n_train // bs  # drop_last para batches uniformes
+        validation_steps = max(1, n_val // bs)
 
-        return train_dataset, val_dataset, steps_per_epoch
+        logger.info(f"  steps_per_epoch={steps_per_epoch}, validation_steps={validation_steps}")
+
+        return train_dataset, val_dataset, steps_per_epoch, validation_steps
 
     def create_callbacks(self, model_name: str) -> list:
         """
@@ -437,7 +518,7 @@ class GeotermiaCNNTrainer:
 
         train_parts = data['train_parts']
         y_train = data['y_train']
-        X_val = data['X_val']
+        val_parts = data['val_parts']
         y_val = data['y_val']
 
         # Nota: el reshape de labels a 2D (N,1) se hace dentro del
@@ -465,9 +546,22 @@ class GeotermiaCNNTrainer:
         model.summary(print_fn=logger.info)
 
         # 3. Crear generadores de datos
-        train_dataset, val_dataset, steps_per_epoch = self.create_data_generators(
-            train_parts, y_train, X_val, y_val
+        train_dataset, val_dataset, steps_per_epoch, validation_steps = self.create_data_generators(
+            train_parts, y_train, val_parts, y_val
         )
+
+        # 3.5 Aplicar CosineDecay con steps_per_epoch REAL
+        # (El modelo se compiló con LR fijo; ahora lo recompilamos con el
+        #  schedule correcto basado en el tamaño real del dataset)
+        total_steps = self.epochs * steps_per_epoch
+        logger.info(f"CosineDecay: {total_steps} steps totales "
+                     f"({self.epochs} epochs × {steps_per_epoch} steps/epoch)")
+        lr_schedule = get_cosine_decay_schedule(
+            initial_learning_rate=self._cfg.LEARNING_RATE,
+            decay_steps=total_steps,
+            alpha=0.0001
+        )
+        model.optimizer.learning_rate = lr_schedule
 
         # 4. Crear callbacks
         callbacks = self.create_callbacks(model_name=f'geotermia_cnn_{model_type}')
@@ -475,6 +569,7 @@ class GeotermiaCNNTrainer:
         # 5. Entrenar modelo
         logger.info("\n" + "="*70)
         logger.info(f"Iniciando entrenamiento - {self.epochs} épocas máximo")
+        logger.info(f"  steps_per_epoch={steps_per_epoch}, validation_steps={validation_steps}")
         logger.info("="*70 + "\n")
 
         history = model.fit(
@@ -482,6 +577,7 @@ class GeotermiaCNNTrainer:
             validation_data=val_dataset,
             epochs=self.epochs,
             steps_per_epoch=steps_per_epoch,
+            validation_steps=validation_steps,
             callbacks=callbacks,
             class_weight=class_weights,
             verbose=1

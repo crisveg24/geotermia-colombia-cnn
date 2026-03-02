@@ -272,17 +272,13 @@ class GeotermiaCNN:
         model = models.Model(inputs=inputs, outputs=outputs, name='GeotermiaCNN_USB_Bogota_Vega_Arevalo_Espitia_Rivera_2026')
         
         # AdamW: Mejor regularización que Adam estándar (weight decay correcto)
-        # v2: Usar CosineDecay schedule para LR en vez de ReduceLROnPlateau.
-        # CosineDecay mantiene balance correcto entre gradiente y weight_decay.
-        # decay_steps se estima como epochs * steps_per_epoch_approx
-        lr_schedule = get_cosine_decay_schedule(
-            initial_learning_rate=0.001,
-            decay_steps=100 * 60,  # ~100 epochs × ~60 steps/epoch (se ajusta en train_model)
-            alpha=0.0001
-        )
+        # v3.3: Usar LR fijo aquí. El schedule se aplica DESPUÉS en train_model.py
+        # cuando se conoce el steps_per_epoch real (depende del tamaño del dataset).
+        # Antes estaba hardcodeado 100*60=6000 steps pero el dataset real tiene
+        # ~690 steps/epoch → 69000 steps totales, no 6000.
         optimizer = keras.optimizers.AdamW(
-            learning_rate=lr_schedule,
-            weight_decay=0.0001, # Regularización L2 decoupled (única fuente de L2)
+            learning_rate=0.001,  # Se reemplaza con CosineDecay en train_model.py
+            weight_decay=0.0001,  # Regularización L2 decoupled (única fuente de L2)
             beta_1=0.9,
             beta_2=0.999,
             epsilon=1e-07
