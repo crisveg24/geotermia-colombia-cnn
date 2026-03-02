@@ -198,29 +198,98 @@ class GeoDataPreparator:
 
         return resized.astype(np.float32)
 
-    def normalize_image(self, image: np.ndarray) -> np.ndarray:
+    def compute_global_band_stats(
+        self, valid_rows: list
+    ) -> tuple:
         """
-        Normaliza la imagen usando normalización por banda.
+        Calcula mean y std GLOBALES por banda sobre TODO el dataset.
+
+        v4 FIX: La versión anterior normalizaba cada imagen
+        individualmente (per-image per-band z-score), destruyendo
+        la información absoluta de las bandas.  Una zona caliente
+        (80°C) quedaba idéntica a una fría (20°C) tras normalizar.
+        AUC ≈ 0.51 = azar.
+
+        Ahora se hace un pase previo sobre TODOS los .tif para obtener
+        mean/std globales por banda.  Esto preserva las diferencias
+        absolutas entre zonas geotérmicas y no-geotérmicas.
+
+        Usa el algoritmo de Welford (online) para no cargar todo en RAM.
 
         Args:
-        image: Array numpy de la imagen
+            valid_rows: Lista de (file_path, label, filename, group)
 
         Returns:
-        Imagen normalizada
+            (band_means, band_stds) — arrays de shape (num_bands,)
         """
-        # Normalización por banda (z-score)
+        n_bands = self.cfg.NUM_BANDS
+        count = np.zeros(n_bands, dtype=np.float64)
+        mean = np.zeros(n_bands, dtype=np.float64)
+        m2 = np.zeros(n_bands, dtype=np.float64)
+
+        logger.info(f"Calculando estadísticas globales por banda "
+                    f"({len(valid_rows)} imágenes, {n_bands} bandas)...")
+
+        for file_path, label, filename, group in tqdm(
+            valid_rows, desc="global_stats"
+        ):
+            image = self.load_tif_image(file_path)
+            if image is None:
+                continue
+            image = self.resize_image(image)
+
+            for b in range(n_bands):
+                band = image[:, :, b].astype(np.float64).ravel()
+                n_pix = len(band)
+                batch_mean = band.mean()
+                batch_var = band.var()
+
+                # Actualización paralela de Welford (batch)
+                new_count = count[b] + n_pix
+                delta = batch_mean - mean[b]
+                mean[b] += delta * n_pix / new_count
+                m2[b] += batch_var * n_pix + delta**2 * count[b] * n_pix / new_count
+                count[b] = new_count
+
+        stds = np.sqrt(m2 / count)
+        stds[stds == 0] = 1.0  # Evitar división por cero
+
+        logger.info("Estadísticas globales por banda (DATASET-LEVEL):")
+        for b in range(n_bands):
+            logger.info(f"  Band {b}: mean={mean[b]:.6f}, std={stds[b]:.6f}")
+
+        self._global_band_means = mean.astype(np.float32)
+        self._global_band_stds = stds.astype(np.float32)
+        return self._global_band_means, self._global_band_stds
+
+    def normalize_image(self, image: np.ndarray) -> np.ndarray:
+        """
+        Normaliza la imagen con z-score PER-DATASET PER-BAND.
+
+        v4 FIX: Usa mean/std globales calculados sobre todo el dataset
+        (compute_global_band_stats), NO mean/std de la imagen individual.
+        Esto preserva la información absoluta de cada banda.
+
+        Requiere haber llamado compute_global_band_stats() antes.
+
+        Args:
+            image: Array numpy de la imagen (H, W, C)
+
+        Returns:
+            Imagen normalizada con stats globales
+        """
+        if not hasattr(self, '_global_band_means'):
+            raise RuntimeError(
+                "Llama a compute_global_band_stats() antes de normalize_image()."
+                " La normalización per-image fue eliminada en v4."
+            )
+
         normalized = np.zeros_like(image, dtype=np.float32)
-
         for i in range(image.shape[-1]):
-            band = image[:, :, i]
-            mean = np.mean(band)
-            std = np.std(band)
-
-            if std > 0:
-                normalized[:, :, i] = (band - mean) / std
-            else:
-                normalized[:, :, i] = band - mean
-
+            normalized[:, :, i] = (
+                (image[:, :, i] - self._global_band_means[i])
+                / self._global_band_stds[i]
+            )
         return normalized
 
     def create_labels_file(self) -> pd.DataFrame:
@@ -436,7 +505,23 @@ class GeoDataPreparator:
         logger.info(f"Validation: {len(val_idx_global)} imagenes")
         logger.info(f"Test: {len(test_idx_global)} imagenes")
 
-        # 4. Cargar, procesar y guardar por split (en lotes, FAT32-safe)
+        # 4a. Calcular estadísticas globales por banda (v4 FIX)
+        # Primer pase sobre TODOS los .tif para obtener mean/std globales.
+        # Esto se usa luego en normalize_image() para preservar info absoluta.
+        self.compute_global_band_stats(valid_rows)
+
+        # Guardar stats para reproducibilidad y para predict.py
+        stats_path = self.processed_data_path / 'band_stats.json'
+        import json as _json
+        with open(stats_path, 'w') as f:
+            _json.dump({
+                'band_means': self._global_band_means.tolist(),
+                'band_stds': self._global_band_stds.tolist(),
+                'num_images_used': len(valid_rows),
+            }, f, indent=2)
+        logger.info(f"Estadísticas globales guardadas: {stats_path}")
+
+        # 4b. Cargar, procesar y guardar por split (en lotes, FAT32-safe)
         # FAT32 limita archivos a 4 GB y memmap no funciona en USB.
         # Estrategia: procesar en lotes de BATCH_SAVE imagenes (~670 MB),
         # guardar con np.save, y liberar RAM entre lotes.

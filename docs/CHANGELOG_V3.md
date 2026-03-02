@@ -3,7 +3,7 @@
 **Rama:** `v3`
 **Fecha:** 2 de marzo de 2026
 **Estado:** Bugs corregidos — pendiente re-entrenamiento con datos corregidos
-**Bugs encontrados:** 4 críticos en el pipeline de datos/entrenamiento
+**Bugs encontrados:** 5 críticos en el pipeline de datos/entrenamiento
 **Entorno:** Python 3.12.8, TensorFlow 2.20.0, CPU (sin GPU)
 
 ---
@@ -12,10 +12,11 @@
 
 La v2 del modelo reportaba Accuracy 91.45% y ROC AUC 0.983 sobre un dataset
 pequeño (6,200 imágenes). Al escalar a **22,209 imágenes** (v3), se
-descubrieron **4 bugs críticos** en el pipeline de entrenamiento que impedían
+descubrieron **5 bugs críticos** en el pipeline de entrenamiento que impedían
 el aprendizaje del modelo. El primer intento de entrenamiento v3 (sin corregir
 la segregación de clases) produjo resultados inaceptables: accuracy oscilando
-45-69%, EarlyStopping en época 20.
+45-69%, EarlyStopping en época 20. El segundo intento (tras corregir bugs 1-4)
+produjo accuracy estancado en ~50% (azar puro) debido al bug de normalización.
 
 ### Bugs Identificados y Corregidos
 
@@ -25,6 +26,7 @@ la segregación de clases) produjo resultados inaceptables: accuracy oscilando
 | 2 | **CRITICAL** | CosineDecay con decay_steps hardcodeado | LR llegaba a mínimo en época 12 en vez de 100 | ✅ Corregido |
 | 3 | **HIGH** | Validación/test cargados completos en RAM | ~5 GB en RAM innecesarios, OOM en equipos limitados | ✅ Corregido |
 | 4 | **HIGH** | Generador con global shuffle + LRU cache | 16 s/step por cache thrashing entre 31 partes | ✅ Corregido |
+| 5 | **CRITICAL** | Normalización z-score per-image per-band | Destruye info absoluta entre imágenes → AUC ≈ 0.51 | ✅ Corregido |
 
 ---
 
@@ -170,6 +172,78 @@ shuffle intra-parte) con I/O óptimo (lectura secuencial, sin cache thrashing).
 
 ---
 
+## Bug 5: Normalización z-score Per-Image Per-Band (CRITICAL)
+
+### Problema
+En `scripts/prepare_dataset.py`, `normalize_image()` aplicaba z-score
+**por imagen individual por banda**:
+
+```python
+# ANTES (bug):
+for i in range(image.shape[-1]):
+    band = image[:, :, i]
+    mean = np.mean(band)      # ← mean de ESTA imagen
+    std = np.std(band)        # ← std de ESTA imagen
+    normalized[:, :, i] = (band - mean) / std
+```
+
+Cada imagen quedaba con mean≈0 y std≈1 en **cada banda**. Esto destruye
+toda la información absoluta: una zona geotérmica (80°C) y una zona fría
+(20°C) quedan idénticas tras normalizar. Las bandas de emissividad, NDVI
+y temperatura pierden su escala real.
+
+### Evidencia
+Diagnóstico ejecutado sobre los 22,209 .npy (sin afectar entrenamiento):
+
+```
+Per-image means:  min=-0.000032, max=0.000323  (todas ≈ 0)
+Per-image stds:   min=0.000000, max=1.000000   (todas ≈ 1)
+Cosine similarity intra-class (clase 1): 0.012
+Cosine similarity cross-class (0 vs 1): 0.006
+→ Clases INDISTINGUIBLES estadísticamente
+```
+
+Entrenamiento tras corregir bugs 1-4 (11 épocas):
+- accuracy: osciló entre 49.0% y 51.4% (azar puro para binario)
+- val_accuracy: 49.7% - 51.1%
+- AUC: 0.505 - 0.515
+- loss: 0.694 - 0.696 (≈ -ln(0.5) = 0.693)
+
+### Solución
+Normalización **dataset-global per-band** en dos pases:
+
+1. **Pase 1** (`compute_global_band_stats()`): Recorre TODOS los 22,209
+   `.tif` usando el algoritmo de Welford (online, O(1) RAM) para calcular
+   mean y std **globales** de cada una de las 7 bandas.
+
+2. **Pase 2**: Normaliza cada imagen con esas estadísticas globales:
+
+```python
+# DESPUÉS (correcto):
+for i in range(image.shape[-1]):
+    normalized[:, :, i] = (
+        (image[:, :, i] - global_band_means[i])
+        / global_band_stds[i]
+    )
+```
+
+Las estadísticas se guardan en `data/processed/band_stats.json` para
+que `predict.py` las use en inferencia (no tiene que recalcularlas).
+
+### Impacto en el pipeline
+- **download_dataset.py**: NO afectado (descarga está bien)
+- **augment_full_dataset.py**: NO afectado (augmentación está bien)
+- **prepare_dataset.py**: CORREGIDO (requiere re-ejecutar)
+- **predict.py**: ACTUALIZADO (carga band_stats.json)
+
+### Archivos modificados
+- `scripts/prepare_dataset.py` — +`compute_global_band_stats()`, `normalize_image()` usa stats globales
+- `scripts/predict.py` — Carga `band_stats.json`, normaliza con stats globales
+- `data/processed/band_stats.json` — Nuevo: mean/std globales por banda
+- `docs/GUIA_REPROCESAR.md` — Guía paso a paso para re-ejecutar el pipeline
+
+---
+
 ## Datos del Dataset v3
 
 | Parámetro | v2 | v3 |
@@ -214,6 +288,8 @@ shuffle intra-parte) con I/O óptimo (lectura secuencial, sin cache thrashing).
 |---------|---------|
 | `models/cnn_geotermia.py` | `build_model()` usa LR fijo, schedule movido a trainer |
 | `scripts/train_model.py` | Generador v3.3, val por partes, CosineDecay dinámico |
+| `scripts/prepare_dataset.py` | +`compute_global_band_stats()`, normalización global per-band |
+| `scripts/predict.py` | Carga `band_stats.json`, normalización con stats globales |
 
 ### Datos (no versionados en git — .npy en .gitignore)
 | Archivo | Cambios |
@@ -224,14 +300,17 @@ shuffle intra-parte) con I/O óptimo (lectura secuencial, sin cache thrashing).
 | Archivo | Cambios |
 |---------|---------|
 | `docs/CHANGELOG_V3.md` | Este documento |
+| `docs/GUIA_REPROCESAR.md` | Guía paso a paso para re-ejecutar el pipeline |
 
 ---
 
 ## Próximos Pasos
 
-1. **Re-entrenar** modelo con datos corregidos (clases mezcladas)
-2. **Evaluar** en test set y comparar con v2
-3. **Documentar** resultados finales
+1. **Re-ejecutar** `prepare_dataset.py` con normalización global corregida
+   (ver `docs/GUIA_REPROCESAR.md`)
+2. **Re-entrenar** modelo con datos correctamente normalizados
+3. **Evaluar** en test set y comparar con v2
+4. **Documentar** resultados finales
 
 ---
 

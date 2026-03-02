@@ -39,7 +39,8 @@ class GeotermalPredictor:
     def __init__(
         self,
         model_path: str,
-        target_size: Tuple[int, int] = (224, 224)
+        target_size: Tuple[int, int] = (224, 224),
+        band_stats_path: Optional[str] = None
         ):
         """
         Inicializa el predictor.
@@ -47,10 +48,34 @@ class GeotermalPredictor:
         Args:
         model_path: Ruta al modelo entrenado (.keras)
         target_size: Tamaño objetivo de las imágenes
+        band_stats_path: Ruta al archivo band_stats.json con mean/std
+                         globales por banda.  Si es None, busca en
+                         data/processed/band_stats.json.
         """
         self.model_path = Path(model_path)
         self.target_size = target_size
         self.model = None
+
+        # Cargar estadísticas globales por banda (v4 FIX)
+        if band_stats_path is None:
+            band_stats_path = (
+                Path(__file__).resolve().parent.parent
+                / "data" / "processed" / "band_stats.json"
+            )
+        band_stats_path = Path(band_stats_path)
+        if band_stats_path.exists():
+            with open(band_stats_path) as f:
+                stats = json.load(f)
+            self._band_means = np.array(stats['band_means'], dtype=np.float32)
+            self._band_stds = np.array(stats['band_stds'], dtype=np.float32)
+            logger.info(f"Stats globales cargadas desde {band_stats_path}")
+        else:
+            self._band_means = None
+            self._band_stds = None
+            logger.warning(
+                f"band_stats.json no encontrado en {band_stats_path}. "
+                "Se usará normalización per-image (NO recomendado)."
+            )
 
         logger.info("GeotermalPredictor inicializado")
 
@@ -133,18 +158,26 @@ class GeotermalPredictor:
             preserve_range=True
         ).astype(np.float32)
 
-        # 2. Normalización por banda
-        normalized = np.zeros_like(resized, dtype=np.float32)
-
-        for i in range(resized.shape[-1]):
-            band = resized[:, :, i]
-            mean = np.mean(band)
-            std = np.std(band)
-
-            if std > 0:
-                normalized[:, :, i] = (band - mean) / std
-            else:
-                normalized[:, :, i] = band - mean
+        # 2. Normalización por banda (v4 FIX: stats globales del dataset)
+        if self._band_means is not None and self._band_stds is not None:
+            normalized = np.zeros_like(resized, dtype=np.float32)
+            for i in range(resized.shape[-1]):
+                normalized[:, :, i] = (
+                    (resized[:, :, i] - self._band_means[i])
+                    / self._band_stds[i]
+                )
+        else:
+            # Fallback per-image (solo si no hay band_stats.json)
+            logger.warning("Usando normalización per-image (sin stats globales)")
+            normalized = np.zeros_like(resized, dtype=np.float32)
+            for i in range(resized.shape[-1]):
+                band = resized[:, :, i]
+                mean = np.mean(band)
+                std = np.std(band)
+                if std > 0:
+                    normalized[:, :, i] = (band - mean) / std
+                else:
+                    normalized[:, :, i] = band - mean
 
         return normalized
 
