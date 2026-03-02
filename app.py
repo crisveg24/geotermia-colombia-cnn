@@ -640,14 +640,25 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
         # Mantenemos las proporciones
         img_resized = img.astype(np.float32)
 
-        # Normalizar por banda (z-score)
-        for i in range(n_bands):
-            band = img_resized[:, :, i]
-            mean, std = band.mean(), band.std()
-            if std > 0:
-                img_resized[:, :, i] = (band - mean) / std
-            else:
-                img_resized[:, :, i] = band - mean
+        # Normalizar por banda (v4 FIX: usar stats globales del dataset)
+        band_stats_path = PROJECT_ROOT / "data" / "processed" / "band_stats.json"
+        if band_stats_path.exists():
+            import json as _json
+            with open(band_stats_path) as _f:
+                _stats = _json.load(_f)
+            _band_means = np.array(_stats['band_means'], dtype=np.float32)
+            _band_stds = np.array(_stats['band_stds'], dtype=np.float32)
+            for i in range(n_bands):
+                img_resized[:, :, i] = (img_resized[:, :, i] - _band_means[i]) / _band_stds[i]
+        else:
+            # Fallback per-image (solo si no hay band_stats.json)
+            for i in range(n_bands):
+                band = img_resized[:, :, i]
+                mean, std = band.mean(), band.std()
+                if std > 0:
+                    img_resized[:, :, i] = (band - mean) / std
+                else:
+                    img_resized[:, :, i] = band - mean
 
         # Prediccion con Sliding Window si es mas grande que 224x224
         t_pred = time.time()
