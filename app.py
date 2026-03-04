@@ -432,6 +432,13 @@ st.markdown("""
 def cargar_modelo():
     """Carga el modelo CNN. Prueba varias rutas posibles."""
     tf = _importar_tensorflow()
+
+    # Compatibilidad con modelos guardados en Keras >= 3.4 que incluyen
+    # quantization_config en la configuración de Dense (no reconocido localmente)
+    class _DenseCompat(tf.keras.layers.Dense):
+        def __init__(self, *args, quantization_config=None, **kwargs):
+            super().__init__(*args, **kwargs)
+
     rutas = [
         # V3: EfficientNetB0 + adapter (prioridad)
         PROJECT_ROOT / "models" / "saved_models" / "geotermia_v7_phase2_best.keras",
@@ -444,7 +451,11 @@ def cargar_modelo():
     for r in rutas:
         if r.exists():
             try:
-                model = tf.keras.models.load_model(str(r))
+                model = tf.keras.models.load_model(
+                    str(r),
+                    custom_objects={"Dense": _DenseCompat},
+                    compile=False,
+                )
                 # v2: Registrar qué modelo se cargó (BUG 8)
                 st.session_state["modelo_cargado_nombre"] = r.name
                 logging.info(f"Modelo cargado: {r.name}")

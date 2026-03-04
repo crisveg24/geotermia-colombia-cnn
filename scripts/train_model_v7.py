@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2025-2026 Vega Sánchez · Arévalo Rubiano · Espitia Ayala · Rivera Martín
+# Universidad de San Buenaventura — Bogotá | github.com/crisveg24/geotermia-colombia-cnn
 """
 train_model_v7.py - Transfer Learning con EfficientNetB0 (CLEAN SPLITS)
 ========================================================================

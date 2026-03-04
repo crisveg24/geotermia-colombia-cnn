@@ -1,3 +1,5 @@
+# Copyright (c) 2025-2026 Vega Sánchez · Arévalo Rubiano · Espitia Ayala · Rivera Martín
+# Universidad de San Buenaventura — Bogotá | github.com/crisveg24/geotermia-colombia-cnn
 """Check split_info.json for data leakage"""
 import json, os
 

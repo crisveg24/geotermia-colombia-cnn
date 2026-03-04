@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright (c) 2025-2026 Vega Sánchez · Arévalo Rubiano · Espitia Ayala · Rivera Martín
+# Universidad de San Buenaventura — Bogotá | github.com/crisveg24/geotermia-colombia-cnn
 """
 resplit_data.py - Re-split processed .npy data fixing data leakage.
 
