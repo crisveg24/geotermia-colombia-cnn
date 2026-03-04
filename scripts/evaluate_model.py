@@ -425,9 +425,13 @@ def main():
     print("="*70)
     print(cfg.summary())
 
-    # Ruta al mejor modelo (siempre en el proyecto, no en disco externo)
+    # Ruta al mejor modelo (V3: EfficientNetB0 + adapter)
     project_root = Path(__file__).parent.parent
-    model_path = project_root / 'models' / 'saved_models' / 'geotermia_cnn_custom_best.keras'
+    model_path = project_root / 'models' / 'saved_models' / 'geotermia_v7_phase2_best.keras'
+
+    if not model_path.exists():
+        # Fallback a modelo custom anterior
+        model_path = project_root / 'models' / 'saved_models' / 'geotermia_cnn_custom_best.keras'
 
     if not model_path.exists():
         print(f"\nError: Modelo no encontrado en {model_path}")

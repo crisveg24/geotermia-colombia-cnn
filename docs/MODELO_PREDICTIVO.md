@@ -32,23 +32,28 @@ El modelo predictivo implementado utiliza **Redes Neuronales Convolucionales (CN
 
 ### 1.2 Características Principales
 
-| Característica | Descripción |
-|---------------|-------------|
-| **Tipo de Modelo** | Red Neuronal Convolucional (CNN) |
-| **Arquitectura** | ResNet-inspired con bloques residuales |
-| **Tarea** | Clasificación binaria (Con/Sin potencial geotérmico) |
-| **Input** | Imágenes 224×224×7 (5 bandas emisividad ASTER + Temperatura + NDVI) |
-| **Output** | Probabilidad [0, 1] de potencial geotérmico |
-| **Framework** | TensorFlow 2.20.0 / Keras 3.12.1 |
-| **Precisión Lograda (v2)** | Accuracy 91.45%, ROC AUC 0.983 |
+| Característica | v2 | v3 (actual) |
+|---------------|-----|-------------|
+| **Arquitectura** | ResNet-inspired con bloques residuales | **EfficientNetB0 + Channel Adapter** |
+| **Tarea** | Clasificación binaria | Clasificación binaria |
+| **Input** | 224×224×7 (5 bandas + Temp + NDVI) | 224×224×7 (5 bandas + Temp + NDVI) |
+| **Output** | Probabilidad [0, 1] | Probabilidad [0, 1] |
+| **Parámetros** | 5,032,385 | **4,396,112** |
+| **Framework** | TensorFlow 2.20.0 / Keras 3.12.1 | TensorFlow 2.20.0 / Keras 3.12.1 |
+| **Entrenamiento** | CPU, 22 épocas | **GPU RTX 4070, 80 épocas (2 fases)** |
+| **Accuracy** | 91.45% | **92.28%** |
+| **ROC AUC** | 0.983 | **0.9737** |
+| **Test Set** | 1,017 imgs (Colombia) | **3,619 imgs (4 países)** |
 
 ### 1.3 Innovaciones Implementadas
 
-- **Bloques Residuales**: Mejoran el flujo de gradientes y permiten redes más profundas
-- **Batch Normalization**: Estabiliza el entrenamiento y acelera convergencia
-- **Mixed Precision Training**: Reduce uso de memoria y acelera entrenamiento en GPUs modernas
-- **Data Augmentation**: Aumenta la generalización del modelo
-- **Transfer Learning**: Opción de usar modelos pre-entrenados (EfficientNet, ResNet50)
+- **Transfer Learning con EfficientNetB0** (v3): Backbone preentrenado en ImageNet con Channel Adapter 7→3 canales
+- **Entrenamiento en 2 fases** (v3): Backbone congelado (30 épocas) + fine-tuning (50 épocas)
+- **MixUp Regularization** (v3): Interpolación de muestras (α=0.2) para suavizar frontera de decisión
+- **Mixed Precision Training**: float16 para duplicar throughput en GPU
+- **Bloques Residuales** (v2): Skip connections para flujo de gradientes
+- **Anti-leakage geográfico**: GroupShuffleSplit por zona base (407 zonas, cero solapamiento)
+- **Data Augmentation offline**: 10 técnicas por imagen (v3) / 30 técnicas (v2)
 
 ---
 
@@ -292,6 +297,76 @@ $$
 - Reduce parámetros **36x**
 - Menos propenso a overfitting
 - Interpretabilidad: cada canal representa un concepto
+
+---
+
+## 3.6 Arquitectura v3: EfficientNetB0 + Channel Adapter
+
+> **Nota:** La sección 3.1-3.5 documenta la arquitectura v2 (ResNet-inspired). La v3 reemplaza la arquitectura completa por Transfer Learning.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ INPUT LAYER                                                     │
+│ (224×224×7 pixels)                                             │
+│ 5 bandas emisividad + temperatura + NDVI                       │
+└────────────────────────┬────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ CHANNEL ADAPTER (proyección 7 → 3 canales)                     │
+│ Conv2D(16, 3×3, padding='same') + BatchNorm + ReLU            │
+│ Conv2D(3, 1×1, padding='same') + BatchNorm + ReLU             │
+│ Output: 224×224×3                                              │
+└────────────────────────┬────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ BACKBONE: EfficientNetB0 (pesos ImageNet)                      │
+│ 237 capas, bloques MBConv + Squeeze-and-Excitation             │
+│ Fase 1: 100% congelado (solo adapter + head entrenables)       │
+│ Fase 2: últimas 39 capas descongeladas (BatchNorm congelado)   │
+│ Output: 7×7×1280                                               │
+└────────────────────────┬────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ GLOBAL AVERAGE POOLING                                         │
+│ Reduce 7×7×1280 → 1280                                        │
+└────────────────────────┬────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ CLASSIFIER HEAD                                                 │
+│ Dropout(0.3)                                                    │
+│ Dense(256, ReLU)                                                │
+│ Dropout(0.3)                                                    │
+│ Dense(1, sigmoid) → Probabilidad [0, 1]                        │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Total parámetros v3:** 4,396,112 (12.6% menos que v2)
+
+### Entrenamiento en 2 Fases
+
+| | Fase 1 (Backbone congelado) | Fase 2 (Fine-tuning) |
+|---|---|---|
+| Épocas | 30 | 50 |
+| Capas entrenables | 345,863 (Adapter + Head) | ~4M (39 capas backbone) |
+| Learning Rate | 1×10⁻³ | 1×10⁻⁴ |
+| MixUp | α=0.2 | α=0.2 |
+| Mejor época | 27 (val_auc=0.9000) | 50 (val_auc=0.9725) |
+| Hardware | GPU RTX 4070, WSL2 | GPU RTX 4070, WSL2 |
+
+### Resultados v3 (Test: 3,619 imágenes, 4 países)
+
+| Métrica | Valor |
+|---------|-------|
+| Accuracy | **92.28%** |
+| Precision | 91.27% |
+| Recall | **93.17%** |
+| F1-Score | 92.21% |
+| ROC AUC | 0.9737 |
+| MCC | 0.8458 |
 
 ---
 

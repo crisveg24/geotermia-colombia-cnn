@@ -186,24 +186,25 @@ Nuestro modelo CNN opera en la **Fase 1 (Reconocimiento regional)** como una her
 
 ### 5.4 Logros del modelo v2 y evolución a v3
 
-El modelo v1 era un **prototipo académico** con limitaciones significativas (accuracy 68.43%, recall 48.10%, solo 85 imágenes). Todas fueron abordadas en la versión v2:
+El modelo v1 era un **prototipo académico** con limitaciones significativas (accuracy 68.43%, recall 48.10%, solo 85 imágenes). Todas fueron abordadas en las versiones v2 y v3:
 
-| Aspecto | v1 (Baseline) | v2 (Actual) | v3 (En curso) |
-|---------|---------------|--------------|----------------|
-| **Accuracy** | 68.43% | **91.45%** | *Pendiente* |
-| **Recall** | 48.10% | **86.05%** | *Pendiente* |
-| **F1-Score** | 61.77% | **91.61%** | *Pendiente* |
-| **ROC AUC** | 0.8198 | **0.9830** | *Pendiente* |
+| Aspecto | v1 (Baseline) | v2 | v3 (Actual) |
+|---------|---------------|-----|-------------|
+| **Accuracy** | 68.43% | 91.45% | **92.28%** |
+| **Recall** | 48.10% | 86.05% | **93.17%** |
+| **F1-Score** | 61.77% | 91.61% | **92.21%** |
+| **ROC AUC** | 0.8198 | 0.983 | **0.9737** |
+| **Arquitectura** | CNN custom | ResNet-inspired | **EfficientNetB0 + Adapter** |
 | **Dataset** | 85 imágenes (5 bandas) | 200 imágenes (7 bandas) | **2,019 imágenes (7 bandas, 4 países)** |
 | **Filtrado NoData** | No | Sí | Sí |
-| **Split** | Aleatorio (data leakage) | GroupShuffleSplit | GroupShuffleSplit (anti-leakage geográfico) |
+| **Split** | Aleatorio (data leakage) | GroupShuffleSplit | GroupShuffleSplit (anti-leakage, 407 zonas) |
 
 **Mejora clave de v3:** El dataset ahora incluye zonas de la **Región Andina** (Colombia, Ecuador, Perú y Chile), lo que aborda la limitación de generalización geográfica. Todos los países comparten el contexto geológico del **Cinturón de Fuego del Pacífico**. Ver [CAMPOS_GEOTERMICOS_REGION_ANDINA.md](CAMPOS_GEOTERMICOS_REGION_ANDINA.md) para el catálogo completo.
 
 **Limitaciones residuales** (alcance académico del proyecto):
 
 - **Resolución temporal:** ASTER GED es un producto promediado; no captura variaciones temporales.
-- **Entrenamiento CPU:** Limitado por hardware disponible (12 GB RAM, sin GPU); GPU podría mejorar más.
+- **Validación en campo:** Las predicciones no han sido contrastadas con prospección geotérmica in situ.
 - **Aplicación:** El modelo se aplica a Colombia; la expansión andina es para robustez del entrenamiento.
 
 Estas limitaciones están documentadas en detalle en [PREDICCIONES_PRUEBA.md](PREDICCIONES_PRUEBA.md) y [CHANGELOG_V2.md](CHANGELOG_V2.md).

@@ -25,6 +25,7 @@ venv/
 env/
 ENV/
 .venv
+.venv_wsl/
 
 # Jupyter Notebook
 .ipynb_checkpoints/
@@ -35,15 +36,12 @@ ENV/
 *.tiff
 *.hdf
 *.nc
-geotermia_imagenes/*.tif
-!geotermia_imagenes/.gitkeep
+
 
 # Documentos del proyecto (no subir PDFs)
 *.pdf
-Proyecto_Geotermia_CNN_APA7.pdf
 
-# Modelos entrenados (muy grandes)
-models/saved_models/*.keras
+# Modelos entrenados (solo .h5 ignorados, .keras V3 se suben ~58MB)
 models/saved_models/*.h5
 
 # Datos procesados (muy grandes)

@@ -1,10 +1,12 @@
-# ANALISIS DEL ENTRENAMIENTO — CNN Geotermia Colombia (v2)
+# ANALISIS DEL ENTRENAMIENTO — CNN Geotermia Colombia (v2 + v3)
 
 **Fecha del entrenamiento v2:** 19 de febrero de 2026
+**Fecha del entrenamiento v3:** 2-3 de marzo de 2026
 **Autores:** Cristian Camilo Vega Sanchez, Daniel Santiago Arevalo Rubiano,
 Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martin
-**Modelo:** GeotermiaCNN (Custom ResNet-inspired, 5,032,385 parametros)
-**Estado:** Entrenamiento v2 **COMPLETADO** — 22 epocas con EarlyStopping (patience=15)
+**Modelo v2:** GeotermiaCNN (Custom ResNet-inspired, 5,032,385 parametros)
+**Modelo v3:** EfficientNetB0 + Channel Adapter (4,396,112 parametros)
+**Estado:** Entrenamiento v2 y v3 **COMPLETADOS**
 
 ---
 
@@ -164,6 +166,83 @@ Total: 1,017 imagenes de prueba
 
 ---
 
+## ENTRENAMIENTO v3: EfficientNetB0 + Channel Adapter (GPU)
+
+### Configuracion del Entrenamiento v3
+
+```
+ Arquitectura:    EfficientNetB0 + Channel Adapter (7→16→3 canales)
+ Parametros:      4,396,112 (12.6% menos que v2)
+ Dataset:         22,209 imagenes (2,019 originales, 4 paises)
+ Split:           15,037 train / 3,553 val / 3,619 test (407 zonas, cero leakage)
+ Bandas:          7 (emissivity_band10-14 + temperature + ndvi)
+ Batch size:      32
+ Hardware:        NVIDIA RTX 4070 12 GB VRAM, WSL2 Ubuntu 22.04
+ Precision mixta: float16 (mixed_float16)
+```
+
+**Fase 1 — Backbone congelado (30 epocas):**
+```
+ Capas entrenables: 345,863 (Channel Adapter + Head)
+ Optimizer:         AdamW (weight_decay=1e-4) con CosineDecay
+ Learning rate:     1e-3
+ MixUp:             alpha=0.2
+ Label Smoothing:   0.1
+ Mejor epoca:       27 (val_auc=0.9000)
+```
+
+**Fase 2 — Fine-tuning (50 epocas):**
+```
+ Capas descongeladas: ultimas 39 del backbone (BatchNorm congelado)
+ Optimizer:           AdamW (weight_decay=1e-4) con CosineDecay
+ Learning rate:       1e-4 (10x menor que Fase 1)
+ MixUp:               alpha=0.2
+ Mejor epoca:         50 (val_auc=0.9725)
+```
+
+### Metricas v3 en Test Set (3,619 imagenes)
+
+```
+ Accuracy:   92.28%
+ Precision:  91.27%
+ Recall:     93.17%
+ F1-Score:   92.21%
+ ROC AUC:    0.9737
+ PR AUC:     0.9693
+ MCC:        0.8458
+```
+
+### Matriz de Confusion v3 (Test: 3,619 imagenes)
+
+```
+                    Predicho
+                 Neg      Pos
+Real Neg  |  1,686  |   158   |  -> Specificity: 91.43%
+Real Pos  |    121  |  1,651  |  -> Recall: 93.17%
+```
+
+### Analisis Comparativo v2 → v3
+
+| Aspecto | v2 | v3 | Cambio |
+|---------|:--:|:--:|:------:|
+| Test set | 1,017 imgs (1 pais) | **3,619 imgs (4 paises)** | x3.6 |
+| Accuracy | 91.45% | **92.28%** | +0.83 pp |
+| Precision | 97.94% | 91.27% | -6.67 pp¹ |
+| **Recall** | 86.05% | **93.17%** | **+7.12 pp** |
+| F1-Score | 91.61% | **92.21%** | +0.60 pp |
+| ROC AUC | 0.983 | 0.9737 | -0.009² |
+| MCC | 0.837 | **0.8458** | +0.009 |
+| Parametros | 5,032,385 | **4,396,112** | -12.6% |
+| Hardware | CPU | **GPU RTX 4070** | — |
+| Epocas | 22 | **80 (30+50)** | — |
+
+¹ Precision menor porque el test v3 es 3.6x mas grande y geograficamente diverso.
+² AUC evaluado sobre un dataset mas desafiante; sigue siendo excelente (>0.97).
+
+**Conclusion v3:** El modelo v3 mejora significativamente el recall (+7.12 pp) con un test set 3.6 veces mayor, demostrando que Transfer Learning con EfficientNetB0 y entrenamiento en GPU produce resultados superiores y mas generalizables.
+
+---
+
 ## NOTA HISTORICA: RESULTADOS v1
 
 Para referencia, los resultados del entrenamiento v1 (baseline) fueron:
@@ -186,5 +265,5 @@ Estos problemas fueron documentados en detalle en [CHANGELOG_V2.md](CHANGELOG_V2
 
 ---
 
-**Ultima actualizacion:** 25 de febrero de 2026
-**Estado:** Entrenamiento v2 completado — Evaluacion y analisis finalizados
+**Ultima actualizacion:** 3 de marzo de 2026
+**Estado:** Entrenamiento v2 y v3 completados — Evaluacion y analisis finalizados

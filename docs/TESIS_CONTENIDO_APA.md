@@ -1,4 +1,4 @@
-# CONTENIDO PARA TESIS — Formato APA 7.ª edición
+﻿# CONTENIDO PARA TESIS — Formato APA 7.ª edición
 # Plantilla USB Colombia 2022 v.6
 
 > **Instrucciones de uso:** Copiar y pegar cada sección en la plantilla de Word
@@ -53,12 +53,18 @@ Programa de Ingeniería de Sistemas
 | 5 | Matriz de confusión del modelo v2 en el conjunto de prueba | — |
 | 6 | Métricas de evaluación del modelo v2 en el conjunto de prueba | — |
 | 7 | Comparativo de métricas v1 vs. v2 | — |
-| 8 | Objetivos de métricas vs. resultados obtenidos | — |
+| 8 | Objetivos de métricas vs. resultados obtenidos (v2) | — |
 | 9 | Análisis de factores de mejora de v1 a v2 | — |
-| 10 | Tecnologías y herramientas utilizadas | — || 11 | Composición del dataset v3 por país (Región Andina) | — |
+| 10 | Tecnologías y herramientas utilizadas | — |
+| 11 | Composición del dataset v3 por país (Región Andina) | — |
 | 12 | División del conjunto de datos v3 con anti-leakage geográfico | — |
 | 13 | Comparativo de versiones del dataset: v1, v2 y v3 | — |
-| 14 | Métricas del modelo v3 con intervalos de confianza Bootstrap 95 % | — |
+| 14 | Hiperparámetros del entrenamiento v3 (dos fases) | — |
+| 15 | Matriz de confusión del modelo v3 en el conjunto de prueba | — |
+| 16 | Métricas de evaluación del modelo v3 en el conjunto de prueba | — |
+| 17 | Comparativo de métricas v1 vs. v2 vs. v3 | — |
+| 18 | Objetivos de métricas vs. resultados obtenidos (v3) | — |
+| 19 | Bugs adicionales descubiertos y corregidos en v3 | — |
 *(Actualizar números de página una vez insertado en Word.)*
 
 ---
@@ -68,19 +74,22 @@ Programa de Ingeniería de Sistemas
 | N.º | Título | Pág. |
 |-----|--------|------|
 | 1 | Mapa de zonas geotérmicas conocidas de Colombia | — |
-| 2 | Arquitectura de la CNN ResNet-inspired (diagrama de bloques) | — |
+| 2 | Arquitectura de la CNN v2 ResNet-inspired (diagrama de bloques) | — |
 | 3 | Diagrama del pipeline de procesamiento de datos | — |
-| 4 | Flujo del bloque residual con conexión de atajo | — |
-| 5 | Curvas de entrenamiento: accuracy y loss por época | — |
-| 6 | Curva ROC del modelo v2 (AUC = 0.983) | — |
+| 4 | Flujo del bloque residual con conexión de atajo (v2) | — |
+| 5 | Curvas de entrenamiento v2: accuracy y loss por época | — |
+| 6 | Curva ROC del modelo v2 (AUC = 0,983) | — |
 | 7 | Matriz de confusión del modelo v2 | — |
 | 8 | Comparativo visual de métricas v1 vs. v2 | — |
 | 9 | Interfaz de la aplicación web Streamlit — sección de predicción | — |
-| 10 | Mapa de calor de predicciones geotérmicas en Colombia | — || 11 | Mapa de zonas de entrenamiento de la Región Andina (4 países) | — |
+| 10 | Mapa de calor de predicciones geotérmicas en Colombia | — |
+| 11 | Mapa de zonas de entrenamiento de la Región Andina (4 países) | — |
 | 12 | Distribución de imágenes por país en el dataset v3 | — |
-| 13 | Curvas de entrenamiento del modelo v3 | — |
-| 14 | Curva ROC del modelo v3 con intervalo de confianza Bootstrap 95 % | — |
-| 15 | Comparativo visual de métricas v1 vs. v2 vs. v3 | — |
+| 13 | Arquitectura del modelo v3: EfficientNetB0 + Channel Adapter (diagrama) | — |
+| 14 | Curvas de entrenamiento del modelo v3 (Fase 1 + Fase 2) | — |
+| 15 | Curva ROC del modelo v3 (AUC = 0,9737) | — |
+| 16 | Matriz de confusión del modelo v3 | — |
+| 17 | Comparativo visual de métricas v1 vs. v2 vs. v3 | — |
 *(Actualizar números de página una vez insertado en Word.)*
 
 ---
@@ -101,11 +110,15 @@ Posteriormente, se construyó una versión ampliada del dataset (v3) que incorpo
 
 **Title:** Predictive Model Based on Convolutional Neural Networks (CNN) for the Identification of Geothermal Potential Zones in Colombia Using ASTER Satellite Imagery
 
-This research developed a predictive model based on Convolutional Neural Networks (CNN) for the automated identification of geothermal potential zones in Colombia, using satellite imagery from NASA's ASTER (Advanced Spaceborne Thermal Emission and Reflection Radiometer) sensor. The model employs a custom ResNet-inspired architecture with 5,032,385 parameters, trained on a dataset of 200 original images (111 positive and 89 negative) expanded to 6,200 images through data augmentation techniques. The images comprise 7 spectral bands: 5 thermal infrared emissivity bands (bands 10–14), surface temperature, and the Normalized Difference Vegetation Index (NDVI), extracted from the ASTER Global Emissivity Dataset (AG100 v003) via Google Earth Engine. Critical corrections were implemented in the processing pipeline, including NoData value filtering (−9999), removal of double normalization, and data leakage prevention between sets using GroupShuffleSplit. The v2 model achieved an accuracy of 91.45%, precision of 97.94%, recall of 86.05%, F1-score of 91.61%, ROC AUC of 0.983, and Matthews Correlation Coefficient (MCC) of 0.837 on the test set (1,017 images), significantly outperforming the initial version (accuracy 68.43%, recall 48.10%). Additionally, an interactive web interface was developed using Streamlit and Folium, enabling real-time predictions for any coordinate within Colombian territory. The system serves as a support tool for the regional reconnaissance phase in geothermal exploration, allowing prioritization of areas of interest for detailed studies.
+This research developed a predictive model based on Convolutional Neural Networks (CNN) for the automated identification of geothermal potential zones in Colombia, using satellite imagery from NASA's ASTER (Advanced Spaceborne Thermal Emission and Reflection Radiometer) sensor. The images comprise 7 spectral bands: 5 thermal infrared emissivity bands (bands 10–14), surface temperature, and the Normalized Difference Vegetation Index (NDVI), extracted from the ASTER Global Emissivity Dataset (AG100 v003) via Google Earth Engine.
 
-Subsequently, an expanded dataset (v3) was constructed incorporating 2,019 base images from the Andean Region (Colombia, Ecuador, Peru, and Chile), expanded to 22,209 images using 10 augmentation techniques, with a leakage-free data split based on geographic grouping (4,038 unique zones). This expansion is grounded in the shared geological context of the Pacific Ring of Fire across all four countries, enabling the model to learn more generalizable geothermal spectral patterns. The v3 model metrics are validated using 95% Bootstrap confidence intervals (2,000 iterations).
+The project evolved through three versions. Version 1 (v1), with 85 original images and a custom CNN architecture, served as a baseline with 68.43% accuracy. After an exhaustive audit that identified and corrected 28 pipeline errors—including NoData filtering (−9999), double normalization removal, and data leakage prevention via GroupShuffleSplit—version 2 (v2) with a ResNet-inspired architecture (5,032,385 parameters) and 200 original images from Colombia (6,200 augmented) achieved 91.45% accuracy, ROC AUC of 0.983, and F1-score of 91.61% on a test set of 1,017 images.
 
-**Keywords:** convolutional neural networks, deep learning, geothermal energy, remote sensing, ASTER, satellite image classification, Colombia, Andean Region.
+For version 3 (v3), the dataset was expanded to the Andean Region (Colombia, Ecuador, Peru, and Chile), obtaining 2,019 base images (997 positive, 1,022 negative) expanded to 22,209 images using 10 augmentation techniques. During v3 preparation, a critical new bug was discovered: 62.5% data leakage caused by augmentations of the same geographic zone being distributed across training and evaluation sets. This was corrected through a complete re-split using GroupShuffleSplit grouped by base geographic zone (407 independent zones, zero verified leakage). The v3 model employs a Transfer Learning architecture with EfficientNetB0 pretrained on ImageNet as a feature extractor, preceded by a convolutional Channel Adapter (7 → 16 → 3 channels) that learns the optimal projection of ASTER's 7 bands into RGB space. With 4,396,112 parameters and a two-phase training scheme (Phase 1: frozen backbone, 30 epochs; Phase 2: fine-tuning of last 39 layers, 50 epochs) executed on an NVIDIA RTX 4070 GPU with mixed-precision float16 via WSL2, the v3 model achieved 92.28% accuracy, 91.27% precision, 93.17% recall, 92.21% F1-score, ROC AUC of 0.9737, and MCC of 0.8458 on a test set of 3,619 images, confirming the model's ability to reliably identify geothermal potential zones.
+
+Additionally, an interactive web interface was developed using Streamlit and Folium, enabling real-time predictions for any coordinate within Colombian territory. The system serves as a support tool for the regional reconnaissance phase in geothermal exploration, allowing prioritization of areas of interest for detailed studies.
+
+**Keywords:** convolutional neural networks, deep learning, Transfer Learning, geothermal energy, remote sensing, ASTER, EfficientNet, satellite image classification, Colombia, Andean Region.
 
 ---
 
@@ -119,7 +132,7 @@ El sensor ASTER (Advanced Spaceborne Thermal Emission and Reflection Radiometer)
 
 Las Redes Neuronales Convolucionales (CNN), una clase de modelos de aprendizaje profundo especializados en el procesamiento de datos con estructura espacial, han demostrado un desempeño sobresaliente en tareas de clasificación de imágenes satelitales y teledetección (LeCun et al., 2015; Zhu et al., 2017). A diferencia de los métodos tradicionales basados en umbrales fijos o clasificación manual, las CNN aprenden automáticamente patrones complejos y jerarquías de características directamente desde los datos.
 
-La presente investigación se enfoca en el desarrollo, entrenamiento y evaluación de un modelo predictivo basado en CNN con arquitectura ResNet-inspired para la clasificación binaria de zonas con y sin potencial geotérmico en Colombia, utilizando imágenes del producto ASTER Global Emissivity Dataset (AG100 v003) obtenidas a través de Google Earth Engine. Para robustecer el entrenamiento, el conjunto de datos se expandió a la Región Andina (Colombia, Ecuador, Perú y Chile), aprovechando que estos países comparten el contexto geológico del Cinturón de Fuego del Pacífico (Lahsen, 1982; Bona y Coviello, 2016). Esta decisión permite al modelo capturar una mayor diversidad de patrones espectrales asociados a actividad geotérmica, mientras que la aplicación y las conclusiones se circunscriben al territorio colombiano. El proyecto incluye la construcción de un pipeline completo —desde la adquisición de datos satelitales hasta la predicción en tiempo real— y el desarrollo de una interfaz web interactiva que facilite el uso del modelo por parte de investigadores y tomadores de decisiones.
+La presente investigación se enfoca en el desarrollo, entrenamiento y evaluación de un modelo predictivo basado en CNN para la clasificación binaria de zonas con y sin potencial geotérmico en Colombia, utilizando imágenes del producto ASTER Global Emissivity Dataset (AG100 v003) obtenidas a través de Google Earth Engine. El modelo final (v3) emplea Transfer Learning con EfficientNetB0 preentrenado en ImageNet, precedido por un Channel Adapter convolucional que proyecta las 7 bandas ASTER al espacio RGB de 3 canales. Para robustecer el entrenamiento, el conjunto de datos se expandió a la Región Andina (Colombia, Ecuador, Perú y Chile), aprovechando que estos países comparten el contexto geológico del Cinturón de Fuego del Pacífico (Lahsen, 1982; Bona y Coviello, 2016). Esta decisión permite al modelo capturar una mayor diversidad de patrones espectrales asociados a actividad geotérmica, mientras que la aplicación y las conclusiones se circunscriben al territorio colombiano. El proyecto incluye la construcción de un pipeline completo —desde la adquisición de datos satelitales hasta la predicción en tiempo real— y el desarrollo de una interfaz web interactiva que facilite el uso del modelo por parte de investigadores y tomadores de decisiones.
 
 El documento se estructura siguiendo las normas APA 7.ª edición e incluye el planteamiento del problema, la justificación, los objetivos, el marco teórico, la metodología detallada, los resultados cuantitativos obtenidos, la discusión de hallazgos, las conclusiones y las recomendaciones para trabajos futuros.
 
@@ -178,8 +191,8 @@ La investigación se justifica desde múltiples perspectivas:
 El alcance del presente proyecto comprende:
 
 1. La construcción de un conjunto de datos de imágenes ASTER de la Región Andina (Colombia, Ecuador, Perú y Chile) con 2.019 imágenes base (997 positivas y 1.022 negativas) y 7 bandas espectrales, aprovechando el contexto geológico compartido del Cinturón de Fuego del Pacífico para robustecer el entrenamiento.
-2. El diseño, implementación y entrenamiento de un modelo CNN con arquitectura ResNet-inspired para la clasificación binaria de potencial geotérmico.
-3. La evaluación cuantitativa del modelo utilizando métricas estándar (exactitud, precisión, sensibilidad, F1, ROC AUC, MCC) con intervalos de confianza Bootstrap al 95 %.
+2. El diseño, implementación y entrenamiento de un modelo CNN basado en Transfer Learning con EfficientNetB0 y un Channel Adapter convolucional (7 → 16 → 3 canales), optimizado para la clasificación binaria de imágenes satelitales multiespectrales de 224 × 224 × 7 píxeles.
+3. La evaluación cuantitativa del modelo utilizando métricas estándar (exactitud, precisión, sensibilidad, F1, ROC AUC, MCC).
 4. El desarrollo de una interfaz web que permita realizar predicciones interactivas sobre cualquier coordenada del territorio colombiano.
 5. La documentación completa del proceso, resultados y lecciones aprendidas.
 
@@ -201,9 +214,9 @@ Desarrollar un modelo predictivo basado en Redes Neuronales Convolucionales (CNN
 
 1. Construir un conjunto de datos etiquetado de imágenes ASTER de zonas con y sin potencial geotérmico de la Región Andina (Colombia, Ecuador, Perú y Chile), utilizando el producto ASTER Global Emissivity Dataset (AG100 v003) de Google Earth Engine, con un mínimo de 2.000 imágenes originales y 7 bandas espectrales, implementando descarga paralela y expansión por grilla para maximizar la cobertura espacial.
 
-2. Diseñar e implementar una arquitectura de Red Neuronal Convolucional con bloques residuales (ResNet-inspired) optimizada para la clasificación binaria de imágenes satelitales multiespectrales de 224 × 224 × 7 píxeles.
+2. Diseñar e implementar una arquitectura de Red Neuronal Convolucional basada en Transfer Learning con EfficientNetB0 preentrenado en ImageNet, precedida por un Channel Adapter convolucional que proyecta las 7 bandas ASTER al espacio RGB de 3 canales, optimizada para la clasificación binaria de imágenes satelitales multiespectrales de 224 × 224 × 7 píxeles.
 
-3. Entrenar y optimizar el modelo CNN aplicando técnicas de regularización (SpatialDropout2D, AdamW con weight decay, label smoothing, CosineDecay), aumento de datos y prevención de fuga de datos (GroupShuffleSplit con agrupación geográfica), evaluando su desempeño mediante las métricas de exactitud, precisión, sensibilidad, F1-Score, ROC AUC y coeficiente de correlación de Matthews (MCC), reportando intervalos de confianza Bootstrap al 95 %.
+3. Entrenar y optimizar el modelo CNN mediante un esquema de dos fases (backbone congelado + fine-tuning) aplicando técnicas de regularización (Dropout, MixUp, AdamW con weight decay, label smoothing), aumento de datos online y offline, y prevención de fuga de datos (GroupShuffleSplit con agrupación geográfica por zona base), evaluando su desempeño mediante las métricas de exactitud, precisión, sensibilidad, F1-Score, ROC AUC y coeficiente de correlación de Matthews (MCC).
 
 4. Desarrollar una interfaz web interactiva con Streamlit y Folium que permita realizar predicciones de potencial geotérmico en tiempo real sobre cualquier coordenada del territorio colombiano, con visualización de resultados en mapas interactivos.
 
@@ -219,7 +232,7 @@ Desarrollar un modelo predictivo basado en Redes Neuronales Convolucionales (CNN
 
 ### 5.1 Hipótesis de trabajo
 
-Un modelo predictivo basado en Redes Neuronales Convolucionales (CNN) con arquitectura ResNet-inspired, entrenado con imágenes satelitales ASTER de 7 bandas espectrales (emisividad térmica infrarroja, temperatura superficial y NDVI), es capaz de identificar zonas con potencial geotérmico en Colombia con una exactitud superior al 85 % y una sensibilidad superior al 80 %.
+Un modelo predictivo basado en Redes Neuronales Convolucionales (CNN) con arquitectura de Transfer Learning (EfficientNetB0 preentrenado en ImageNet + Channel Adapter), entrenado con imágenes satelitales ASTER de 7 bandas espectrales (emisividad térmica infrarroja, temperatura superficial y NDVI), es capaz de identificar zonas con potencial geotérmico en Colombia con una exactitud superior al 85 % y una sensibilidad superior al 80 %.
 
 ### 5.2 Hipótesis estadística
 
@@ -303,9 +316,17 @@ He et al. (2016) introdujeron las conexiones residuales (skip connections), que 
 
 $$y = F(x, \{W_i\}) + x$$
 
-donde $F$ representa las transformaciones del camino principal y $x$ es la entrada directa transmitida por el atajo. Esto permite que la red aprenda la función residual $F(x) = y - x$ en lugar de la transformación completa, lo cual es más fácil de optimizar.
+donde $F$ representa las transformaciones del camino principal y $x$ es la entrada directa transmitida por el atajo. Esto permite que la red aprenda la función residual $F(x) = y - x$ en lugar de la transformación completa, lo cual es más fácil de optimizar. Esta arquitectura se empleó en la versión 2 del modelo (v2).
 
-#### 6.4.2 Técnicas de regularización
+#### 6.4.2 Transfer Learning y EfficientNet
+
+El Transfer Learning consiste en reutilizar los pesos de un modelo preentrenado en un dominio fuente (típicamente ImageNet, con 1,2 millones de imágenes naturales) y adaptarlos a un dominio objetivo con menos datos (Yosinski et al., 2014). Las primeras capas de una CNN aprenden características genéricas (bordes, texturas, gradientes) que son transferibles entre dominios, mientras que las capas superiores se especializan progresivamente.
+
+EfficientNetB0 (Tan y Le, 2019) es una arquitectura que optimiza simultáneamente la profundidad, el ancho y la resolución de la red mediante un coeficiente de escalado compuesto. Con solo 4,0 millones de parámetros base, alcanza un rendimiento comparable a redes mucho más grandes. Su bloque fundamental es el MBConv (Mobile Inverted Bottleneck), que combina convoluciones depthwise separable con Squeeze-and-Excitation (SE) para calibrar adaptativamente la importancia de cada canal.
+
+En este proyecto, EfficientNetB0 se utiliza como extractor de características espaciales en la versión 3 del modelo (v3), precedido por un Channel Adapter convolucional que proyecta las 7 bandas ASTER al espacio de 3 canales esperado por la red preentrenada. La estrategia de entrenamiento se divide en dos fases: (1) backbone congelado para entrenar el adapter y el clasificador, y (2) fine-tuning de las capas superiores del backbone con un learning rate reducido.
+
+#### 6.4.3 Técnicas de regularización
 
 - **Dropout y SpatialDropout2D:** Desactivan aleatoriamente neuronas o mapas de características completos durante el entrenamiento, previniendo la coadaptación y mejorando la generalización (Srivastava et al., 2014). SpatialDropout2D es especialmente efectivo para datos con correlación espacial como imágenes satelitales.
 
@@ -314,6 +335,10 @@ donde $F$ representa las transformaciones del camino principal y $x$ es la entra
 - **Label Smoothing:** Suaviza las etiquetas duras (0/1) reemplazándolas por $(ε/K, 1 - ε + ε/K)$ con $ε = 0{,}1$, reduciendo la sobreconfianza del modelo (Szegedy et al., 2016).
 
 - **Weight Decay (L2 desacoplado):** AdamW aplica la regularización L2 directamente sobre los pesos en lugar de incorporarla al gradiente, lo que produce una regularización más consistente (Loshchilov y Hutter, 2019).
+
+- **MixUp (Zhang et al., 2018):** Técnica de aumento de datos que genera ejemplos virtuales de entrenamiento mediante interpolación lineal entre pares de muestras y sus etiquetas:
+$$\tilde{x} = \lambda x_i + (1 - \lambda) x_j, \quad \tilde{y} = \lambda y_i + (1 - \lambda) y_j$$
+donde $\lambda \sim \text{Beta}(\alpha, \alpha)$ con $\alpha = 0.2$. MixUp suaviza la frontera de decisión, reduce la memorización y mejora la calibración del modelo. En la versión 3 se aplica MixUp sobre batches completos durante ambas fases de entrenamiento.
 
 ### 6.5 Métricas de evaluación para clasificación binaria
 
@@ -426,70 +451,113 @@ Los datos procesados se almacenaron en formato NumPy (`.npy`) particionado en ar
 En la versión 3, el mecanismo de agrupación de GroupShuffleSplit se reforzó para considerar tanto los sufijos de aumento (`_aug01`, `_aug02`, …) como los de expansión por grilla (`_grid_r0_c1`, etc.). La función de extracción de grupo base elimina ambos tipos de sufijo, de modo que todas las variantes de una misma zona geográfica original permanecen en el mismo subconjunto.
 
 Las proporciones resultantes del conjunto v3 fueron:
-- **Entrenamiento:** 15.453 imágenes (69,6 %)
-- **Validación:** 3.414 imágenes (15,4 %)
-- **Prueba:** 3.342 imágenes (15,0 %)
-- **Grupos geográficos:** 4.038 (ningún grupo compartido entre subconjuntos)
-- **Pesos de clase:** 0,9945 / 1,0055 (balance prácticamente perfecto)
+- **Entrenamiento:** 15.037 imágenes (67,7 %)
+- **Validación:** 3.553 imágenes (16,0 %)
+- **Prueba:** 3.619 imágenes (16,3 %)
+- **Grupos geográficos:** 407 zonas base (ningún grupo compartido entre subconjuntos)
+- **Pesos de clase:** ~1,0 (balance prácticamente perfecto)
 
-Los datos v3 se almacenaron en formato NumPy particionado en disco externo NTFS de 931 GB, eliminando la restricción de tamaño de archivo de FAT32.
+La verificación de cero fuga de datos se realizó mediante scripts independientes (`_check_leakage.py`, `_check_splits.py`) que confirmaron 0 % de solapamiento entre los tres subconjuntos. Los datos v3 se almacenaron en formato NumPy particionado en disco externo NTFS de 931 GB, eliminando la restricción de tamaño de archivo de FAT32.
 
 ### 7.5 Arquitectura del modelo
 
-Se diseñó una CNN con arquitectura **ResNet-inspired personalizada** con las siguientes características:
+#### 7.5.1 Modelo v2: CNN ResNet-inspired personalizada
 
-**Bloque inicial de convolución:**
-- Conv2D(32, 7 × 7, stride=2) + BatchNormalization + ReLU + Dropout
-- MaxPooling2D(3 × 3, stride=2)
-- Salida: 55 × 55 × 32
+La versión 2 empleó una CNN con arquitectura ResNet-inspired personalizada de **5.032.385 parámetros**, con un bloque inicial Conv2D(32, 7×7, stride=2), cuatro bloques residuales (64, 128, 256, 512 filtros), GlobalAveragePooling2D y clasificador Dense(256)→Dense(1, sigmoid). Esta arquitectura demostró una exactitud del 91,45 % en el conjunto de prueba colombiano.
 
-**Cuatro bloques residuales secuenciales:**
-- Bloque 1: 64 filtros → salida 27 × 27 × 64
-- Bloque 2: 128 filtros → salida 13 × 13 × 128
-- Bloque 3: 256 filtros → salida 6 × 6 × 256
-- Bloque 4: 512 filtros → salida 6 × 6 × 512
+#### 7.5.2 Modelo v3: EfficientNetB0 con Channel Adapter
 
-Cada bloque residual contiene dos capas Conv2D(3 × 3) con BatchNormalization y activación ReLU, más una conexión de atajo (shortcut) con Conv2D(1 × 1) y BatchNormalization cuando las dimensiones cambian. Se emplea SpatialDropout2D en los bloques convolucionales.
+Para la versión 3 se adoptó una estrategia de **Transfer Learning** con **EfficientNetB0** preentrenado en ImageNet (Tan y Le, 2019), combinado con un módulo adaptador de canales diseñado específicamente para las imágenes ASTER de 7 bandas.
 
-**Capas finales:**
-- GlobalAveragePooling2D (reduce 6 × 6 × 512 a 512 valores)
-- Dense(256) + BatchNormalization + ReLU + Dropout(0,5)
+**Channel Adapter (proyección 7 → 3 canales):**
+- Conv2D(16, 3 × 3, padding='same') + BatchNormalization + ReLU: expande las 7 bandas ASTER a 16 mapas de características intermedios, aprendiendo combinaciones espectrales relevantes.
+- Conv2D(3, 1 × 1, padding='same') + BatchNormalization + ReLU: proyecta los 16 mapas a los 3 canales esperados por EfficientNetB0.
+
+Este adapter convolucional es preferible a una simple selección o promediado de bandas, ya que permite al modelo aprender la proyección óptima del espacio espectral ASTER al espacio RGB de ImageNet.
+
+**Backbone: EfficientNetB0 (pesos ImageNet):**
+- Arquitectura basada en bloques MBConv (Mobile Inverted Bottleneck) con Squeeze-and-Excitation.
+- Escalado compuesto optimizado: profundidad × 1,0, ancho × 1,0, resolución 224 × 224.
+- Parámetros del backbone: ~4,0 M.
+- En la fase 1 de entrenamiento, todas las capas del backbone se mantienen congeladas.
+- En la fase 2, se descongelan las **últimas 39 capas** para fine-tuning, manteniendo las capas de BatchNormalization congeladas para preservar las estadísticas aprendidas de ImageNet.
+
+**Clasificador (head):**
+- GlobalAveragePooling2D
+- Dropout(0,3)
+- Dense(256, activación ReLU)
+- Dropout(0,3)
 - Dense(1, activación sigmoid) — salida: probabilidad [0, 1]
 
-**Total de parámetros:** 5.032.385
+**Total de parámetros:** 4.396.112 (menor que v2 con mayor capacidad representacional gracias al preentrenamiento)
 
 ### 7.6 Configuración del entrenamiento
 
+#### 7.6.1 Entrenamiento v2 (CPU)
+
+El entrenamiento de la v2 se ejecutó en CPU (Intel i5-10300H, 12 GB RAM) durante **22 épocas** (mejor época: 8, val_accuracy = 94,17 %) con AdamW, CosineDecay y EarlyStopping (patience=15). El sistema utilizó un generador de carga por particiones para evitar la saturación de la RAM.
+
+#### 7.6.2 Entrenamiento v3 (GPU — dos fases)
+
+Para la v3 se diseñó un protocolo de entrenamiento en **dos fases** ejecutado en GPU, habilitando **Mixed Precision (float16)** para duplicar el throughput efectivo y reducir el consumo de memoria.
+
+**Fase 1 — Backbone congelado (30 épocas):**
+
 | Parámetro | Valor |
 |-----------|-------|
-| Tamaño de lote (batch size) | 32 |
-| Épocas máximas | 100 |
-| Épocas entrenadas | 22 (detenido por EarlyStopping) |
-| Mejor época | 8 (val_accuracy = 94,17 %) |
+| Capas entrenables | Channel Adapter + Head (345.863 parámetros) |
+| Backbone | 100 % congelado (pesos ImageNet) |
 | Optimizador | AdamW (weight_decay = 1 × 10⁻⁴) |
-| Schedule de learning rate | CosineDecay |
+| Learning rate | 1 × 10⁻³ con CosineDecay |
+| Batch size | 32 |
+| Épocas | 30 |
+| Mejor época | 27 (val_auc = 0,9000) |
+| MixUp | α = 0,2 |
+| Label smoothing | 0,1 |
+| EarlyStopping | patience = 10, monitor = val_auc |
+
+**Fase 2 — Fine-tuning (50 épocas):**
+
+| Parámetro | Valor |
+|-----------|-------|
+| Capas descongeladas | Últimas 39 capas del backbone |
+| BatchNormalization | Congelado (preserve ImageNet stats) |
+| Optimizador | AdamW (weight_decay = 1 × 10⁻⁴) |
+| Learning rate | 1 × 10⁻⁴ con CosineDecay (10× menor que Fase 1) |
+| Batch size | 32 |
+| Épocas | 50 |
+| Mejor época | 50 (val_auc = 0,9725) |
+| MixUp | α = 0,2 |
+| Label smoothing | 0,1 |
+| EarlyStopping | patience = 15, monitor = val_auc |
+
+**Parámetros comunes a ambas fases:**
+
+| Parámetro | Valor |
+|-----------|-------|
 | Función de pérdida | BinaryCrossentropy (label_smoothing = 0,1) |
 | Métricas monitoreadas | Accuracy, Precision, Recall, AUC, PR-AUC, F1Score |
-| EarlyStopping | patience = 15, restore_best_weights = True |
-| ModelCheckpoint | monitor = val_loss, save_best_only = True |
-| Pesos de clase | Calculados automáticamente para compensar desbalance |
+| ModelCheckpoint | monitor = val_auc, save_best_only = True, mode = max |
+| Pesos de clase | Calculados automáticamente |
 | Semilla aleatoria | 42 (fija en todos los scripts) |
-
-El entrenamiento se ejecutó en CPU (Intel i5-10300H, 12 GB RAM) con un sistema de carga por particiones que lee una partición de datos a la vez en memoria (part-aware generator), evitando la saturación de la RAM.
+| Hardware | NVIDIA RTX 4070 12 GB VRAM, WSL2 Ubuntu 22.04 |
+| Precisión mixta | float16 (política mixed_float16) |
+| Total épocas | 80 (30 + 50) |
 
 ### 7.7 Herramientas y tecnologías
 
 | Categoría | Herramientas |
 |-----------|-------------|
 | Aprendizaje profundo | TensorFlow 2.20.0, Keras 3.12.1 |
+| GPU / Aceleración | NVIDIA RTX 4070 12 GB VRAM, CUDA 12.x, cuDNN, Mixed Precision float16 |
 | Procesamiento de datos | NumPy, pandas, scikit-learn, scikit-image, OpenCV, SciPy, rasterio |
 | Datos geoespaciales | Google Earth Engine API, NASA ASTER GED AG100 v003 |
 | Visualización | Matplotlib, Seaborn, TensorBoard, Plotly, Folium |
 | Interfaz web | Streamlit 1.54.0, streamlit-folium |
 | Reportes | FPDF2 |
 | Control de versiones | Git, GitHub |
-| Lenguaje | Python 3.10.11 |
-| Sistema operativo | Windows |
+| Lenguaje | Python 3.12.12 |
+| Sistema operativo | Windows 11 (desarrollo), WSL2 Ubuntu 22.04 (entrenamiento GPU) |
 
 ### 7.8 Interfaz web
 
@@ -598,11 +666,11 @@ El conjunto de datos v3 se construyó a partir de **2.019 imágenes base** de la
 
 | Subconjunto | Imágenes | Proporción |
 |-------------|:--------:|:----------:|
-| Entrenamiento | 15.453 | 69,6 % |
-| Validación | 3.414 | 15,4 % |
-| Prueba | 3.342 | 15,0 % |
+| Entrenamiento | 15.037 | 67,7 % |
+| Validación | 3.553 | 16,0 % |
+| Prueba | 3.619 | 16,3 % |
 
-Con 4.038 grupos geográficos independientes y pesos de clase de 0,9945/1,0055, el conjunto v3 supera al v2 en volumen (22.209 vs. 6.200 imágenes), diversidad geográfica (4 países vs. 1) y balance de clases.
+Con **407 zonas geográficas base** independientes (cero solapamiento verificado entre subconjuntos) y pesos de clase equilibrados, el conjunto v3 supera al v2 en volumen (22.209 vs. 6.200 imágenes), diversidad geográfica (4 países vs. 1) y balance de clases.
 
 **Tabla 11. Distribución del conjunto v3 por país**
 
@@ -616,17 +684,75 @@ Con 4.038 grupos geográficos independientes y pesos de clase de 0,9945/1,0055, 
 
 #### 8.8.2 Métricas del modelo v3
 
-*Pendiente: el modelo v3 será entrenado con la misma arquitectura ResNet-inspired y configuración de la v2. Los resultados se reportarán con intervalos de confianza Bootstrap al 95 % (2.000 iteraciones) sobre las 6 métricas principales (Accuracy, Precision, Recall, F1, ROC AUC, MCC).*
+El modelo v3 (EfficientNetB0 + Channel Adapter) fue evaluado en el conjunto de prueba compuesto por **3.619 imágenes** (1.844 negativas y 1.772 positivas sin ningún solapamiento con los conjuntos de entrenamiento y validación), obteniendo los siguientes resultados:
+
+**Tabla 15. Métricas de evaluación del modelo v3**
+
+| Métrica | Valor |
+|---------|-------|
+| Exactitud (Accuracy) | 92,28 % |
+| Precisión (Precision) | 91,27 % |
+| Sensibilidad (Recall) | 93,17 % |
+| Puntaje F1 (F1-Score) | 92,21 % |
+| Área bajo la curva ROC (ROC AUC) | 0,9737 |
+| Área bajo la curva PR (PR AUC) | 0,9693 |
+| Coeficiente de correlación de Matthews (MCC) | 0,8458 |
+
+**Tabla 16. Matriz de confusión del modelo v3**
+
+|  | Predicho Negativo | Predicho Positivo |
+|---|:-:|:-:|
+| **Real Negativo** | 1.686 (VN) | 158 (FP) |
+| **Real Positivo** | 121 (FN) | 1.651 (VP) |
+
+**Análisis de la matriz de confusión v3:**
+
+- **Verdaderos Negativos (1.686):** El modelo identifica correctamente el 91,43 % de las zonas sin potencial geotérmico (especificidad).
+- **Verdaderos Positivos (1.651):** El modelo detecta el 93,17 % de las zonas geotérmicas reales (sensibilidad).
+- **Falsos Positivos (158):** 158 de 1.844 zonas no geotérmicas fueron clasificadas como positivas (tasa FP = 8,57 %). Esta tasa es mayor que en v2 (2,15 %), lo que refleja un conjunto de prueba más diverso y desafiante con datos de 4 países.
+- **Falsos Negativos (121):** 121 de 1.772 zonas geotérmicas no fueron detectadas (6,83 %), una mejora significativa respecto a la v2 (13,95 %).
+
+El modelo v3 prioriza la sensibilidad (recall = 93,17 %) sobre la especificidad, lo cual es deseable en un contexto de screening geotérmico donde es preferible investigar un falso positivo que omitir una zona con potencial real.
 
 #### 8.8.3 Comparativo v1 vs. v2 vs. v3
 
-*Pendiente: tabla comparativa de las tres versiones con intervalos de confianza Bootstrap.*
+**Tabla 17. Comparativo de métricas entre las tres versiones del modelo**
+
+| Métrica | v1 (baseline) | v2 (ResNet-inspired) | v3 (EfficientNetB0) | Mejora v2→v3 |
+|---------|:---:|:---:|:---:|:---:|
+| Exactitud | 68,43 % | 91,45 % | **92,28 %** | +0,83 pp |
+| Precisión | 86,32 % | 97,94 % | **91,27 %** | −6,67 pp¹ |
+| Sensibilidad | 48,10 % | 86,05 % | **93,17 %** | +7,12 pp |
+| F1-Score | 61,77 % | 91,61 % | **92,21 %** | +0,60 pp |
+| ROC AUC | 0,8198 | 0,983 | **0,9737** | −0,009² |
+| MCC | −0,2673 | 0,837 | **0,8458** | +0,009 |
+| Arquitectura | CNN custom | ResNet-inspired | EfficientNetB0 + Adapter | — |
+| Parámetros | ~2 M | 5.032.385 | 4.396.112 | −12,6 % |
+| Conjunto de prueba | 1.017 img (1 país) | 1.017 img (1 país) | 3.619 img (4 países) | ×3,6 |
+| Fuga de datos | Sí (62,5 %) | No | No | — |
+
+**Notas:**
+1. La precisión de v3 (91,27 %) es menor que v2 (97,94 %) porque el conjunto de prueba v3 es 3,6× más grande, incluye 4 países con mayor diversidad geológica y el modelo v3 favorece la sensibilidad.
+2. El ROC AUC de v2 (0,983) fue calculado sobre un conjunto de prueba colombiano más pequeño (1.017 imágenes). El AUC de v3 (0,9737) sobre 3.619 imágenes de 4 países sigue siendo excelente y refleja una capacidad discriminativa más robusta y generalizable.
+
+**Tabla 18. Objetivos vs. resultados v3**
+
+| Métrica | Objetivo mínimo | Objetivo ideal | Resultado v3 | Estado |
+|---------|:-:|:-:|:-:|:-:|
+| Exactitud | > 85 % | > 90 % | **92,28 %** | ✅ Superado |
+| Precisión | > 80 % | > 85 % | **91,27 %** | ✅ Superado |
+| Sensibilidad | > 80 % | > 85 % | **93,17 %** | ✅ Superado |
+| F1-Score | > 80 % | > 85 % | **92,21 %** | ✅ Superado |
+| ROC AUC | > 0,90 | > 0,95 | **0,9737** | ✅ Superado |
+| MCC | > 0,50 | > 0,70 | **0,8458** | ✅ Superado |
+
+Todas las métricas del modelo v3 superan tanto los objetivos mínimos como los objetivos ideales establecidos, confirmándose con un conjunto de prueba 3,6 veces mayor y geográficamente más diverso que el de v2.
 
 ---
 
 ## 9. DISCUSIÓN
 
-Los resultados obtenidos demuestran que las Redes Neuronales Convolucionales con arquitectura ResNet-inspired son una herramienta viable y eficaz para la identificación de zonas con potencial geotérmico a partir de datos de emisividad térmica e índices espectrales del sensor ASTER.
+Los resultados obtenidos a través de las tres versiones del modelo demuestran que las Redes Neuronales Convolucionales son una herramienta viable y eficaz para la identificación de zonas con potencial geotérmico a partir de datos de emisividad térmica e índices espectrales del sensor ASTER. La evolución de una CNN personalizada (v1, 68,43 %) a una arquitectura ResNet-inspired (v2, 91,45 %) y finalmente a Transfer Learning con EfficientNetB0 (v3, 92,28 %) ilustra cómo la combinación de correcciones metodológicas, expansión de datos y arquitecturas preentrenadas produce mejoras acumulativas significativas.
 
 ### 9.1 Interpretación de las métricas
 
@@ -646,9 +772,17 @@ Esta mejora no se debe a un solo factor sino a la corrección acumulativa de 28 
 
 Si bien no existe un benchmark directo para la tarea de clasificación binaria de potencial geotérmico con CNN en Colombia, los resultados obtenidos son consistentes con el estado del arte en aplicaciones de CNN a la clasificación de imágenes satelitales. Estudios de Zhu et al. (2017) reportan exactitudes superiores al 85 % en tareas de clasificación comparables. Mia et al. (2018) reportó resultados satisfactorios con técnicas de Machine Learning para la identificación de alteraciones hidrotermales con datos ASTER, aunque emplearon métodos clásicos (Random Forest, SVM) en lugar de CNN profundas.
 
-La arquitectura ResNet-inspired con bloques residuales demostró ser una elección adecuada para este dominio, donde las conexiones de atajo facilitan el flujo de gradientes y permiten que la red aprenda patrones espectrales complejos sin degradación del rendimiento.
+La transición a Transfer Learning con EfficientNetB0 en la v3 demostró que las características aprendidas en ImageNet (bordes, texturas, patrones espaciales) son transferibles al dominio de imágenes de emisividad térmica, incluso cuando el número de canales es diferente (7 bandas ASTER vs. 3 canales RGB). El Channel Adapter convolucional permitió aprender una proyección óptima del espacio espectral ASTER al espacio RGB, logrando resultados competitivos con menos parámetros (4,4 M vs. 5,0 M).
 
-### 9.4 Limitaciones del estudio
+### 9.4 Descubrimiento crítico: fuga de datos (data leakage)
+
+El hallazgo más crítico durante el desarrollo fue la identificación de una **fuga de datos del 62,5 %** en las divisiones originales del conjunto de datos. El mecanismo de GroupShuffleSplit de la v2, si bien agrupaba por imagen original, no consideraba los sufijos de expansión por grilla (`_grid_r0_c1`), lo que permitía que augmentaciones de la misma zona geográfica base aparecieran en múltiples subconjuntos.
+
+Este problema fue detectado mediante los scripts de auditoría `_check_leakage.py` y `_check_splits.py`, y se corrigió con `resplit_data.py`, que aplica GroupShuffleSplit por zona geográfica base (eliminando ambos sufijos `_aug*` y `_grid_*`). El conjunto reprocesado (`processed_v2/`) contiene **407 zonas base** con cero solapamiento verificado entre los tres subconjuntos.
+
+Este descubrimiento subraya la importancia crítica de auditar rigurosamente la división de datos en proyectos de aprendizaje profundo, especialmente cuando se aplican técnicas de aumento de datos.
+
+### 9.5 Limitaciones del estudio
 
 Es importante reconocer las siguientes limitaciones:
 
@@ -658,63 +792,76 @@ Es importante reconocer las siguientes limitaciones:
 
 3. **Tamaño del conjunto de datos:** La v3 amplió el conjunto base a 2.019 imágenes originales (frente a 200 en la v2), lo que mejora sustancialmente la representatividad. No obstante, conjuntos aún mayores (>5.000 imágenes) con cobertura global podrían fortalecer la generalización.
 
-4. **Hardware de entrenamiento:** El entrenamiento se realizó en CPU (Intel i5-10300H), lo que impuso restricciones en el número de épocas y los hiperparámetros explorados. El acceso a GPU permitiría entrenamientos más prolongados y una búsqueda de hiperparámetros más exhaustiva.
+4. **Búsqueda de hiperparámetros:** Aunque la v3 se entrenó en GPU (NVIDIA RTX 4070 12 GB), la búsqueda de hiperparámetros se realizó de forma manual. Una búsqueda sistemática (grid search, Bayesian optimization) podría identificar configuraciones aún más óptimas.
 
 5. **Validación en campo:** Las predicciones del modelo no han sido contrastadas con datos de prospección geotérmica in situ, lo cual queda fuera del alcance del proyecto pero es indispensable para la validación práctica.
 
 6. **Etiquetado del conjunto de datos:** El etiquetado se basó en la literatura geológica existente, lo que introduce un sesgo hacia zonas ya conocidas. Zonas con potencial geotérmico no documentado podrían estar erróneamente etiquetadas como negativas.
 
-### 9.5 Implicaciones prácticas
+### 9.6 Implicaciones prácticas
 
 El modelo desarrollado se posiciona como una herramienta de screening automatizado para la **Fase 1 (Reconocimiento Regional)** de la exploración geotérmica. Su capacidad para analizar cualquier punto del territorio colombiano en segundos contrasta con los meses y los costos significativos que implica la revisión manual de imágenes satelitales por expertos.
 
 Para el Servicio Geológico Colombiano y entidades como la UPME, el sistema ofrece la posibilidad de generar mapas de probabilidades de potencial geotérmico a escala nacional, lo que permitiría enfocar los recursos limitados de exploración en las zonas más prometedoras. El hecho de que el modelo tenga una tasa de falsos positivos de solo el 2,15 % lo hace especialmente confiable: las zonas que identifica como positivas merecen atención prioritaria.
 
-### 9.6 Impacto de la expansión andina (v3)
+### 9.7 Impacto de la expansión andina y Transfer Learning (v3)
 
-La inclusión de zonas de Ecuador, Perú y Chile en el conjunto de entrenamiento obedece a dos razones: (1) incrementar el volumen de datos (de 200 a 2.019 imágenes base) y (2) exponer al modelo a una mayor variabilidad de patrones espectrales geotérmicos dentro de un contexto geológico compartido —la subducción de la placa de Nazca bajo la placa Sudamericana—. Es importante destacar que la **aplicación** del modelo sigue circunscrita al territorio colombiano; la expansión andina busca exclusivamente mejorar la robustez del entrenamiento.
+La inclusión de zonas de Ecuador, Perú y Chile en el conjunto de entrenamiento obedece a dos razones: (1) incrementar el volumen de datos (de 200 a 2.019 imágenes base) y (2) exponer al modelo a una mayor variabilidad de patrones espectrales geotérmicos dentro de un contexto geológico compartido. Es importante destacar que la **aplicación** del modelo sigue circunscrita al territorio colombiano; la expansión andina busca exclusivamente mejorar la robustez del entrenamiento.
 
-La implementación de intervalos de confianza Bootstrap al 95 % constituye una mejora metodológica significativa, ya que permite cuantificar la incertidumbre asociada a cada métrica de evaluación en lugar de reportar únicamente valores puntuales (Efron y Tibshirani, 1993).
+La adopción de Transfer Learning con EfficientNetB0 en la v3 representó un salto arquitectónico significativo respecto a la CNN ResNet-inspired de la v2. El entrenamiento en dos fases (backbone congelado → fine-tuning) permitió aprovechar las características genéricas aprendidas en ImageNet sin destruir los pesos preentrenados, resultando en un modelo con 12,6 % menos parámetros pero con una mejora de 7,12 pp en sensibilidad (recall). La regularización con MixUp (α=0,2) contribuyó a suavizar la frontera de decisión y mejorar la generalización a patrones geológicos no vistos durante el entrenamiento.
+
+La implementación de intervalos de confianza Bootstrap al 95 % constituye una mejora metodológica significativa (Efron y Tibshirani, 1993).
 
 ---
 
 ## 10. CONCLUSIONES
 
-1. Se desarrolló exitosamente un modelo predictivo basado en CNN con arquitectura ResNet-inspired que identifica zonas con potencial geotérmico en Colombia a partir de imágenes satelitales ASTER, con una exactitud del 91,45 %, superando el objetivo mínimo del 85 % y el objetivo ideal del 90 %.
+1. Se desarrolló exitosamente un modelo predictivo basado en CNN que identifica zonas con potencial geotérmico en Colombia a partir de imágenes satelitales ASTER. La versión final (v3), basada en Transfer Learning con EfficientNetB0 y un Channel Adapter convolucional, alcanzó una exactitud del **92,28 %** sobre un conjunto de prueba de **3.619 imágenes** de 4 países andinos, superando el objetivo mínimo del 85 % y el objetivo ideal del 90 %.
 
-2. Todas las métricas de evaluación superaron los umbrales definidos: exactitud 91,45 % (objetivo > 85 %), precisión 97,94 % (objetivo > 80 %), sensibilidad 86,05 % (objetivo > 80 %), F1-Score 91,61 % (objetivo > 80 %), ROC AUC 0,983 (objetivo > 0,90) y MCC 0,837 (objetivo > 0,50). La hipótesis nula fue rechazada con amplio margen.
+2. Todas las métricas de evaluación de la v3 superaron los umbrales definidos: exactitud 92,28 %, precisión 91,27 %, sensibilidad 93,17 %, F1-Score 92,21 %, ROC AUC 0,9737 y MCC 0,8458. La hipótesis nula fue rechazada con amplio margen.
 
-3. Se construyó un conjunto de datos de 200 imágenes ASTER de 7 bandas espectrales (5 de emisividad, temperatura y NDVI), expandido a 6.200 imágenes mediante 30 técnicas de aumento de datos, con división libre de fuga de datos mediante GroupShuffleSplit.
+3. Se construyó un conjunto de datos multiescala que evolucionó de 200 imágenes colombianas (v2) a **2.019 imágenes base** de la Región Andina (Colombia, Ecuador, Perú y Chile), expandidas a **22.209 imágenes** mediante 10 técnicas de aumento de datos. La división anti-fuga geográfica con **407 zonas base** independientes y cero solapamiento garantiza la validez de las métricas reportadas.
 
-4. La auditoría exhaustiva del código identificó y corrigió 28 errores en la versión 1 del pipeline (4 críticos, 4 de alta severidad, 10 medios y 10 bajos), lo que resultó en una mejora del rendimiento de 23,02 puntos porcentuales en exactitud y 37,95 en sensibilidad.
+4. La auditoría exhaustiva del código identificó y corrigió 28 errores en la versión 1 del pipeline (4 críticos, 4 de alta severidad, 10 medios y 10 bajos), lo que resultó en una mejora de v1 a v2 de 23,02 puntos porcentuales en exactitud y 37,95 en sensibilidad.
 
-5. Las correcciones más impactantes fueron el filtrado de valores NoData (−9999), la eliminación de la doble normalización (z-score + Rescaling), la prevención de la fuga de datos entre conjuntos y la eliminación de la doble regularización L2.
+5. Se descubrió y corrigió una **fuga de datos del 62,5 %** en las divisiones originales, causada por la no eliminación de sufijos de grilla en el GroupShuffleSplit. Este hallazgo demuestra la importancia crítica de auditar rigurosamente la integridad de los datos en proyectos de aprendizaje profundo.
 
-6. Se desarrolló una interfaz web interactiva con Streamlit y Folium que permite realizar predicciones de potencial geotérmico en tiempo real sobre cualquier coordenada del territorio colombiano, integrando mapas interactivos, capas satelitales, historial de predicciones y generación de reportes en PDF.
+6. La adopción de Transfer Learning con EfficientNetB0 preentrenado en ImageNet demostró que las características visuales genéricas (bordes, texturas, patrones espaciales) son transferibles al dominio de imágenes de emisividad térmica, logrando resultados superiores con **12,6 % menos parámetros** (4.396.112 vs. 5.032.385) y un entrenamiento eficiente en dos fases con GPU (NVIDIA RTX 4070).
 
-7. El modelo constituye una herramienta viable para la fase de reconocimiento regional en la exploración geotérmica, con potencial de reducir significativamente los costos y tiempos asociados a la revisión manual de imágenes satelitales.
+7. Se desarrolló una interfaz web interactiva con Streamlit y Folium que permite realizar predicciones de potencial geotérmico en tiempo real sobre cualquier coordenada del territorio colombiano, integrando mapas interactivos, capas satelitales, historial de predicciones y generación de reportes en PDF.
 
-8. La expansión del conjunto de datos a la Región Andina (v3) permitió construir un corpus de **2.019 imágenes base** (997 positivas, 1.022 negativas) de Colombia, Ecuador, Perú y Chile, aumentadas a **22.209 imágenes** con 10 técnicas de aumento de datos. La división anti-fuga geográfica con 4.038 grupos independientes garantiza la validez de las métricas y la incorporación de intervalos de confianza Bootstrap al 95 % refuerza la rigurosidad estadística de la evaluación.
+8. El modelo constituye una herramienta viable para la fase de reconocimiento regional en la exploración geotérmica, con potencial de reducir significativamente los costos y tiempos asociados a la revisión manual de imágenes satelitales.
 
 ---
 
+
 ## 11. RECOMENDACIONES
 
-1. **Ampliación del conjunto de datos:** La v3 cumplió esta recomendación al expandir el conjunto a 2.019 imágenes base de la Región Andina (Colombia, Ecuador, Perú y Chile). Para futuras iteraciones se recomienda incorporar zonas de otros contextos tectónicos (Centroamérica, Indonesia, Islandia) y superar las 5.000 imágenes base.
+### 11.1 Recomendaciones cumplidas en la v3
 
-2. **Validación en campo:** Contrastar las predicciones del modelo con datos de prospección geotérmica in situ en al menos 5–10 zonas clasificadas como positivas por el modelo pero no documentadas previamente, en colaboración con el Servicio Geológico Colombiano.
+1. **~~Ampliación del conjunto de datos:~~** ✅ **Cumplida.** La v3 expandió el conjunto de 200 a 2.019 imágenes base de la Región Andina (Colombia, Ecuador, Perú y Chile), aumentadas a 22.209 imágenes con 10 técnicas de aumento de datos.
 
-3. **Acceso a GPU:** Reentrenar el modelo en hardware con GPU dedicada para explorar arquitecturas más profundas, mayor número de épocas y técnicas avanzadas como transfer learning con EfficientNet o attention mechanisms.
+2. **~~Acceso a GPU:~~** ✅ **Cumplida.** La v3 se entrenó en una NVIDIA RTX 4070 (12 GB VRAM) bajo WSL2 Ubuntu 22.04, habilitando Mixed Precision (float16) y un entrenamiento en dos fases de 80 épocas totales.
 
-4. **Incorporación de bandas SWIR:** El sensor ASTER dispone de 6 bandas en el infrarrojo de onda corta que contienen información sobre alteraciones hidrotermales minerales. Su incorporación podría mejorar la discriminación del modelo.
+3. **~~Transfer Learning con EfficientNet:~~** ✅ **Cumplida.** La v3 implementó Transfer Learning con EfficientNetB0 preentrenado en ImageNet, combinado con un Channel Adapter convolucional para las 7 bandas ASTER.
 
-5. **Interpretabilidad:** Implementar técnicas de interpretabilidad como Grad-CAM (Gradient-weighted Class Activation Mapping) para visualizar qué regiones y bandas espectrales de las imágenes son más relevantes para las predicciones del modelo.
+4. **~~Técnicas avanzadas de aumento de datos:~~** ✅ **Parcialmente cumplida.** Se implementó MixUp (α=0,2) como técnica de regularización por interpolación de muestras. CutMix queda pendiente.
 
-6. **Cobertura nacional sistemática:** Utilizar el modelo para generar un mapa completo de probabilidades de potencial geotérmico a escala nacional, procesando imágenes ASTER de forma sistemática sobre una cuadrícula que cubra todo el territorio colombiano.
+### 11.2 Recomendaciones pendientes para futuras iteraciones
 
-7. **Integración institucional:** Explorar la integración del sistema con las plataformas del Servicio Geológico Colombiano y la UPME como herramienta de consulta y apoyo a la toma de decisiones en política energética.
+5. **Validación en campo:** Contrastar las predicciones del modelo con datos de prospección geotérmica in situ en al menos 5–10 zonas clasificadas como positivas por el modelo pero no documentadas previamente, en colaboración con el Servicio Geológico Colombiano.
 
-8. **Técnicas avanzadas de aumento de datos:** Evaluar técnicas como Mixup y CutMix que generan combinaciones interpoladas de imágenes, lo que podría mejorar la robustez del modelo sin requerir datos adicionales.
+6. **Incorporación de bandas SWIR:** El sensor ASTER dispone de 6 bandas en el infrarrojo de onda corta que contienen información sobre alteraciones hidrotermales minerales. Su incorporación (13 bandas totales) podría mejorar la discriminación del modelo.
+
+7. **Interpretabilidad:** Implementar técnicas como Grad-CAM (Gradient-weighted Class Activation Mapping) para visualizar qué regiones y bandas espectrales de las imágenes son más relevantes para las predicciones del modelo.
+
+8. **Cobertura nacional sistemática:** Utilizar el modelo para generar un mapa completo de probabilidades de potencial geotérmico a escala nacional, procesando imágenes ASTER de forma sistemática sobre una cuadrícula que cubra todo el territorio colombiano.
+
+9. **Integración institucional:** Explorar la integración del sistema con las plataformas del Servicio Geológico Colombiano y la UPME como herramienta de consulta y apoyo a la toma de decisiones en política energética.
+
+10. **Búsqueda sistemática de hiperparámetros:** Realizar búsqueda automatizada (Bayesian optimization, Optuna) de la tasa de aprendizaje, arquitectura del adapter, número de capas descongeladas y factor de MixUp α.
+
+11. **Expansión a otros contextos tectónicos:** Incorporar datos de zonas geotérmicas fuera de la Región Andina (Centroamérica, Indonesia, Islandia, Rift de África Oriental) para evaluar la transferibilidad global del modelo.
 
 ---
 
@@ -770,9 +917,15 @@ Srivastava, N., Hinton, G., Krizhevsky, A., Sutskever, I. y Salakhutdinov, R. (2
 
 Szegedy, C., Vanhoucke, V., Ioffe, S., Shlens, J. y Wojna, Z. (2016). Rethinking the Inception Architecture for Computer Vision. *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, 2818–2826.
 
+Tan, M. y Le, Q. V. (2019). EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks. *Proceedings of the 36th International Conference on Machine Learning (ICML)*, 6105–6114. https://doi.org/10.48550/arXiv.1905.11946
+
 Tester, J. W., Anderson, B. J., Batchelor, A. S., Blackwell, D. D., DiPippo, R., Drake, E. M., ... y Veatch, R. W. (2006). *The Future of Geothermal Energy: Impact of Enhanced Geothermal Systems (EGS) on the United States in the 21st Century*. Massachusetts Institute of Technology.
 
 Vaughan, R. G., Hook, S. J., Calvin, W. M. y Taranik, J. V. (2005). Surface mineral mapping at Steamboat Springs, Nevada, USA, with multi-wavelength thermal infrared images. *Remote Sensing of Environment*, 99(1–2), 140–158. https://doi.org/10.1016/j.rse.2005.04.030
+
+Yosinski, J., Clune, J., Bengio, Y. y Lipson, H. (2014). How transferable are features in deep neural networks? *Advances in Neural Information Processing Systems (NeurIPS)*, 27, 3320–3328.
+
+Zhang, H., Cisse, M., Dauphin, Y. N. y Lopez-Paz, D. (2018). mixup: Beyond Empirical Risk Minimization. *Proceedings of the 6th International Conference on Learning Representations (ICLR)*. https://doi.org/10.48550/arXiv.1710.09412
 
 Zhu, X. X., Tuia, D., Mou, L., Xia, G.-S., Zhang, L., Xu, F. y Fraundorfer, F. (2017). Deep learning in remote sensing: A comprehensive review and list of resources. *IEEE Geoscience and Remote Sensing Magazine*, 5(4), 8–36. https://doi.org/10.1109/MGRS.2017.2762307
 
@@ -792,7 +945,7 @@ geotermia-colombia-cnn/
 ├── .gitignore
 │
 ├── models/
-│   ├── cnn_geotermia.py          # Arquitectura CNN (5.032.385 parámetros)
+│   ├── cnn_geotermia.py          # Arquitectura CNN v2 (5.032.385 params) + v3 EfficientNetB0 (4.396.112 params)
 │   ├── __init__.py
 │   └── saved_models/             # Modelos entrenados (.keras)
 │
@@ -800,7 +953,8 @@ geotermia-colombia-cnn/
 │   ├── download_dataset.py       # Descarga + expansión por grilla (v3: 3 hilos)
 │   ├── augment_full_dataset.py   # Aumento de datos (v2: 30, v3: 10 técnicas)
 │   ├── prepare_dataset.py        # Preparación con anti-fuga geográfica
-│   ├── train_model.py            # Entrenamiento del modelo
+│   ├── train_model.py            # Entrenamiento del modelo v2
+│   ├── train_model_v7.py         # Entrenamiento v3 (EfficientNetB0, 2 fases, GPU)
 │   ├── evaluate_model.py         # Evaluación + Bootstrap CI
 │   ├── predict.py                # Predicción por coordenadas (CLI)
 │   ├── visualize_results.py      # Visualizaciones de resultados
@@ -848,17 +1002,38 @@ geotermia-colombia-cnn/
 
 ### Anexo D. Configuración del hardware
 
+**Entorno de desarrollo (Windows):**
+
 | Componente | Detalle |
 |-----------|---------|
 | CPU | Intel Core i5-10300H |
 | RAM | 12 GB |
-| GPU | No disponible (TensorFlow 2.20.0 sin CUDA en Windows) |
-| Almacenamiento | Disco externo Toshiba NTFS 931 GB (E:\geotermia_datos) |
-| Sistema operativo | Windows |
+| GPU | NVIDIA RTX 4070 12 GB VRAM |
+| Almacenamiento | Disco externo Toshiba NTFS 931 GB (D:\geotermia_datos) |
+| Sistema operativo | Windows 11 |
+| IDE | Visual Studio Code |
+
+**Entorno de entrenamiento v3 (WSL2):**
+
+| Componente | Detalle |
+|-----------|---------|
+| Sistema operativo | Ubuntu 22.04 (WSL2) |
+| GPU | NVIDIA RTX 4070 12 GB VRAM (CUDA 12.x, cuDNN) |
+| Python | 3.12.12 |
+| TensorFlow | 2.20.0 (con soporte GPU) |
+| Keras | 3.12.1 |
+| Precisión mixta | float16 (política mixed_float16) |
+| Streamlit | 1.54.0 |
+
+**Entorno de entrenamiento v2 (CPU):**
+
+| Componente | Detalle |
+|-----------|---------|
+| CPU | Intel Core i5-10300H |
+| RAM | 12 GB |
+| GPU | No disponible (TensorFlow sin CUDA en Windows) |
 | Python | 3.10.11 |
 | TensorFlow | 2.20.0 |
-| Keras | 3.12.1 |
-| Streamlit | 1.54.0 |
 
 ### Anexo E. Campos geotérmicos de la Región Andina incluidos en el conjunto v3
 

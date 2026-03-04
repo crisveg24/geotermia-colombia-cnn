@@ -3,7 +3,7 @@
 **Proyecto:** Sistema CNN para Identificacion de Zonas Geotermicas en Colombia
 **Institucion:** Universidad de San Buenaventura - Bogota
 **Fecha de inicio:** Noviembre 2025
-**Ultima actualizacion:** 27 de febrero de 2026
+**Ultima actualizacion:** 3 de marzo de 2026
 **Rama activa:** `v3`
 **Repositorio:** https://github.com/crisveg24/geotermia-colombia-cnn
 
@@ -18,11 +18,12 @@
 | Dataset v2 (Colombia) | 100% | 200 imagenes ASTER (111 positivas + 89 negativas) |
 | Dataset v3 (Region Andina) | 100% | 2,019 imagenes (997 positivas + 1,022 negativas, 4 paises) |
 | Dataset augmentado v3 | 100% | 22,209 imagenes (x10 variaciones por imagen) |
-| Dataset preparado v3 | 100% | Train 15,453 / Val 3,414 / Test 3,342 (anti-leakage geografico) |
-| Entrenamiento v2 | 100% | 22 epocas, mejor epoca 8 (val_acc 94.17%) |
+| Dataset preparado v3 | 100% | Train 15,037 / Val 3,553 / Test 3,619 (407 zonas, anti-leakage) |
+| Entrenamiento v2 | 100% | 22 epocas CPU, mejor epoca 8 (val_acc 94.17%) |
 | Evaluacion v2 test | 100% | Accuracy 91.45%, ROC AUC 0.983, F1 91.61% |
-| Entrenamiento v3 | Pendiente | Siguiente paso del pipeline |
-| Interfaz grafica | 100% | Streamlit con Folium, Plotly — metricas v2 integradas |
+| **Entrenamiento v3** | **100%** | **EfficientNetB0 + Channel Adapter, 2 fases, 80 epocas GPU** |
+| **Evaluacion v3 test** | **100%** | **Accuracy 92.28%, ROC AUC 0.9737, F1 92.21%** |
+| Interfaz grafica | 100% | Streamlit con Folium, Plotly — metricas v3 integradas |
 | Auditoria de codigo | 100% | 28 bugs corregidos (ver CHANGELOG_V2.md) |
 | Prediccion CLI | 100% | predict.py con resize bicubico alineado a entrenamiento |
 
@@ -42,8 +43,8 @@
 - **1,022 negativas** de zonas de control (llanos, costa, amazonia, etc.).
 - **22,209 imagenes** tras augmentacion (x10 variaciones por imagen original).
 - **7 bandas**: emissivity_band10–14, temperature, ndvi.
-- **Division con GroupShuffleSplit** (anti-leakage geografico): Train 15,453 / Val 3,414 / Test 3,342.
-- **4,038 grupos geograficos unicos** (base zones + grid suffixes).
+- **Division con GroupShuffleSplit** (anti-leakage geografico): Train 15,037 / Val 3,553 / Test 3,619.
+- **407 zonas geograficas base** (cero solapamiento entre subconjuntos).
 - **Datos particionados** en partes de ~500 imgs: Train 31 partes, Val 7 partes, Test 7 partes.
 - **Expansion por grilla**: Cada zona base se expande en 9 tiles (center + 8 direcciones) para mayor cobertura.
 - **Balance casi perfecto**: Class weights 0.9945 (pos) / 1.0055 (neg).
@@ -67,7 +68,17 @@ Ver detalle completo en [CHANGELOG_V2.md](CHANGELOG_V2.md).
 - Sin Rescaling layer (solo z-score).
 - BatchNorm en shortcuts de bloques residuales.
 
-### 2.4 Resultados v2 en Test Set (1,017 imagenes)
+### 2.4 Modelo v3: EfficientNetB0 + Channel Adapter
+- **Transfer Learning** con EfficientNetB0 preentrenado en ImageNet.
+- **Channel Adapter**: Conv2D(16, 3x3) + Conv2D(3, 1x1) para proyectar 7 bandas ASTER a 3 canales RGB.
+- **4,396,112 parametros** (12.6% menos que v2).
+- Entrenamiento en **2 fases** con GPU (RTX 4070, WSL2, Mixed Precision float16):
+  - Fase 1 (30 epocas): backbone congelado, LR=1e-3.
+  - Fase 2 (50 epocas): fine-tuning ultimas 39 capas, LR=1e-4.
+- Regularizacion: MixUp (α=0.2), Label Smoothing (0.1), AdamW, Dropout(0.3).
+- Script: `train_model_v7.py`.
+
+### 2.5 Resultados v2 en Test Set (1,017 imagenes)
 
 | Metrica | Valor v2 | Valor v1 | Mejora |
 |---------|----------|----------|--------|
@@ -85,7 +96,27 @@ Real Neg         455          10
 Real Pos          77         475
 ```
 
-### 2.5 Interfaz Grafica (Streamlit)
+### 2.6 Resultados v3 en Test Set (3,619 imagenes)
+
+| Metrica | Valor v3 | Valor v2 | Cambio |
+|---------|----------|----------|--------|
+| Accuracy | **92.28%** | 91.45% | +0.83 pp |
+| Precision | **91.27%** | 97.94% | -6.67 pp¹ |
+| Recall | **93.17%** | 86.05% | +7.12 pp |
+| F1-Score | **92.21%** | 91.61% | +0.60 pp |
+| ROC AUC | **0.9737** | 0.983 | -0.009² |
+| MCC | **0.8458** | 0.837 | +0.009 |
+
+¹ Precision menor por test set 3.6x mayor y mas diverso (4 paises). ² AUC sobre dataset mas desafiante.
+
+**Matriz de Confusion v3 (Test: 3,619 imagenes):**
+```
+              Predicho Neg  Predicho Pos
+Real Neg        1,686         158
+Real Pos          121       1,651
+```
+
+### 2.7 Interfaz Grafica (Streamlit)
 - `app.py` con 5 paginas: Inicio, Prediccion por coordenadas, Metricas, Arquitectura, Acerca de.
 - Mapas interactivos con Folium, graficos con Plotly.
 - Metricas v2 integradas (lectura dinamica de `evaluation_metrics.json`).
@@ -111,25 +142,28 @@ Real Pos          77         475
 | LR Schedule | ReduceLROnPlateau | CosineDecay | CosineDecay |
 | Disco | USB FAT32 15 GB | USB FAT32 15 GB | **Disco externo NTFS 931 GB** |
 | Descarga | Secuencial | Secuencial | **Paralela (3 hilos)** |
-| Test Accuracy | 68.43% | **91.45%** | *Pendiente* |
-| Test Recall | 48.10% | **86.05%** | *Pendiente* |
-| ROC AUC | 0.8198 | **0.983** | *Pendiente* |
-| Parametros | 5,025,409 | 5,032,385 | 5,032,385 |
+| Test Accuracy | 68.43% | **91.45%** | **92.28%** |
+| Test Recall | 48.10% | **86.05%** | **93.17%** |
+| ROC AUC | 0.8198 | **0.983** | **0.9737** |
+| Parametros | 5,025,409 | 5,032,385 | **4,396,112** |
+| Arquitectura | CNN custom | ResNet-inspired | **EfficientNetB0 + Adapter** |
+| Entrenamiento | CPU | CPU | **GPU RTX 4070 (WSL2)** |
+| Epocas | 23 | 22 | **80 (30+50, 2 fases)** |
 
 ---
 
 ## 4. Metricas Objetivo vs Resultado
 
-| Metrica | Objetivo minimo | Objetivo ideal | Resultado v2 | Estado |
-|---------|----------------|---------------|--------------|--------|
-| Accuracy | >85% | >90% | **91.45%** | Logrado |
-| Precision | >80% | >85% | **97.94%** | Superado |
-| Recall | >80% | >85% | **86.05%** | Logrado |
-| F1-Score | >80% | >85% | **91.61%** | Superado |
-| ROC AUC | >0.90 | >0.95 | **0.983** | Superado |
-| MCC | >0.50 | >0.70 | **0.837** | Superado |
+| Metrica | Objetivo minimo | Objetivo ideal | Resultado v2 | **Resultado v3** | Estado |
+|---------|----------------|---------------|--------------|-----------------|--------|
+| Accuracy | >85% | >90% | 91.45% | **92.28%** | ✅ Superado |
+| Precision | >80% | >85% | 97.94% | **91.27%** | ✅ Superado |
+| Recall | >80% | >85% | 86.05% | **93.17%** | ✅ Superado |
+| F1-Score | >80% | >85% | 91.61% | **92.21%** | ✅ Superado |
+| ROC AUC | >0.90 | >0.95 | 0.983 | **0.9737** | ✅ Superado |
+| MCC | >0.50 | >0.70 | 0.837 | **0.8458** | ✅ Superado |
 
-**Todas las metricas superan los objetivos ideales.**
+**Todas las metricas de la v3 superan los objetivos ideales, validadas sobre un test set 3.6x mayor y geograficamente mas diverso.**
 
 ---
 
@@ -138,12 +172,15 @@ Real Pos          77         475
 | Categoria | Herramientas |
 |-----------|-------------|
 | Deep Learning | TensorFlow 2.20.0, Keras 3.12.1 |
+| GPU / Aceleracion | NVIDIA RTX 4070 12 GB VRAM, CUDA 12.x, cuDNN, Mixed Precision float16 |
 | Procesamiento | NumPy, pandas, scikit-learn, scikit-image, OpenCV, SciPy, rasterio |
 | Datos geoespaciales | Google Earth Engine API, NASA ASTER GED AG100_003 |
 | Visualizacion | Matplotlib, Seaborn, TensorBoard, Plotly, Folium |
 | Interfaz | Streamlit 1.54.0, streamlit-folium |
 | Reportes | FPDF2 |
 | Control de versiones | Git, GitHub |
+| Lenguaje | Python 3.12.12 (WSL2), Python 3.10.11 (Windows) |
+| SO | Windows 11 (desarrollo), WSL2 Ubuntu 22.04 (entrenamiento GPU) |
 
 ---
 
@@ -159,7 +196,7 @@ geotermia-colombia-cnn/
 |-- .gitignore
 |
 |-- models/
-|   |-- cnn_geotermia.py         # Arquitectura CNN (5,032,385 params)
+|   |-- cnn_geotermia.py         # Arquitectura CNN v2 (5M params) + v3 EfficientNetB0 (4.4M params)
 |   |-- __init__.py
 |   +-- saved_models/            # Modelos entrenados (.keras)
 |
@@ -167,7 +204,8 @@ geotermia-colombia-cnn/
 |   |-- download_dataset.py      # Descarga imagenes desde GEE (2,019 imgs, 3 hilos)
 |   |-- augment_full_dataset.py  # Augmentacion del dataset (10 variaciones/img)
 |   |-- prepare_dataset.py       # Preparacion con anti-leakage geografico
-|   |-- train_model.py           # Entrenamiento (part-aware generator)
+|   |-- train_model.py           # Entrenamiento v2 (part-aware generator, CPU)
+|   |-- train_model_v7.py       # Entrenamiento v3 (EfficientNetB0, 2 fases, GPU)
 |   |-- evaluate_model.py        # Evaluacion en test set (particionado)
 |   |-- predict.py               # Prediccion con coordenadas
 |   |-- visualize_results.py     # Visualizaciones de resultados
@@ -189,6 +227,7 @@ geotermia-colombia-cnn/
 |   |-- GUIA_PASO_A_PASO.md      # Guia completa paso a paso
 |   |-- PREDICCIONES_PRUEBA.md   # Baseline v1 + comparativa v2
 |   +-- CHANGELOG_V2.md          # Auditoria: 28 bugs + mejoras implementadas
+|   +-- CHANGELOG_V3.md          # Cambios v3: EfficientNetB0, GPU, anti-leakage
 |
 |-- logs/                        # Logs de TensorBoard
 |-- results/                     # Metricas y figuras
@@ -277,28 +316,46 @@ geotermia-colombia-cnn/
 - Expansion por grilla: cada zona genera 9 tiles (center + 8 direcciones).
 - `NUM_AUGMENTATIONS` ajustado de 30 a 10 (optimo para 2,019 imagenes base).
 - Augmentacion: 2,019 → 22,209 imagenes en 40.90 minutos.
-- Preparacion con **anti-leakage geografico** (GroupShuffleSplit): 4,038 grupos.
-- Splits: Train 15,453 / Val 3,414 / Test 3,342 (balance 0.9945/1.0055).
+- Preparacion con **anti-leakage geografico** (GroupShuffleSplit): 407 zonas base.
+- Splits (tras resplit): Train 15,037 / Val 3,553 / Test 3,619 (cero solapamiento).
 - Almacenamiento migrado de USB FAT32 15 GB a disco externo NTFS 931 GB.
 - Documentacion completa actualizada a v3 con referencias academicas.
 - **Siguiente paso**: Entrenamiento v3 y evaluacion.
+
+### Fase 17: Entrenamiento y Evaluacion v3 — EfficientNetB0 (Mar 2-3, 2026)
+- Correccion de **fuga de datos del 62.5%** en divisiones originales: `resplit_data.py` con GroupShuffleSplit por zona geografica base (407 zonas, cero solapamiento).
+- Configuracion de **WSL2 Ubuntu 22.04** con GPU **NVIDIA RTX 4070** (CUDA 12.x, cuDNN).
+- Implementacion de modelo v3: **EfficientNetB0 + Channel Adapter** (7→16→3 canales), 4,396,112 parametros.
+- Entrenamiento en **dos fases** con Mixed Precision float16:
+  - Fase 1 (30 epocas): backbone congelado, LR=1e-3, mejor E27 val_auc=0.9000.
+  - Fase 2 (50 epocas): fine-tuning ultimas 39 capas, LR=1e-4, mejor E50 val_auc=0.9725.
+- Regularizacion: **MixUp** (α=0.2), Label Smoothing (0.1), AdamW weight_decay.
+- Evaluacion en test set (3,619 imagenes, 4 paises):
+  - **Accuracy: 92.28%**, Precision: 91.27%, **Recall: 93.17%**, F1: 92.21%.
+  - **ROC AUC: 0.9737**, PR AUC: 0.9693, **MCC: 0.8458**.
+  - Confusion Matrix: [[1686,158],[121,1651]].
+- Modelo guardado: `geotermia_v3_efficientnet_best.keras`.
+- Actualizacion de `app.py` para cargar modelo v3.
+- Documentacion completa actualizada (TESIS_CONTENIDO_APA.md, CHANGELOG_V3.md, etc.).
 
 ---
 
 ## 8. Hardware y Entorno
 
 | Componente | Detalle |
-|-----------|---------|
+|-----------|--------|
 | CPU | Intel i5-10300H |
 | RAM | 12 GB |
-| GPU | No disponible (TF 2.20.0 sin CUDA en Windows) |
+| **GPU** | **NVIDIA RTX 4070 12 GB VRAM** |
 | Almacenamiento v2 | USB FAT32 15 GB (`D:\geotermia_datos`) |
-| Almacenamiento v3 | Disco externo NTFS Toshiba 931 GB (`E:\geotermia_datos`) |
-| SO | Windows |
-| Python | 3.10.11 |
-| TensorFlow | 2.20.0 |
+| Almacenamiento v3 | Disco externo NTFS Toshiba 931 GB (`D:\geotermia_datos`) |
+| SO (desarrollo) | Windows 11 |
+| **SO (entrenamiento)** | **WSL2 Ubuntu 22.04** |
+| Python | 3.12.12 (WSL2), 3.10.11 (Windows) |
+| TensorFlow | 2.20.0 (con soporte GPU en WSL2) |
 | Keras | 3.12.1 |
 | Streamlit | 1.54.0 |
+| Precision mixta | float16 (politica mixed_float16) |
 
 ---
 
@@ -350,5 +407,5 @@ geotermia-colombia-cnn/
 
 ---
 
-**Ultima actualizacion:** 27 de febrero de 2026
+**Ultima actualizacion:** 3 de marzo de 2026
 **Documento fusionado de:** RESUMEN_PROYECTO.md (v1) + REGISTRO_PROCESO.md (bitacora)

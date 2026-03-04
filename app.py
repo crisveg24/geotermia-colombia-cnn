@@ -433,6 +433,10 @@ def cargar_modelo():
     """Carga el modelo CNN. Prueba varias rutas posibles."""
     tf = _importar_tensorflow()
     rutas = [
+        # V3: EfficientNetB0 + adapter (prioridad)
+        PROJECT_ROOT / "models" / "saved_models" / "geotermia_v7_phase2_best.keras",
+        PROJECT_ROOT / "models" / "saved_models" / "geotermia_v7_final.keras",
+        # V2: Custom ResNet (fallback)
         PROJECT_ROOT / "models" / "saved_models" / "geotermia_cnn_custom_best.keras",
         PROJECT_ROOT / "models" / "saved_models" / "best_model.keras",
         PROJECT_ROOT / "models" / "saved_models" / "mini_model_best.keras",
@@ -640,8 +644,10 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
         # Mantenemos las proporciones
         img_resized = img.astype(np.float32)
 
-        # Normalizar por banda (v4 FIX: usar stats globales del dataset)
-        band_stats_path = PROJECT_ROOT / "data" / "processed" / "band_stats.json"
+        # Normalizar por banda (v3 FIX: usar stats globales del dataset, prioridad processed_v2)
+        band_stats_path = PROJECT_ROOT / "data" / "processed" / "band_stats_v3.json"
+        if not band_stats_path.exists():
+            band_stats_path = PROJECT_ROOT / "data" / "processed" / "band_stats.json"
         if band_stats_path.exists():
             import json as _json
             with open(band_stats_path) as _f:
@@ -836,7 +842,8 @@ def generar_reporte_texto(p: dict) -> str:
     lines += [
         "",
         "--- MODELO ---",
-        "Arquitectura:     CNN personalizada",
+        "Arquitectura:     EfficientNetB0 + Channel Adapter (7→16→3)",
+        "Version:          V3 (transfer learning, two-phase training)",
         f"Accuracy:         {acc_str}",
         f"Precision:        {prec_str}",
         f"ROC AUC:          {roc_str}",
@@ -948,15 +955,18 @@ def generar_reporte_historial(historial: list) -> str:
             "MODELO UTILIZADO",
             "=" * 70,
             "",
-            "Arquitectura:     CNN personalizada (ResNet-inspired, 5M parametros)",
+            "Arquitectura:     EfficientNetB0 + Channel Adapter (7→16→3)",
+            "Version:          V3 (transfer learning, two-phase training)",
+            "Parametros:       4,396,112 (57.9 MB)",
             f"Accuracy:         {met.get('accuracy', 0)*100:.2f}%",
             f"Precision:        {met.get('precision', 0)*100:.2f}%",
             f"Recall:           {met.get('recall', 0)*100:.2f}%",
             f"F1-Score:         {met.get('f1_score', 0)*100:.2f}%",
             f"ROC AUC:          {met.get('roc_auc', 0):.4f}",
-            "Dataset:          6,200 imagenes (200 originales x 31 augmentaciones)",
+            "Dataset:          22,209 imagenes (2,019 originales, 407 zonas, zero leakage)",
+            "Test set:         3,619 imagenes (62 zonas exclusivas)",
             "Bandas:           7 (5 TIR emisividad + temperatura + NDVI)",
-            "Normalizacion:    Z-score por banda",
+            "Normalizacion:    Z-score global por banda (band_stats_v3.json)",
         ]
 
     lines += [
@@ -1145,8 +1155,8 @@ def pagina_inicio():
             '<div class="info-card">'
             '<span class="card-icon">🧠</span>'
             '<h3>Modelo</h3>'
-            '<p>CNN ResNet-inspired con SpatialDropout2D, AdamW optimizer, '
-            'Label Smoothing y ~5 millones de parametros entrenables.</p>'
+            '<p>EfficientNetB0 con Channel Adapter (7→3 bandas), Transfer Learning, '
+            'MixUp, AdamW optimizer y ~4.4 millones de parametros. Accuracy 92.28%.</p>'
             '</div>',
             unsafe_allow_html=True,
         )
@@ -1606,22 +1616,22 @@ def pagina_prediccion():
                 st.markdown(
                     '<div style="background:#f0f4f8;border-radius:10px;padding:12px 14px;margin-bottom:10px;">'
                     '<div style="font-weight:600;color:#1a1a2e;margin-bottom:6px;font-size:0.9rem;">'
-                    '⚙️ Modelo CNN</div>'
+                    '⚙️ Modelo CNN V3</div>'
                     '<table style="width:100%;font-size:0.82rem;color:#444;">'
                     '<tr><td style="padding:2px 0;"><b>Arquitectura</b></td>'
-                    '<td style="text-align:right;">CNN personalizada</td></tr>'
+                    '<td style="text-align:right;">EfficientNetB0 + Adapter</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>Dataset</b></td>'
-                    '<td style="text-align:right;">6,200 imagenes</td></tr>'
+                    '<td style="text-align:right;">22,209 imagenes (zero leakage)</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>Mejor epoca</b></td>'
-                    '<td style="text-align:right;">8 / 22</td></tr>'
+                    '<td style="text-align:right;">50 / 50 (Phase 2)</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>Accuracy</b></td>'
-                    '<td style="text-align:right;">91.45%</td></tr>'
+                    '<td style="text-align:right;">92.28%</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>Precision</b></td>'
-                    '<td style="text-align:right;">97.94%</td></tr>'
+                    '<td style="text-align:right;">91.27%</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>ROC AUC</b></td>'
-                    '<td style="text-align:right;">0.983</td></tr>'
+                    '<td style="text-align:right;">0.9737</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>F1-Score</b></td>'
-                    '<td style="text-align:right;">91.61%</td></tr>'
+                    '<td style="text-align:right;">92.21%</td></tr>'
                     '</table></div>',
                     unsafe_allow_html=True,
                 )
@@ -2140,9 +2150,10 @@ def pagina_arquitectura():
     )
     st.markdown(
         '<div class="info-box">'
-        'Arquitectura <b>ResNet-inspired</b> con bloques residuales, '
-        'SpatialDropout2D para regularizacion espacial y Global Average Pooling. '
-        'Disenada para clasificacion binaria de imagenes ASTER de 7 bandas (5 TIR + temperatura + NDVI).'
+        'Arquitectura <b>EfficientNetB0</b> con Channel Adapter (7→16→3 canales), '
+        'Transfer Learning desde ImageNet, MixUp regularization y two-phase training. '
+        'Disenada para clasificacion binaria de imagenes ASTER de 7 bandas (5 TIR + temperatura + NDVI). '
+        '<b>Accuracy: 92.28%, ROC AUC: 0.9737</b>.'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -2152,24 +2163,21 @@ def pagina_arquitectura():
 
     capas = pd.DataFrame({
         "Capa": [
-            "Input", "Conv2D + BN + ReLU", "SpatialDropout2D", "MaxPooling2D",
-            "Residual Block 1", "SpatialDropout2D + MaxPool",
-            "Residual Block 2", "SpatialDropout2D + MaxPool",
-            "Residual Block 3", "SpatialDropout2D + MaxPool",
-            "Residual Block 4", "SpatialDropout2D",
-            "Global Average Pooling", "Dense + BN + Dropout", "Output (Sigmoid)",
+            "Input", "Conv2D 3x3 (Adapter 1) + BN + ReLU", "Conv2D 1x1 (Adapter 2) + BN + ReLU",
+            "EfficientNetB0 (ImageNet)", "Global Average Pooling",
+            "Dense 256 + BN + ReLU + Dropout(0.5)",
+            "Dense 64 + BN + ReLU + Dropout(0.3)",
+            "Output (Sigmoid)",
         ],
         "Filtros": [
-            "—", "32 (7x7)", "—", "—",
-            "64", "—", "128", "—",
-            "256", "—", "512", "—",
-            "—", "256", "1",
+            "—", "16 (3x3)", "3 (1x1)",
+            "ImageNet pretrained", "—",
+            "256", "64", "1",
         ],
         "Salida": [
-            "224x224x7", "224x224x32", "224x224x32", "112x112x32",
-            "112x112x64", "56x56x64", "56x56x128", "28x28x128",
-            "28x28x256", "14x14x256", "14x14x512", "14x14x512",
-            "512", "256", "1",
+            "224x224x7", "224x224x16", "224x224x3",
+            "224x224x...", "1280",
+            "256", "64", "1",
         ],
     })
     st.dataframe(capas, width="stretch", hide_index=True)
@@ -2182,13 +2190,11 @@ def pagina_arquitectura():
 
     colors = [
         "#4FC3F7",  # Input - azul claro
-        "#81C784", "#A5D6A7", "#66BB6A",  # Conv + spatial + pool - verdes
-        "#FF8A65", "#FFAB91",  # Res Block 1 - naranjas
-        "#EF5350", "#EF9A9A",  # Res Block 2 - rojos
-        "#AB47BC", "#CE93D8",  # Res Block 3 - morados
-        "#5C6BC0", "#9FA8DA",  # Res Block 4 - indigo
+        "#81C784", "#66BB6A",  # Adapter stages - verdes
+        "#FF8A65",  # EfficientNetB0 - naranja
         "#FDD835",  # GAP - amarillo
-        "#26A69A",  # Dense - teal
+        "#AB47BC",  # Dense 256 - morado
+        "#5C6BC0",  # Dense 64 - indigo
         "#E94560",  # Output - rojo acento
     ]
 
@@ -2219,13 +2225,16 @@ def pagina_arquitectura():
         st.markdown("""
 | Parametro | Valor |
 |-----------|-------|
-| Optimizador | **AdamW** (weight_decay=1e-4) |
-| Learning Rate | 0.001 |
+| Backbone | **EfficientNetB0** (ImageNet) |
+| Adapter | Conv2D 7→16→3 canales |
+| Optimizador | **AdamW** (weight_decay=1e-3) |
+| Learning Rate | Phase 1: 1e-3, Phase 2: 1e-4 |
 | Loss | BinaryCrossentropy (label_smoothing=0.1) |
-| Dropout | 0.5 (Dense) · 0.1-0.3 (Spatial) |
+| Dropout | 0.5 (Dense 256) · 0.3 (Dense 64) |
 | Batch Size | 32 |
-| Epocas | 100 (EarlyStopping, patience=15) |
-| Parametros | 5,025,409 |
+| Entrenamiento | Phase 1: 30 ep (frozen) + Phase 2: 50 ep (fine-tune) |
+| Regularizacion | MixUp (α=0.2) + online augmentation |
+| Parametros | 4,396,112 (57.9 MB) |
 """)
     with c2:
         st.markdown("#### Datos de Entrada")
@@ -2236,8 +2245,8 @@ def pagina_arquitectura():
 | Resolucion | 100 metros |
 | Bandas | 10, 11, 12, 13, 14 (TIR) + temperature + NDVI |
 | Entrada | 224 x 224 x 7 |
-| Normalizacion | Z-score por banda |
-| Dataset | ~6,200 imagenes (augmentadas) |
+| Normalizacion | Z-score global por banda |
+| Dataset | 22,209 imagenes (2,019 originales, 407 zonas, zero leakage) |
 """)
 
 
@@ -2279,7 +2288,7 @@ satelitales termicas del sensor **NASA ASTER**.
 
 2. **Especificos:**
    - Recopilar y procesar imagenes ASTER de zonas geotermicas colombianas.
-   - Disenar una arquitectura CNN optimizada con bloques residuales.
+   - Disenar una arquitectura CNN con Transfer Learning (EfficientNetB0).
    - Entrenar y evaluar con metricas estandar de clasificacion.
    - Desarrollar interfaz web interactiva para visualizacion y prediccion.
 
@@ -2291,11 +2300,11 @@ satelitales termicas del sensor **NASA ASTER**.
     met_data = pd.DataFrame({
         "Fase": ["Adquisicion", "Augmentacion", "Preparacion", "Modelado", "Evaluacion", "Despliegue"],
         "Descripcion": [
-            "Google Earth Engine -> 200 imagenes ASTER (7 bandas)",
-            "31 transformaciones -> ~6,200 imagenes",
-            "Normalizacion + split 70/15/15 estratificado",
-            "CNN ResNet-inspired (5 M parametros)",
-            "Accuracy, Precision, Recall, F1, ROC-AUC, PR-AUC",
+            "Google Earth Engine -> 2,019 imagenes ASTER (7 bandas, 407 zonas)",
+            "~11 transformaciones/imagen -> 22,209 imagenes",
+            "Normalizacion global + GroupShuffleSplit por zona (zero leakage)",
+            "EfficientNetB0 + Channel Adapter (4.4 M parametros)",
+            "Accuracy 92.28%, ROC-AUC 0.9737, F1 92.21%",
             "Streamlit + Folium + Plotly",
         ],
     })

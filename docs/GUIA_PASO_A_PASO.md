@@ -33,12 +33,12 @@
 
 | Componente | Versión mínima | Notas |
 |-----------------|----------------|-------|
-| Python | 3.10.x | 3.10 o 3.11. NO 3.12+ (compatibilidad TF) |
+| Python | 3.10+ | 3.10, 3.11 o 3.12. Recomendado 3.12 con WSL2 para GPU |
 | pip | 23+ | `python -m pip install --upgrade pip` |
 | Git | 2.x | Para clonar el repo |
 | Cuenta Google | — | Para Google Earth Engine |
 | Espacio disco | ~40 GB | Dataset v3 completo (~30 GB procesado + raw + augmented) |
-| GPU (opcional) | NVIDIA + CUDA 12 | Acelera el entrenamiento. Sin GPU funciona en CPU |
+| GPU | NVIDIA RTX 4070+ | **Recomendado** para v3. WSL2 Ubuntu 22.04 + CUDA 12.x |
 
 ---
 
@@ -324,32 +324,44 @@ data/processed/
 
 ## 10 · Entrenar el modelo CNN
 
+### Opción A: Entrenamiento v3 (recomendado — EfficientNetB0 + GPU)
+
+```bash
+# En WSL2 Ubuntu 22.04 con GPU NVIDIA
+python scripts/train_model_v7.py
+```
+
+### Opción B: Entrenamiento v2 (ResNet-inspired, CPU)
+
 ```bash
 python scripts/train_model.py
 ```
 
-### Configuración del entrenamiento
+### Configuración del entrenamiento v3 (EfficientNetB0)
 
 | Parámetro | Valor | Notas |
 |-----------|-------|-------|
+| Arquitectura | EfficientNetB0 + Channel Adapter | Transfer Learning desde ImageNet |
+| Parámetros | 4,396,112 | 12.6% menos que v2 |
 | Input shape | 224×224×7 | 7 bandas ASTER (5 TIR + Temperatura + NDVI) |
-| Batch size | 32 | Reducir a 16 si hay poca RAM/VRAM |
-| Épocas | 100 máx | EarlyStopping con patience=15 |
-| Optimizer | AdamW | lr=0.001, weight_decay=0.0001 |
+| Batch size | 32 | Reducir a 16 si hay poca VRAM |
+| Fase 1 | 30 épocas, backbone congelado | LR=1e-3, CosineDecay |
+| Fase 2 | 50 épocas, fine-tuning 39 capas | LR=1e-4, CosineDecay |
+| Optimizer | AdamW | weight_decay=0.0001 |
 | Label Smoothing | 0.1 | Regularización |
-| Mixed Precision | Sí | float16 para GPU (auto-desactiva en CPU) |
-| Data Augmentation | Sí | RandomFlip, Rotation, Zoom, Translation, Contrast |
+| MixUp | α=0.2 | Interpolación de muestras |
+| Mixed Precision | Sí | float16 para GPU |
 
 ### Tiempo estimado
 
-| Hardware | Tiempo por época | Total (~20-30 épocas con EarlyStopping) |
+| Hardware | Tiempo por época | Total v3 (80 épocas, 2 fases) |
 |----------|-----------------|----------------------|
-| CPU (i5/i7) | ~5-8 min | 2-4 horas |
-| GPU GTX 1060+ | 30-60 seg | 15-30 min |
-| GPU RTX 3060+ | 15-30 seg | 8-15 min |
+| CPU (i5/i7) | ~10-15 min | 13-20 horas (no recomendado) |
+| GPU RTX 4070 | ~30-45 seg | ~45-60 min |
+| GPU RTX 3060 | ~45-90 seg | ~1-2 horas |
 
-> **Nota v3:** Con 22,209 imágenes (15,453 train), los tiempos por época son
-> significativamente mayores que v2 (6,200 imgs). Se recomienda GPU.
+> **Nota v3:** Con 22,209 imágenes (15,037 train) y entrenamiento en 2 fases,
+> se requiere GPU. El entrenamiento completo (30+50 épocas) tomó ~45 min en RTX 4070.
 
 ### Callbacks automáticos
 
@@ -359,14 +371,15 @@ python scripts/train_model.py
 - **TensorBoard**: Logs para visualización
 - **CSVLogger**: Historial en CSV
 
-**Salida**:
+**Salida v3**:
 ```
 models/saved_models/
- geotermia_cnn_custom_best.keras ← mejor modelo (usar este)
- geotermia_cnn_custom_final.keras ← modelo al final del entrenamiento
+ geotermia_v3_efficientnet_best.keras ← mejor modelo v3 (usar este)
+ geotermia_v3_efficientnet_final.keras ← modelo al final del entrenamiento
 logs/
- history_custom.json ← historial de métricas
- training_YYYYMMDD_HHMMSS/ ← logs de TensorBoard
+ history_v7.json ← historial de métricas
+ geotermia_v7_phase1.csv ← log Fase 1
+ geotermia_v7_phase2.csv ← log Fase 2
 ```
 
 ### Monitorear con TensorBoard (opcional)
@@ -527,8 +540,10 @@ python scripts/download_dataset.py        # ~45 min, requiere internet (2,019 im
 python scripts/augment_full_dataset.py     # ~40 min (~22,209 augmentadas)
 python scripts/prepare_dataset.py          # ~30 min (particionado, ~30 GB)
 
-# 5. Entrenar
-python scripts/train_model.py  # 2-4 h (CPU) / 15-30 min (GPU)
+# 5. Entrenar (v3 recomendado — requiere GPU + WSL2)
+python scripts/train_model_v7.py  # ~45 min (RTX 4070) — EfficientNetB0, 2 fases
+# Alternativa v2 (CPU):
+# python scripts/train_model.py  # 2-4 h (CPU)
 
 # 6. Interfaz
 streamlit run app.py --server.headless true
