@@ -15,6 +15,9 @@ Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martín
 3. [Dataset: Región Andina](#3-dataset-región-andina)
 4. [Pipeline de Procesamiento](#4-pipeline-de-procesamiento)
 5. [Conceptos de Deep Learning](#5-conceptos-de-deep-learning)
+   - 5.1 [Analogía cotidiana: Entendiendo el modelo sin ser experto](#51-analogía-cotidiana-entendiendo-el-modelo-sin-ser-experto)
+   - 5.2 [¿Cómo aprende el modelo?](#52-cómo-aprende-el-modelo-el-ciclo-de-aprendizaje)
+   - 5.3 [Glosario de términos técnicos](#53-glosario-de-términos-técnicos)
 6. [Arquitectura del Modelo](#6-arquitectura-del-modelo)
 7. [Entrenamiento](#7-entrenamiento)
 8. [Métricas de Evaluación](#8-métricas-de-evaluación)
@@ -251,7 +254,148 @@ Las estadísticas globales se calculan en un solo pase con el **algoritmo de Wel
 
 ## 5. Conceptos de Deep Learning
 
-### 5.1 Redes Neuronales Convolucionales (CNN)
+### 5.1 Analogía cotidiana: Entendiendo el modelo sin ser experto
+
+Para entender cómo funciona nuestro modelo **sin necesidad de saber programación ni matemáticas**, imagina la siguiente situación:
+
+Queremos entrenar a un **médico radiólogo** para que identifique una enfermedad rara mirando un tipo especial de radiografía que él nunca ha visto antes. ¿Cómo lo haríamos?
+
+---
+
+**Paso 1 — Estudiar medicina general (preentrenamiento en ImageNet):**
+
+Antes de especializarse, el médico estudió medicina general durante años: aprendió a reconocer huesos, tejidos, bordes, texturas, contrastes — habilidades visuales que sirven para *cualquier* especialidad. Nuestro modelo hizo exactamente lo mismo: antes de saber nada de geotermia, ya "estudió" **1,2 millones de fotos normales** (perros, gatos, autos, paisajes, comida) y aprendió a detectar **bordes, texturas, formas, contrastes y patrones visuales generales**.
+
+Aunque esas fotos no tienen nada que ver con volcanes ni satélites, las habilidades de "ver" son universales: un borde es un borde, ya sea en la foto de un gato o en una imagen satelital. A toda esa base de conocimiento visual la llamamos **backbone** (que literalmente significa "columna vertebral" — es la estructura principal del modelo).
+
+**Paso 2 — Ponerle gafas especiales (Channel Adapter):**
+
+Nuestras "radiografías" no son fotos normales. Las fotos normales tienen **3 colores** (Rojo, Verde, Azul = RGB). Pero nuestras imágenes satelitales tienen **7 "colores" invisibles** al ojo humano: 5 bandas de emisividad térmica (calor que emite la superficie), la temperatura del suelo, y un índice de vegetación. Es información que un humano no puede "ver" — pero que contiene pistas sobre actividad geotérmica.
+
+El problema: el médico fue entrenado mirando fotos de 3 colores, y ahora le damos radiografías de 7 colores. Su cerebro no puede procesarlas directamente. La solución: **unas gafas especiales** que traducen automáticamente los 7 colores invisibles a los 3 colores que su cerebro ya sabe interpretar. Estas gafas son el **Channel Adapter** — un módulo pequeño que aprende por sí solo cuál es la mejor manera de combinar las 7 bandas del satélite en 3 canales útiles.
+
+**Paso 3 — Estudiar la enfermedad sin olvidar medicina — Fase 1 (congelamiento):**
+
+Ahora el médico empieza a ver radiografías de pacientes con y sin la enfermedad rara. Pero le damos una instrucción clave: **"NO olvides nada de lo que ya sabes de anatomía general"**. Le ponemos un **candado** a todos sus conocimientos previos: no se pueden borrar ni modificar. Solo le permitimos aprender dos cosas nuevas:
+
+1. Cómo ajustar las gafas especiales (el **adapter**)
+2. Cómo dar el diagnóstico final (el **classification head** — la "cabeza" que decide: ¿zona geotérmica sí o no?)
+
+Esto es lo que llamamos **congelar el backbone** (*freeze*): los millones de conocimientos visuales que aprendió con fotos normales quedan **protegidos e inmutables**. Solo se entrenan las partes nuevas. Dura **30 rondas completas** (épocas) por todos los casos de estudio.
+
+**Paso 4 — Ajustar el ojo clínico — Fase 2 (fine-tuning):**
+
+Después de 30 rondas, el médico ya entiende bastante bien las nuevas radiografías. Entonces le damos un permiso limitado: **"Puedes ajustar ligeramente tu conocimiento general — pero con MUCHO cuidado"**. Le quitamos el candado solo a las **últimas 39 capas** de su cerebro (las más especializadas y superficiales) y le permitimos modificarlas un poco. Esto se llama **fine-tuning** (ajuste fino).
+
+¿Por qué solo las últimas capas? Porque en las redes neuronales las primeras capas reconocen cosas muy básicas (bordes, líneas, contrastes) que son iguales en cualquier dominio. Las últimas capas son las más "especializadas" — son las que más necesitan adaptarse del mundo de fotos de gatos al mundo de emisividad térmica.
+
+¿Y por qué "con cuidado"? Porque su ritmo de cambio es **10 veces más lento** que antes: pasamos de una velocidad (learning rate) de 0,001 a 0,0001. No queremos que el médico destroce todo lo que aprendió en la universidad por apurarse.
+
+**Paso 5 — El diagnóstico (predicción):**
+
+Ahora, frente a una imagen satelital nueva que nunca ha visto, el modelo dice: *"Hay un 87% de probabilidad de que esta zona sea geotérmica"*. No dice "sí" o "no" rotundamente — da una **probabilidad entre 0% y 100%**. Si supera el 50%, la clasificamos como positiva (potencial geotérmico). Si no, negativa.
+
+---
+
+**Tabla de correspondencias — de la analogía al modelo real:**
+
+| El médico radiólogo | Término técnico | En nuestro modelo concreto |
+|---|---|---|
+| Estudiar medicina general (fotos normales) | **Preentrenamiento (ImageNet)** | EfficientNetB0 entrenado con 1,2 millones de fotos |
+| Su cerebro visual ya entrenado | **Backbone** (columna vertebral) | Las 237 capas internas de EfficientNetB0 |
+| Gafas que traducen 7 → 3 colores | **Channel Adapter** | 2 capas Conv2D que proyectan 7 bandas → 3 canales |
+| Su criterio final de diagnóstico | **Classification Head** (cabeza) | Dense(256) → Dense(64) → Dense(1, sigmoid) |
+| "No olvides anatomía" (candado) | **Congelar (freeze)** | `layer.trainable = False` en el backbone |
+| "Ahora ajusta un poco tu ojo" | **Fine-tuning** (ajuste fino) | Descongelar últimas 39 capas |
+| Ritmo de cambio cauteloso | **Learning Rate bajo** | De 0,001 (Fase 1) a 0,0001 (Fase 2) |
+| Cada pase completo por todos los casos | **Época (epoch)** | 1 revisión de las 15.037 imágenes de entrenamiento |
+| Ver 32 radiografías y corregirse | **Batch (lote)** | 32 imágenes procesadas antes de ajustar pesos |
+| Examen con casos que no estudió | **Validación / Test** | 3.553 + 3.619 imágenes nunca usadas para entrenar |
+| "Me equivoqué, ¿en qué fallé?" | **Backpropagation** | El error se propaga hacia atrás para saber qué ajustar |
+| "¿Cuánto me equivoqué?" | **Loss (pérdida)** | Binary Cross-Entropy: mide distancia predicción vs. realidad |
+| "¿Cómo me corrijo?" | **Optimizador (AdamW)** | Algoritmo que decide cómo ajustar cada peso |
+
+### 5.2 ¿Cómo aprende el modelo? (El ciclo de aprendizaje)
+
+El modelo **no se programa con reglas** como "si la temperatura es mayor a X grados, entonces es geotérmico". En cambio, aprende **por repetición y corrección de errores**, de forma muy similar a como estudia un ser humano. El ciclo completo tiene 5 pasos que se repiten miles de veces:
+
+#### Paso 1 — Ver (Forward Pass)
+
+El modelo recibe un lote de 32 imágenes satelitales. Cada imagen recorre todas las capas del modelo en orden (adapter → backbone → head) y al final produce una predicción: un número entre 0 y 1 que representa la probabilidad de ser una zona geotérmica. Este recorrido "hacia adelante" se llama **forward pass** (pasada hacia adelante).
+
+#### Paso 2 — Calificarse (Función de pérdida / Loss)
+
+Se compara cada predicción con la **respuesta correcta** (la etiqueta que ya sabemos: 1 = geotérmico, 0 = no geotérmico). La **función de pérdida (loss)** pone una "nota" que cuantifica qué tan mal lo hizo. Usamos **Binary Cross-Entropy**, que funciona como un profesor estricto:
+
+- Si la zona **es** geotérmica (etiqueta = 1.0) y el modelo dijo **0.95** → error pequeño, casi acertó ✓
+- Si la zona **es** geotérmica (etiqueta = 1.0) y el modelo dijo **0.10** → error enorme ✗
+- Si la zona **no es** geotérmica (etiqueta = 0.0) y el modelo dijo **0.85** → error enorme ✗
+
+Lo clave: la penalización crece **exponencialmente** con la confianza del error. Equivocarse estando "95% seguro" se penaliza **muchísimo más** que equivocarse estando "55% indeciso". Esto fuerza al modelo a ser honesto con su incertidumbre.
+
+#### Paso 3 — Entender dónde se equivocó (Backpropagation)
+
+El error calculado en el paso 2 se **propaga hacia atrás** por todas las capas del modelo, desde la salida (la predicción) hasta la entrada (la imagen), capa por capa. En cada capa se calcula: *"¿Cuánto contribuyó ESTA capa al error total?"*. Este proceso se llama **backpropagation** (retropropagación).
+
+El resultado son los **gradientes**: vectores que indican, para cada uno de los 4,4 millones de parámetros del modelo, **en qué dirección y cuánto** debería cambiar para reducir el error. Es como si el profesor le dijera al alumno: "Te equivocaste porque no prestaste suficiente atención a la banda de temperatura y confundiste el patrón de arcillas con cuarzo".
+
+#### Paso 4 — Corregirse (Optimizador AdamW)
+
+El **optimizador** toma los gradientes y actualiza los **pesos** (parámetros numéricos) del modelo. La regla fundamental es:
+
+$$w_{\text{nuevo}} = w_{\text{actual}} - \text{learning\_rate} \times \text{gradiente}$$
+
+Es decir: cada peso se mueve un pasito en la dirección opuesta al error. El **learning rate (lr)** controla el tamaño de ese paso:
+
+- **Muy alto** (ej: 0,1) → el modelo da saltos enormes, no converge (como un estudiante que cambia de opinión completamente después de cada examen)
+- **Muy bajo** (ej: 0,000001) → aprende extremadamente lento, puede tardarse una eternidad
+- **Justo** (ej: 0,001 en Fase 1 → 0,0001 en Fase 2) → converge de forma estable y progresiva
+
+Nuestro optimizador **AdamW** es "inteligente" porque además:
+- Adapta la velocidad **individualmente** para cada parámetro (los que necesitan más ajuste se mueven más)
+- Aplica **weight decay** (decaimiento de pesos): penaliza los pesos que crecen demasiado, forzando al modelo a usar soluciones simples en vez de memorizar
+
+#### Paso 5 — Repetir (miles de veces)
+
+Este ciclo (ver → calificarse → entender error → corregirse) se repite miles de veces:
+
+| Concepto | Valor en nuestro modelo |
+|----------|:-:|
+| Imágenes por batch | 32 |
+| Steps por época | ~470 (15.037 ÷ 32) |
+| Épocas totales | 80 (30 + 50) |
+| **Total de ciclos de corrección** | **~37.600** |
+
+A medida que avanzan los ciclos, la **pérdida disminuye** (el modelo se equivoca menos) y la **exactitud en validación sube** (el modelo generaliza mejor). Si después de 10–15 épocas la validación no mejora, el **EarlyStopping** detiene el entrenamiento para evitar **overfitting** (sobreajuste): cuando el modelo "memoriza" los ejemplos específicos de entrenamiento en vez de aprender patrones generalizables, como un estudiante que memoriza las respuestas del examen de práctica pero no entiende la materia.
+
+### 5.3 Glosario de términos técnicos
+
+| Término | Explicación |
+|---------|-------------|
+| **Backbone** | La "columna vertebral" del modelo: la red neuronal principal (EfficientNetB0, 237 capas) que contiene los filtros visuales preentrenados. Sabe detectar bordes, texturas, formas y patrones. Es la parte más grande y la que más "sabe". |
+| **Congelar (Freeze)** | Bloquear los pesos de ciertas capas para que **no cambien** durante el entrenamiento (`layer.trainable = False`). Es como ponerle candado a un conocimiento para protegerlo mientras se aprenden cosas nuevas. |
+| **Descongelar (Unfreeze)** | Quitar el candado: permitir que los pesos vuelvan a modificarse (`layer.trainable = True`). Se hace de forma selectiva (solo las últimas capas) y con cautela (learning rate bajo). |
+| **Fine-tuning** | "Ajuste fino": descongelar parte del backbone y re-entrenarlo con un learning rate muy bajo. No se aprende desde cero — se **refinan** conocimientos existentes para adaptarlos al nuevo dominio. |
+| **Pesos (Weights)** | Los 4,4 millones de números decimales que componen el modelo. Cada peso se ajusta un poco en cada ciclo de entrenamiento. Juntos, definen todo lo que el modelo "sabe". Cuando guardamos el modelo (.keras), guardamos estos números. |
+| **Época (Epoch)** | Una pasada completa por TODAS las imágenes de entrenamiento (15.037 imágenes). Se necesitan muchas épocas (80 en nuestro caso) para que el modelo converja a una solución buena. |
+| **Batch (Lote)** | Subconjunto de imágenes (32) procesadas simultáneamente. El modelo actualiza sus pesos después de cada batch, no después de cada imagen individual. Esto hace el entrenamiento más estable y eficiente. |
+| **Learning Rate** | "Velocidad de aprendizaje": número que controla cuánto se ajustan los pesos en cada corrección. Fase 1 usa 0,001 (aprendizaje rápido); Fase 2 usa 0,0001 (aprendizaje cauteloso). Decae gradualmente con CosineDecay. |
+| **Loss (Pérdida)** | Número que cuantifica qué tan mal predice el modelo. Mientras menor sea, mejor. Todo el entrenamiento busca **minimizar** este número. En nuestro caso: Binary Cross-Entropy. |
+| **Optimizador (AdamW)** | Algoritmo que decide cómo actualizar los pesos usando los gradientes. AdamW adapta la velocidad de cada parámetro individualmente y penaliza pesos excesivamente grandes (weight decay). |
+| **Backpropagation** | "Retropropagación": algoritmo que calcula, para cada peso, cuánto contribuyó al error. Funciona hacia atrás: desde el error final hacia la imagen de entrada, capa por capa. Es lo que permite al modelo saber **qué** necesita ajustar. |
+| **Gradiente** | La "dirección de corrección" para un peso específico. Indica hacia dónde y cuánto debe moverse para reducir el error. Es el resultado del backpropagation. |
+| **Forward Pass** | Pasada "hacia adelante": la imagen entra por la primera capa, recorre todas las capas hasta la última, y produce una predicción. Es el paso donde el modelo "mira" la imagen. |
+| **Overfitting** | "Sobreajuste": cuando el modelo memoriza los ejemplos de entrenamiento en vez de aprender patrones generalizables. Se detecta cuando la exactitud en entrenamiento es alta pero en validación es baja. Las técnicas de regularización lo previenen. |
+| **Regularización** | Conjunto de técnicas (Dropout, Weight Decay, MixUp, Label Smoothing, EarlyStopping) que fuerzan al modelo a **generalizar** en vez de memorizar. Son como reglas de estudio que evitan que el alumno dependa de la memoria a corto plazo. |
+| **Dropout** | Durante el entrenamiento, se "apagan" aleatoriamente un % de neuronas (30–50%). Esto fuerza al modelo a no depender de ninguna neurona individual — como un equipo donde cualquier miembro puede faltar y los demás compensan. En la predicción final, todas funcionan. |
+| **Channel Adapter** | Módulo pequeño (2 capas) que traduce las 7 bandas satelitales a 3 canales que el backbone entiende. Aprende la proyección óptima automáticamente, sin intervención humana. |
+| **Classification Head** | Las capas finales del modelo que toman la decisión. Reciben 1.280 características extraídas por el backbone y producen un solo número (0–1): la probabilidad de potencial geotérmico. |
+| **Transfer Learning** | "Aprendizaje por transferencia": reutilizar un modelo preentrenado (en fotos normales) y adaptarlo a otro dominio (imágenes satelitales). Reduce drásticamente el tiempo y la cantidad de datos necesarios. |
+| **Batch Normalization** | Capa que normaliza las activaciones internas de la red en cada paso, estabilizando la convergencia. En la Fase 2 se mantiene **congelada** para preservar las estadísticas que aprendió con ImageNet. |
+| **EarlyStopping** | Mecanismo de seguridad: si el rendimiento en validación no mejora durante 10–15 épocas seguidas, se detiene el entrenamiento automáticamente para evitar overfitting. |
+| **CosineDecay** | Estrategia donde el learning rate empieza alto y va decayendo suavemente siguiendo una curva de coseno, hasta llegar a un mínimo. Permite aprender rápido al inicio y afinar al final. |
+
+### 5.4 Redes Neuronales Convolucionales (CNN)
 
 Las CNN son arquitecturas de aprendizaje profundo especializadas en datos con estructura de cuadrícula (imágenes). Su poder radica en tres operaciones:
 
@@ -265,7 +409,7 @@ Los filtros de las primeras capas aprenden bordes y texturas; los de capas profu
 
 **Activación (ReLU):** Introduce no linealidad: $f(x) = \max(0, x)$. Permite al modelo aprender relaciones complejas.
 
-### 5.2 Redes residuales (ResNet) — usadas en v2
+### 5.5 Redes residuales (ResNet) — usadas en v2
 
 He et al. (2016) introdujeron las **conexiones residuales (skip connections)**: el gradiente fluye directamente a través de las capas, evitando el problema de degradación en redes profundas.
 
@@ -274,7 +418,7 @@ $$y = F(x, \{W_i\}) + x$$
 
 donde $F$ es la transformación del camino principal y $x$ es la entrada transmitida por el atajo. La red aprende la función residual $F(x) = y - x$.
 
-### 5.3 Transfer Learning — usado en v3
+### 5.6 Transfer Learning — usado en v3
 
 Consiste en **reutilizar pesos** de un modelo preentrenado en un dominio fuente (ImageNet, 1,2M imágenes) y adaptarlos al dominio objetivo. Las primeras capas aprenden características genéricas (bordes, texturas) que son **transferibles entre dominios**; las capas superiores se especializan.
 
@@ -282,7 +426,7 @@ Consiste en **reutilizar pesos** de un modelo preentrenado en un dominio fuente 
 1. **Backbone congelado:** Solo se entrenan el adapter y el clasificador
 2. **Fine-tuning:** Se descongelan las últimas capas del backbone con un learning rate reducido
 
-### 5.4 EfficientNet (Tan & Le, 2019)
+### 5.7 EfficientNet (Tan & Le, 2019)
 
 Arquitectura que optimiza simultáneamente la **profundidad, ancho y resolución** mediante un coeficiente de escalado compuesto. EfficientNetB0 (la variante base) alcanza rendimiento comparable a redes mucho más grandes con solo 4,0M parámetros.
 
@@ -291,7 +435,7 @@ Su bloque fundamental es el **MBConv** (Mobile Inverted Bottleneck):
 - **Squeeze-and-Excitation (SE):** Calibra adaptativamente la importancia de cada canal
 - Skip connections internas
 
-### 5.5 Channel Adapter
+### 5.8 Channel Adapter
 
 Módulo convolucional diseñado para **proyectar las 7 bandas ASTER al espacio de 3 canales** esperado por EfficientNetB0 (preentrenado en RGB):
 
@@ -300,7 +444,7 @@ Módulo convolucional diseñado para **proyectar las 7 bandas ASTER al espacio d
 
 Este adapter **aprende la proyección óptima** del espacio espectral ASTER al espacio RGB de ImageNet, en lugar de seleccionar o promediar bandas manualmente.
 
-### 5.6 Técnicas de regularización
+### 5.9 Técnicas de regularización
 
 | Técnica | Qué hace | Parámetro en v3 |
 |---------|----------|:---------------:|
@@ -316,14 +460,14 @@ Este adapter **aprende la proyección óptima** del espacio espectral ASTER al e
 $$\tilde{x} = \lambda x_i + (1 - \lambda) x_j, \quad \tilde{y} = \lambda y_i + (1 - \lambda) y_j$$
 donde $\lambda \sim \text{Beta}(\alpha, \alpha)$. Suaviza la frontera de decisión y mejora la calibración.
 
-### 5.7 Mixed Precision Training (float16)
+### 5.10 Mixed Precision Training (float16)
 
 Usa aritmética de 16 bits para las operaciones forward/backward y 32 bits para la acumulación de gradientes. Beneficios:
 - **Duplica el throughput** en GPU modernas (RTX 4070)
 - **Reduce consumo de VRAM** (~50 %)
 - Sin pérdida de precisión (loss scaling automático)
 
-### 5.8 Global Average Pooling
+### 5.11 Global Average Pooling
 
 En lugar de aplanar (Flatten) la salida del backbone (que generaría millones de parámetros), se calcula el **promedio por canal**:
 
@@ -446,15 +590,74 @@ Para referencia, la v2 empleaba una arquitectura personalizada con:
 | Total épocas | 80 (30 + 50) |
 | Script | `scripts/train_model_v7.py` |
 
-### 7.2 ¿Por qué 2 fases?
+### 7.2 ¿Por qué 2 fases? (Explicación detallada)
 
-1. **Fase 1** entrena solo el adapter y el clasificador (~346K params) con un LR alto. El backbone ya tiene buenos filtros de ImageNet; no queremos destruirlos.
+El entrenamiento en 2 fases es una estrategia estándar en transfer learning. La lógica es la siguiente:
 
-2. **Fase 2** desbloquea las últimas 39 capas del backbone para **ajustar finamente** los filtros al dominio ASTER. Se usa un LR 10× menor para no destruir los pesos preentrenados. Las BatchNorm se mantienen congeladas porque sus estadísticas de ImageNet siguen siendo útiles.
+**Fase 1 — "Aprende lo nuevo sin tocar lo viejo" (30 épocas):**
 
-### 7.3 ¿Por qué mantener BatchNorm congelado?
+El backbone (EfficientNetB0) llega con 4.050.249 parámetros ya entrenados en ImageNet — sabe detectar bordes, texturas, patrones visuales. Si desde el primer momento le permitimos modificar TODOS esos parámetros con nuestro dataset (que es 550× más pequeño que ImageNet), corre el riesgo de **destruir** ese conocimiento valioso. Es como si un cirujano experto intentara reaprender anatomía con un solo libro de texto: perdería más de lo que ganaría.
 
-Las capas de Batch Normalization almacenan estadísticas (media y varianza) calculadas durante el preentrenamiento en ImageNet. Si se descongelan, estas estadísticas se recalculan con los datos de nuestro dataset (mucho más pequeño), lo que puede desestabilizar el entrenamiento.
+Por eso, en la Fase 1 congelamos el backbone completo (`layer.trainable = False` para cada capa) y solo entrenamos:
+- El **Channel Adapter** (las "gafas" que traducen 7 → 3 canales) — ~345K parámetros
+- El **Classification Head** (la "cabeza" que toma la decisión final) — incluido en esos ~345K
+
+El learning rate es relativamente alto (0,001) porque estas capas se entrenan **desde cero** — no hay conocimiento previo que proteger. Al final de esta fase, el adapter ya sabe cómo combinar las 7 bandas ASTER, y la cabeza ya tiene un criterio razonable de clasificación (val_auc = 0,9000).
+
+**Fase 2 — "Ahora refina tu visión para este dominio" (50 épocas):**
+
+Una vez que el adapter y la cabeza ya están entrenados, podemos empezar a **ajustar el backbone** — pero con extrema cautela:
+
+1. **Solo se descongelan las últimas 39 capas** (de 237 totales). ¿Por qué las últimas? Porque en las CNN las capas están organizadas jerárquicamente:
+   - Capas iniciales (1–50): detectan bordes, líneas, contrastes → **universales**, no necesitan cambiar
+   - Capas medias (50–150): detectan texturas, patrones repetitivos → **mayormente universales**
+   - Capas finales (150–237): detectan combinaciones complejas de patrones → **específicas del dominio original (fotos naturales)**, necesitan adaptarse a imágenes satelitales
+
+2. **El learning rate se reduce 10×** (de 0,001 a 0,0001). Esto significa que cada corrección es 10 veces más pequeña. Los pesos del backbone se ajustan con "pinzas de relojero", no con un martillo. El objetivo es **refinar**, no reemplazar.
+
+3. **Las capas de Batch Normalization permanecen congeladas** (ver 7.3 abajo). Sus estadísticas internas son valiosas y no queremos que se recalculen con nuestro dataset pequeño.
+
+4. **EarlyStopping es más paciente** (patience = 15 vs 10 en Fase 1). El fine-tuning produce mejoras más graduales, así que le damos más tiempo antes de declarar que ya no mejora.
+
+El resultado: la validación sube de AUC 0,9000 → 0,9725. El backbone ajustó sus detectores de patrones al dominio ASTER sin perder sus habilidades fundamentales.
+
+**Visualización del proceso completo:**
+
+```
+Fase 1 (épocas 1–30):
+┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+│   Adapter    │   │   Backbone   │   │     Head     │
+│  🔓 ABIERTO  │──▶│  🔒 CERRADO  │──▶│  🔓 ABIERTO  │
+│  LR = 0,001  │   │ (no cambia)  │   │  LR = 0,001  │
+│  345K params │   │ 4,05M params │   │              │
+└──────────────┘   └──────────────┘   └──────────────┘
+
+Fase 2 (épocas 31–80):
+┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+│   Adapter    │   │   Backbone   │   │     Head     │
+│  🔓 ABIERTO  │──▶│  🔓 últimas  │──▶│  🔓 ABIERTO  │
+│ LR = 0,0001  │   │  39 capas    │   │ LR = 0,0001  │
+│              │   │ BN congelado │   │              │
+└──────────────┘   └──────────────┘   └──────────────┘
+```
+
+### 7.3 ¿Por qué mantener BatchNorm congelado en Fase 2?
+
+Las capas de **Batch Normalization (BN)** son un caso especial. Cada capa BN almacena internamente dos valores acumulados:
+
+- **Media móvil (running mean):** el promedio de las activaciones que ha visto durante el entrenamiento
+- **Varianza móvil (running variance):** la dispersión de esas activaciones
+
+Estos valores fueron calculados durante el preentrenamiento con **1,2 millones de imágenes** de ImageNet. Son estadísticas muy estables y robustas.
+
+Si descongelamos las capas BN en la Fase 2, estas estadísticas se **recalcularían** usando solo nuestras ~15.000 imágenes (600× menos datos). Esto causaría que:
+
+1. Los valores de media/varianza fluctúen mucho entre batches (solo 32 imágenes por batch)
+2. La normalización interna se vuelva inestable
+3. La red "olvide" cómo escalar correctamente sus activaciones
+4. El entrenamiento se desestabilice y las métricas caigan
+
+La solución estándar: al descongelar capas del backbone, se mantiene **BN en modo inferencia** (no actualiza sus estadísticas). Así la red ajusta los filtros convolucionales mientras mantiene una normalización estable basada en las estadísticas robustas de ImageNet.
 
 ### 7.4 Generador de datos por particiones
 
