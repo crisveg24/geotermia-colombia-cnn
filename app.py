@@ -1043,7 +1043,7 @@ def crear_mapa_heatmap(zonas, predicciones_hist=None):
             fg_heat = folium.FeatureGroup(name="Mapa de calor")
             HeatMap(
                 heat_data,
-                min_opacity=0.4, max_val=1.0,
+                min_opacity=0.4,
                 radius=45, blur=35,
                 gradient={0.0: '#1565c0', 0.25: '#42a5f5', 0.5: '#ffca28', 0.75: '#ff6d00', 1.0: '#d32f2f'},
             ).add_to(fg_heat)
@@ -1893,7 +1893,7 @@ def pagina_prediccion():
                     unsafe_allow_html=True,
                 )
                 mapa_heat = crear_mapa_heatmap(zonas, st.session_state["pred_historial"])
-                st_folium(mapa_heat, width=None, height=450, returned_objects=[])
+                st_folium(mapa_heat, width=700, height=450, returned_objects=[])
 
         # ---- Modo comparacion ----
         st.write("")
