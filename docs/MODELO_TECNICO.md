@@ -434,6 +434,49 @@ Cada parámetro es un **dial de sintonía**. Antes del entrenamiento:
 
 Durante el entrenamiento, el algoritmo ajusta cada dial un pequeñísimo paso, ~37.600 veces, hasta que los 4,4 millones de diales en conjunto producen la respuesta correcta para el 92% de los casos. Al final, esos números **codifican todo el conocimiento del modelo**: qué bandas importan más, qué texturas son características de zonas geotérmicas, cómo combinar señales de temperatura con señales mineralógicas. Nadie programó esas reglas explícitamente — emergieron solas del proceso de ajuste.
 
+### 5.5 ¿Qué es un tensor?
+
+Un **tensor** es simplemente una forma de organizar números en varias dimensiones. Es la estructura de datos fundamental sobre la que opera todo el modelo.
+
+Para entenderlo sin tecnicismos, imagina estas estructuras cotidianas:
+
+| Estructura | Dimensiones | Ejemplo |
+|---|---|---|
+| Un número suelto | 0D (escalar) | La temperatura hoy: `28.5` |
+| Una lista de números | 1D (vector) | Las temperaturas de 7 días: `[28, 29, 31, 27, 30, 28, 32]` |
+| Una tabla de números | 2D (matriz) | Una hoja de Excel con filas y columnas |
+| Un cubo de números | 3D (tensor) | Una imagen: alto × ancho × canales de color |
+| Varios cubos apilados | 4D (tensor) | Un lote de imágenes: cantidad × alto × ancho × canales |
+
+#### La imagen ASTER como tensor
+
+Cada imagen ASTER que recibe nuestro modelo es un tensor 3D:
+
+```
+Forma: (224, 224, 7)
+         │     │   └── 7 bandas espectrales
+         │     └────── 224 píxeles de ancho
+         └──────────── 224 píxeles de alto
+```
+
+Eso son `224 × 224 × 7 = 351.232 números` por imagen. Un número por cada banda en cada píxel.
+
+Cuando el modelo procesa un **batch** de 32 imágenes a la vez, el tensor tiene 4 dimensiones:
+
+```
+Forma: (32, 224, 224, 7)
+        │    │     │   └── 7 bandas
+        │    │     └────── 224 ancho
+        │    └──────────── 224 alto
+        └───────────────── 32 imágenes en el lote
+```
+
+Eso son `32 × 351.232 = 11.239.424 números` procesados simultáneamente en la GPU en cada step.
+
+#### ¿Por qué se llaman "tensores"?
+
+El término viene de la física/matemática donde un tensor es una generalización de vectores y matrices a cualquier número de dimensiones. En deep learning adoptaron el mismo nombre porque es exactamente lo que son: datos numéricos organizados en estructuras multidimensionales. TensorFlow, literalmente, significa **"flujo de tensores"** — los datos fluyen como tensores a través de las capas de la red.
+
 ### 5.6 Redes Neuronales Convolucionales (CNN)
 
 Las CNN son arquitecturas de aprendizaje profundo especializadas en datos con estructura de cuadrícula (imágenes). Su poder radica en tres operaciones:
@@ -567,6 +610,69 @@ En lugar de aplanar (Flatten) la salida del backbone (que generaría millones de
 
 Reduce parámetros drásticamente y es menos propenso a overfitting.
 
+### 5.15 CUDA y la GPU: ¿por qué el entrenamiento es 45× más rápido?
+
+Entrenar el modelo en la CPU tomaba varios días. Con la GPU RTX 4070 tomó pocas horas. La diferencia está en cómo están construidas CPU y GPU.
+
+**CPU (procesador central):**
+- Tiene **8–16 núcleos** (en PCs modernas)
+- Cada núcleo es muy potente y versátil — puede hacer cualquier tarea
+- Diseñada para tareas **secuenciales** (una instrucción tras otra)
+- Velocidad de reloj alta (~4–5 GHz)
+
+**GPU (tarjeta gráfica):**
+- Tiene **miles de núcleos pequeños** (la RTX 4070 tiene 5.888 núcleos CUDA)
+- Cada núcleo es más simple, pero hay miles trabajando **en paralelo**
+- Diseñada para tareas **masivamente paralelas** (mover millones de píxeles a la vez)
+- Velocidad de reloj menor (~2 GHz), pero miles de operaciones simultáneas
+
+#### ¿Por qué esto importa en deep learning?
+
+Las operaciones del modelo (multiplicaciones de matrices, convoluciones) son **perfectamente paralelizables**: cada píxel de la imagen, cada neurona de la red, puede procesarse independientemente de las demás. La GPU puede hacer esas 11 millones de multiplicaciones de un batch **todas al mismo tiempo**. La CPU las haría una por una (o en grupos de 8–16).
+
+```
+CPU:  [núcleo 1] → [2] → [3] ... (8 a la vez, una tras otra)
+GPU:  [5.888 núcleos CUDA] todos a la vez → listo
+```
+
+**CUDA** (Compute Unified Device Architecture) es el sistema de programación de NVIDIA que permite escribir código que se ejecuta en esos 5.888 núcleos. TensorFlow ya viene integrado con CUDA — cuando detecta una GPU compatible, automáticamente envía todos los cálculos a ella.
+
+#### En números concretos de v3
+
+| Medida | CPU | GPU RTX 4070 |
+|---|---|---|
+| Tiempo por step (batch de 32) | ~15.600 ms | **347 ms** |
+| Factores de mejora | — | **45× más rápido** |
+| Tiempo total de entrenamiento | ~días | **horas** |
+| VRAM utilizada | RAM normal | 12 GB VRAM dedicada |
+
+#### Mixed Precision + CUDA = máxima eficiencia
+
+Además de los núcleos CUDA, las GPU modernas tienen **Tensor Cores** especializados en multiplicaciones de matrices en float16. Al combinar Mixed Precision Training con Tensor Cores, la RTX 4070 puede hacer **el doble de operaciones por segundo** que en float32, reduciendo además el uso de VRAM a la mitad.
+
+### 5.16 ¿Por qué sigmoid y no softmax en la salida?
+
+Hay dos funciones de activación comunes para la capa de salida de una clasificación:
+
+**Softmax** — se usa cuando hay **múltiples clases excluyentes**. Por ejemplo, clasificar un número entre 10 dígitos (0–9). Softmax distribuye la probabilidad entre todas las clases y fuerza a que sumen exactamente 1,0:
+```
+Softmax([2.1, 0.3, 1.8]) → [0.65, 0.08, 0.27]  (suman 1.0)
+```
+
+**Sigmoid** — se usa para **clasificación binaria** (dos opciones: sí o no). Toma cualquier número y lo convierte en una probabilidad independiente entre 0 y 1:
+
+$$\sigma(x) = \frac{1}{1 + e^{-x}}$$
+
+Nuestro problema es binario: ¿zona geotérmica o no? Por eso la capa final tiene **una sola neurona con sigmoid**, no 2 neuronas con softmax. El resultado es un único número entre 0% y 100%:
+
+| Salida del modelo | Temperatura de la salida lineal | Predicción |
+|---|---|---|
+| 0.03 | Número muy negativo (–3.5) | No geotérmico (3% probabilidad) |
+| 0.50 | Cero (frontera de decisión) | Indeciso |
+| 0.87 | Número positivo (+1.9) | Geotérmico (87% probabilidad) |
+
+> Una sola neurona sigmoid es equivalente a dos neuronas softmax, pero más eficiente: usa la mitad de parámetros y es matemáticamente idéntica.
+
 ---
 
 ## 6. Arquitectura del Modelo
@@ -630,6 +736,59 @@ Para referencia, la v2 empleaba una arquitectura personalizada con:
 | Recall | 86,05 % | **93,17 %** (+7,12 pp) |
 | Dataset de prueba | 1.017 imgs, 1 país | **3.619 imgs, 4 países** |
 | Entrenamiento | CPU, 22 épocas | **GPU, 80 épocas (2 fases)** |
+
+### 6.4 Ejemplo paso a paso: ¿qué pasa cuando das unas coordenadas?
+
+Para hacer concreto todo lo anterior, veamos exactamente qué ocurre cuando alguien ingresa las coordenadas del **Nevado del Ruiz** (lat=4.895, lon=−75.322) en la app:
+
+**① Descarga de la imagen (Google Earth Engine, ~3 s)**
+```
+Zona: buffer 5 km alrededor de (4.895°N, -75.322°W)
+Descarga: imagen ASTER 7 bandas, ~111×111 píxeles
+Guardado: /tmp/pred_4.895_-75.322.tif
+```
+
+**② Preprocesamiento (~50 ms)**
+```
+1. Leer el .tif con rasterio → array NumPy (111, 111, 7)
+2. Reemplazar NoData (-9999) por mediana de cada banda
+3. Redimensionar a (224, 224, 7) con scipy.zoom
+4. Normalizar con estadísticas globales del dataset:
+   banda_6 (temperatura): valor_real = 29.701
+   banda_6 normalizada:   (valor - 29.701) / std_global
+5. Expandir: (224, 224, 7) → (1, 224, 224, 7)  ← batch de 1 imagen
+```
+
+**③ Forward pass por el modelo (~200 ms en GPU)**
+```
+Entrada:   tensor (1, 224, 224, 7)
+           │
+           ▼ Channel Adapter
+           tensor (1, 224, 224, 3)   ← 7 bandas → 3 canales
+           │
+           ▼ EfficientNetB0 (237 capas)
+           tensor (1, 7, 7, 1280)    ← mapa de características
+           │
+           ▼ Global Average Pooling
+           tensor (1, 1280)          ← 1.280 características
+           │
+           ▼ Dense(256) + BN + ReLU + Dropout
+           tensor (1, 256)
+           │
+           ▼ Dense(64) + BN + ReLU + Dropout
+           tensor (1, 64)
+           │
+           ▼ Dense(1, sigmoid)
+           tensor (1, 1)             ← un solo número
+```
+
+**④ Resultado**
+```
+Salida del modelo: 0.9312  → 93.1% de probabilidad geotérmica
+Decisión:          0.9312 > 0.50  → POTENCIAL GEOTÉRMICO ALTO ✅
+```
+
+Eso es todo. Los 4,4 millones de parámetros del modelo transformaron 351.232 números (la imagen) en un único número (la probabilidad) en menos de 300 milisegundos.
 
 ---
 
@@ -790,6 +949,56 @@ Se estima la variabilidad de cada métrica generando **2.000 muestras con reempl
 ### 8.3 ¿Qué métrica importa más para screening geotérmico?
 
 El **recall** (sensibilidad) es la métrica más crítica en un contexto de screening: es preferible investigar un falso positivo (zona señalada erróneamente) que **omitir** una zona con potencial real. El modelo v3 prioriza recall (93,17 %) sobre precisión (91,27 %).
+
+### 8.4 ¿Qué significa AUC-ROC y cómo interpretarla?
+
+El **AUC-ROC** (Area Under the Receiver Operating Characteristic Curve) es una de las métricas más importantes. Para entenderla, primero hay que ver qué es la curva ROC.
+
+#### La situación del umbral
+
+El modelo no dice "sí" o "no" directamente — produce una probabilidad (ej: 73%). Nosotros decidimos a qué umbral consideramos positivo. Por defecto es 50%, pero podría ser 30% (más sensible, más falsos positivos) o 70% (más conservador, más falsos negativos).
+
+**La curva ROC** muestra qué pasa con las métricas para **cada umbral posible** de 0% a 100%:
+
+```
+       │ 1.0 ╔═══════════════╗
+       │     ║   Modelo      ║
+TPR    │     ║   perfecto    ║
+(Re-   │ 0.97║               ●←── nuestro modelo
+call)  │     ║           ●
+       │     ║       ●
+       │     ║   ●
+       │ 0.0 ╚═════════════════
+       └──────────────────────
+         0.0  FPR (1-Especificidad) 1.0
+
+  TPR = True Positive Rate (Recall) = TP/(TP+FN)
+  FPR = False Positive Rate = FP/(FP+TN)
+```
+
+- **Punto (0, 0):** Umbral 100% — el modelo no predice nada positivo. Cero aciertos, cero falsas alarmas.
+- **Punto (1, 1):** Umbral 0% — el modelo predice todo positivo. Detecta todo, pero también genera todas las falsas alarmas.
+- **Curva ideal:** Sube verticalmente hasta (0, 1) — detecta todo sin ninguna falsa alarma.
+- **Diagonal (línea punteada):** Lo que haría un modelo aleatorio (tirar una moneda).
+
+#### El AUC: un solo número resumen
+
+El **AUC** (Área Bajo la Curva) es exactamente eso: el área debajo de esa curva, entre 0 y 1:
+
+| AUC | Interpretación |
+|:-:|---|
+| **1.00** | Modelo perfecto: separa siempre las clases sin errores |
+| **0.97** | ← Nuestro modelo v3: excelente discriminación |
+| **0.80–0.90** | Bueno |
+| **0.70–0.80** | Aceptable |
+| **0.50** | Equivale a tirar una moneda (modelo inútil) |
+| **< 0.50** | Peor que el azar (¡el modelo está invertido!) |
+
+Nuestro **AUC = 0,9737** significa que si tomamos una zona geotérmica real y una zona no geotérmica al azar, el modelo le asignará mayor probabilidad a la geotérmica en el **97,37% de los casos**. Solo en el 2,63% de los pares aleatorios se confundirá.
+
+#### ¿Por qué es importante en nuestro contexto?
+
+A diferencia de la accuracy (que solo es válida para un umbral fijo del 50%), el AUC es **independiente del umbral**. Mide la capacidad de discriminación del modelo en todas las situaciones posibles. En exploración geotérmica esto es valioso: si en el futuro se decide usar un umbral del 30% para ser más conservadores, el AUC ya nos dice que el modelo seguirá siendo excelente.
 
 ---
 
