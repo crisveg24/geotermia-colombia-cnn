@@ -95,3 +95,5 @@ token*
 # Archivos temporales
 *.tmp
 *.temp
+
+video_deeplearning.md
