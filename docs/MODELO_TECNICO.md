@@ -256,7 +256,7 @@ Las estadísticas globales se calculan en un solo pase con el **algoritmo de Wel
 
 ### 5.1 Analogía cotidiana: Entendiendo el modelo sin ser experto
 
-Para entender cómo funciona nuestro modelo **sin necesidad de saber programación ni matemáticas**, imagina la siguiente situación:
+Para entender cómo funciona nuestro modelo, imagina la siguiente situación:
 
 Queremos entrenar a un **médico radiólogo** para que identifique una enfermedad rara mirando un tipo especial de radiografía que él nunca ha visto antes. ¿Cómo lo haríamos?
 
@@ -395,7 +395,46 @@ A medida que avanzan los ciclos, la **pérdida disminuye** (el modelo se equivoc
 | **EarlyStopping** | Mecanismo de seguridad: si el rendimiento en validación no mejora durante 10–15 épocas seguidas, se detiene el entrenamiento automáticamente para evitar overfitting. |
 | **CosineDecay** | Estrategia donde el learning rate empieza alto y va decayendo suavemente siguiendo una curva de coseno, hasta llegar a un mínimo. Permite aprender rápido al inicio y afinar al final. |
 
-### 5.4 Redes Neuronales Convolucionales (CNN)
+### 5.4 ¿Qué son los 4,4 millones de parámetros?
+
+Un **parámetro** es simplemente un número decimal almacenado dentro del modelo. Nada más. Cuando guardamos el modelo en un archivo `.keras` (60 MB), lo que se guarda es exactamente esa lista de 4.396.112 decimales.
+
+#### ¿Para qué sirve cada número?
+
+Cada parámetro es un **peso** (`w`) o un **sesgo** (`b`) dentro de una operación matemática elemental:
+
+$$\text{salida} = \text{entrada} \times w + b$$
+
+`w` amplifica o atenúa la señal que entra. `b` la desplaza hacia arriba o hacia abajo. El entrenamiento consiste en ajustar esos valores miles de veces hasta que produzcan la salida correcta.
+
+#### ¿Dónde están los 4,4 millones?
+
+No están en un solo lugar — están repartidos en cientos de capas:
+
+| Parte del modelo | Parámetros aprox. | % del total |
+|---|:-:|:-:|
+| **Backbone EfficientNetB0** | ~4.050.000 | 92,1 % |
+| **Channel Adapter** (7 → 3 canales) | ~1.400 | 0,03 % |
+| **Classification Head** (256 → 64 → 1) | ~344.000 | 7,8 % |
+| **Total** | **4.396.112** | 100 % |
+
+#### Ejemplo concreto de cómo se acumulan
+
+**En el Channel Adapter:** la primera capa convolucional tiene 16 filtros de tamaño 3×3 aplicados a 7 bandas. Cada filtro es una grilla de 9 números. Eso son `7 × 16 × 9 = 1.008 pesos`. Esos 1.008 números aprenden a combinar las 7 bandas satelitales de la forma más útil posible.
+
+**En el Backbone:** hay capas convolucionales mucho más grandes. Una capa que transforma 40 canales en 80 canales con filtros 3×3 tiene `3 × 3 × 40 × 80 = 28.800 pesos`. Multiplicado por cientos de capas, los números se acumulan hasta los ~4 millones.
+
+**En el Classification Head:** las capas densas tienen una conexión entre cada neurona de entrada y cada neurona de salida. Una capa Dense(256) que recibe 1.280 valores tiene `1.280 × 256 = 327.680 pesos` — uno por cada par de neuronas conectadas.
+
+#### La intuición clave
+
+Cada parámetro es un **dial de sintonía**. Antes del entrenamiento:
+- Los del backbone vienen en valores heredados de ImageNet (ya son útiles)
+- Los del adapter y la cabeza parten de valores aleatorios
+
+Durante el entrenamiento, el algoritmo ajusta cada dial un pequeñísimo paso, ~37.600 veces, hasta que los 4,4 millones de diales en conjunto producen la respuesta correcta para el 92% de los casos. Al final, esos números **codifican todo el conocimiento del modelo**: qué bandas importan más, qué texturas son características de zonas geotérmicas, cómo combinar señales de temperatura con señales mineralógicas. Nadie programó esas reglas explícitamente — emergieron solas del proceso de ajuste.
+
+### 5.6 Redes Neuronales Convolucionales (CNN)
 
 Las CNN son arquitecturas de aprendizaje profundo especializadas en datos con estructura de cuadrícula (imágenes). Su poder radica en tres operaciones:
 
@@ -409,7 +448,7 @@ Los filtros de las primeras capas aprenden bordes y texturas; los de capas profu
 
 **Activación (ReLU):** Introduce no linealidad: $f(x) = \max(0, x)$. Permite al modelo aprender relaciones complejas.
 
-### 5.5 Redes residuales (ResNet) — usadas en v2
+### 5.7 Redes residuales (ResNet) — usadas en v2
 
 He et al. (2016) introdujeron las **conexiones residuales (skip connections)**: el gradiente fluye directamente a través de las capas, evitando el problema de degradación en redes profundas.
 
@@ -418,7 +457,7 @@ $$y = F(x, \{W_i\}) + x$$
 
 donde $F$ es la transformación del camino principal y $x$ es la entrada transmitida por el atajo. La red aprende la función residual $F(x) = y - x$.
 
-### 5.6 Transfer Learning — usado en v3
+### 5.8 Transfer Learning — usado en v3
 
 Consiste en **reutilizar pesos** de un modelo preentrenado en un dominio fuente (ImageNet, 1,2M imágenes) y adaptarlos al dominio objetivo. Las primeras capas aprenden características genéricas (bordes, texturas) que son **transferibles entre dominios**; las capas superiores se especializan.
 
@@ -426,7 +465,7 @@ Consiste en **reutilizar pesos** de un modelo preentrenado en un dominio fuente 
 1. **Backbone congelado:** Solo se entrenan el adapter y el clasificador
 2. **Fine-tuning:** Se descongelan las últimas capas del backbone con un learning rate reducido
 
-### 5.7 EfficientNet (Tan & Le, 2019)
+### 5.9 EfficientNet (Tan & Le, 2019)
 
 Arquitectura que optimiza simultáneamente la **profundidad, ancho y resolución** mediante un coeficiente de escalado compuesto. EfficientNetB0 (la variante base) alcanza rendimiento comparable a redes mucho más grandes con solo 4,0M parámetros.
 
@@ -435,7 +474,7 @@ Su bloque fundamental es el **MBConv** (Mobile Inverted Bottleneck):
 - **Squeeze-and-Excitation (SE):** Calibra adaptativamente la importancia de cada canal
 - Skip connections internas
 
-### 5.8 Channel Adapter
+### 5.10 Channel Adapter
 
 Módulo convolucional diseñado para **proyectar las 7 bandas ASTER al espacio de 3 canales** esperado por EfficientNetB0 (preentrenado en RGB):
 
@@ -444,7 +483,7 @@ Módulo convolucional diseñado para **proyectar las 7 bandas ASTER al espacio d
 
 Este adapter **aprende la proyección óptima** del espacio espectral ASTER al espacio RGB de ImageNet, en lugar de seleccionar o promediar bandas manualmente.
 
-### 5.9 Técnicas de regularización
+### 5.11 Técnicas de regularización
 
 | Técnica | Qué hace | Parámetro en v3 |
 |---------|----------|:---------------:|
@@ -460,14 +499,14 @@ Este adapter **aprende la proyección óptima** del espacio espectral ASTER al e
 $$\tilde{x} = \lambda x_i + (1 - \lambda) x_j, \quad \tilde{y} = \lambda y_i + (1 - \lambda) y_j$$
 donde $\lambda \sim \text{Beta}(\alpha, \alpha)$. Suaviza la frontera de decisión y mejora la calibración.
 
-### 5.10 Mixed Precision Training (float16)
+### 5.12 Mixed Precision Training (float16)
 
 Usa aritmética de 16 bits para las operaciones forward/backward y 32 bits para la acumulación de gradientes. Beneficios:
 - **Duplica el throughput** en GPU modernas (RTX 4070)
 - **Reduce consumo de VRAM** (~50 %)
 - Sin pérdida de precisión (loss scaling automático)
 
-### 5.11 Global Average Pooling
+### 5.13 Global Average Pooling
 
 En lugar de aplanar (Flatten) la salida del backbone (que generaría millones de parámetros), se calcula el **promedio por canal**:
 
