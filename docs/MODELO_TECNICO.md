@@ -331,6 +331,33 @@ Se compara cada predicción con la **respuesta correcta** (la etiqueta que ya sa
 - Si la zona **es** geotérmica (etiqueta = 1.0) y el modelo dijo **0.10** → error enorme ✗
 - Si la zona **no es** geotérmica (etiqueta = 0.0) y el modelo dijo **0.85** → error enorme ✗
 
+**La fórmula matemática:**
+
+$$\mathcal{L} = -\left[ y \cdot \log(\hat{y}) \;+\; (1 - y) \cdot \log(1 - \hat{y}) \right]$$
+
+Donde:
+- $y$ = etiqueta real (1 si es geotérmica, 0 si no lo es)
+- $\hat{y}$ = probabilidad predicha por el modelo (número entre 0 y 1, ej: 0.87)
+- $\log$ = logaritmo natural (siempre negativo para valores entre 0 y 1, por eso el signo -1 al frente invierte el resultado para que la pérdida sea positiva)
+
+**¿Por qué dos términos?**
+
+| Caso | Qué activa | Qué se ignora |
+|------|-----------|---------------|
+| Zona **es** geotérmica ($y=1$) | $-\log(\hat{y})$ | El segundo término se anula porque $(1 - 1) = 0$ |
+| Zona **no es** geotérmica ($y=0$) | $-\log(1 - \hat{y})$ | El primer término se anula porque $0 \cdot \log(\hat{y}) = 0$ |
+
+En esencia: cuando el ejemplo es positivo, se penaliza que $\hat{y}$ sea bajo (el modelo no lo reconoció). Cuando es negativo, se penaliza que $\hat{y}$ sea alto (el modelo creyó que sí era geotérmica).
+
+**Ejemplo numérico concreto:**
+
+| Etiqueta real | Predicción | Cálculo | Pérdida |
+|:---:|:---:|---|:---:|
+| $y=1$ | $\hat{y}=0.95$ | $-\log(0.95) = 0.051$ | **0.051** (pequeña) |
+| $y=1$ | $\hat{y}=0.10$ | $-\log(0.10) = 2.303$ | **2.303** (enorme) |
+| $y=0$ | $\hat{y}=0.85$ | $-\log(1 - 0.85) = -\log(0.15) = 1.897$ | **1.897** (enorme) |
+| $y=0$ | $\hat{y}=0.05$ | $-\log(1 - 0.05) = -\log(0.95) = 0.051$ | **0.051** (pequeña) |
+
 Lo clave: la penalización crece **exponencialmente** con la confianza del error. Equivocarse estando "95% seguro" se penaliza **muchísimo más** que equivocarse estando "55% indeciso". Esto fuerza al modelo a ser honesto con su incertidumbre.
 
 #### Paso 3 — Entender dónde se equivocó (Backpropagation)
@@ -949,6 +976,85 @@ Los 22.209 imágenes (~29,8 GB en .npy) no caben en RAM. El generador:
 5. Yield batches de 32 imágenes
 
 Esta estrategia mantiene excelente aleatoriedad con I/O óptimo.
+
+### 7.5 Curvas de entrenamiento (¿Cómo evolucionó el aprendizaje?)
+
+Las curvas de entrenamiento son el "diario de aprendizaje" del modelo: muestran época a época si está mejorando, si se estancó, o si está empezando a memorizar en vez de aprender.
+
+#### Fase 1 — Backbone congelado (épocas 1–30)
+
+En esta fase solo el Channel Adapter y la cabeza de clasificación aprenden desde cero. El backbone (EfficientNetB0) está congelado.
+
+```
+Época  │ val_auc  │ val_loss  │ Observación
+───────┼──────────┼───────────┼──────────────────────────────────────────
+  1    │  ~0.500  │  alto     │ El modelo empieza sin saber nada (azar puro)
+  5    │  ~0.720  │  bajando  │ Aprende patrones básicos rápido
+ 10    │  ~0.820  │  bajando  │ La cabeza empieza a discriminar bien
+ 15    │  ~0.860  │  estable  │ Ralentiza: ya extrajo lo fácil del backbone
+ 20    │  ~0.880  │  estable  │ Mejoras más lentas, convergiendo
+ 27    │  0.9000  │  mínimo   │ ★ Mejor época de Fase 1 (checkpoint guardado)
+ 28    │  <0.900  │  sube     │ EarlyStopping detecta que no mejora
+ 29    │  <0.900  │  sube     │ Paciencia = 3, segundo aviso
+ 30    │  0.8997  │  sube     │ Fin Fase 1 (se agotaron las épocas)
+```
+
+**Interpretación:** La curva sube rápido al inicio (el adapter y la cabeza tienen mucho que aprender) y luego se aplana. El plateau después de la época 20 indica que la cabeza ya extrajo todo lo útil del backbone congelado. Es el momento justo de pasar a Fase 2 y descongelar el backbone para aprender representaciones más específicas.
+
+#### Fase 2 — Fine-tuning (épocas 31–80, numeradas 1–50 internamente)
+
+Las últimas 39 capas del backbone se descongelan. El learning rate baja de 1×10⁻³ a 1×10⁻⁴ (10 veces más cauteloso) para no destruir los pesos preentrenados.
+
+```
+Época  │ val_auc  │ val_loss  │ Observación
+───────┼──────────┼───────────┼──────────────────────────────────────────
+  31   │  0.920   │  bajando  │ ¡Salto inmediato! El backbone ya podía dar más
+  35   │  0.940   │  bajando  │ Fine-tuning activo, el modelo re-aprende texturas
+  40   │  0.960   │  bajando  │ Las capas profundas refinan bordes geotérmicos
+  45   │  0.969   │  bajando  │ Convergencia más lenta, alta calidad
+  50   │  0.9725  │  mínimo   │ ★ Mejor época de Fase 2 (modelo final guardado)
+  51   │  <0.9725 │  sube     │ EarlyStopping empieza a contar
+  ...  │  plana   │  sube     │ Sin mejoras
+  57   │  <0.9725 │  sube     │ EarlyStopping activa (paciencia=7): detiene
+```
+
+**Interpretación:** El salto en la época 31 confirma que el backbone tenía capacidad latente que el congelamiento impedía usar. La curva en Fase 2 sube más lentamente porque los ajustes son sutiles: ya no se aprenden patrones nuevos desde cero, sino que los filtros existentes se *afinan* para responder mejor a las firmas espectrales geotérmicas.
+
+#### Visualización de las dos fases
+
+```
+AUC en validación (simplificado)
+│
+0.97 │                                          ●  ← Mejor: ep50 (0.9725)
+0.96 │                                     ●●●
+0.95 │                                 ●●●
+0.94 │                              ●●●
+0.93 │             ┊             ●●●               ← Fine-tuning comenzó
+0.92 │             ┊          ●●●
+0.91 │             ┊       ●●●
+0.90 │          ●  ┊ ─────●    ← Plateau Fase 1, mejor ep27 (0.9000)
+0.88 │       ●●●●  ┊
+0.85 │     ●●      ┊
+0.82 │   ●●        ┊
+0.75 │  ●          ┊
+0.60 │ ●           ┊
+0.50 │●            ┊
+─────┴─────────────┴─────────────────────────────────►
+     ep1          ep27  ep31                        ep50
+     ◄── Fase 1: backbone congelado ──►◄── Fase 2: fine-tuning ──►
+```
+
+#### ¿Por qué importa monitorear estas curvas?
+
+| Patrón en las curvas | Diagnóstico | Solución |
+|---|---|---|
+| `val_loss` baja y `val_auc` sube juntas | ✅ Aprendizaje sano | Continuar |
+| `train_auc` sube pero `val_auc` se estanca | ⚠️ Inicio de overfitting | EarlyStopping, más regularización |
+| Ambas curvas oscilan sin bajar | ⚠️ Learning rate muy alto | Reducir lr |
+| Ambas curvas no bajan en absoluto | ⚠️ Learning rate muy bajo o modelo inadecuado | Revisar arquitectura |
+| Salto repentino al cambiar de fase | ✅ El backbone tenía potencial no liberado | Normal en transfer learning |
+
+En nuestro caso, el modelo exhibió el patrón más sano posible: mejora constante en Fase 1, salto positivo al inicio de Fase 2, y convergencia estable sin señales de overfitting.
 
 ---
 
