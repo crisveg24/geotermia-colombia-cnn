@@ -650,7 +650,38 @@ GPU:  [5.888 núcleos CUDA] todos a la vez → listo
 
 Además de los núcleos CUDA, las GPU modernas tienen **Tensor Cores** especializados en multiplicaciones de matrices en float16. Al combinar Mixed Precision Training con Tensor Cores, la RTX 4070 puede hacer **el doble de operaciones por segundo** que en float32, reduciendo además el uso de VRAM a la mitad.
 
-### 5.16 ¿Por qué sigmoid y no softmax en la salida?
+#### WSL2: ¿por qué entrenar en Linux estando en Windows?
+
+El entrenamiento se realizó en un PC con **Windows 11**, pero usamos **WSL2** (Windows Subsystem for Linux 2) con Ubuntu 22.04. ¿Por qué no entrenar directamente en Windows?
+
+**WSL2** es una capa de compatibilidad desarrollada por Microsoft que permite correr un **kernel de Linux real** dentro de Windows, sin arrancar una máquina virtual completa. No es una emulación — es Linux de verdad, con acceso directo al hardware.
+
+La razón de usarlo es que CUDA y TensorFlow tienen soporte oficial y mucho más estable en Linux que en Windows:
+
+| Aspecto | Windows nativo | WSL2 Ubuntu |
+|---|---|---|
+| Soporte CUDA/TensorFlow | Parcial, con problemas frecuentes | **Oficial y completo** |
+| Drivers GPU compatibles | Versiones específicas requeridas | **Driver Windows → acceso directo** |
+| Rendimiento GPU | Bueno | **Igual o mejor** |
+| Herramientas de ML (pip, conda) | Funciona | **Funciona mejor** |
+| Estabilidad en entrenamiento largo | Ocasionalmente falla | **Estable** |
+
+**¿Cómo funciona técnicamente?**
+
+WSL2 no emula hardware — usa **virtualización ligera** (Hyper-V) para correr un kernel Linux real. NVIDIA desarrolló drivers especiales que permiten que ese kernel Linux acceda directamente a la GPU física de Windows. Desde Ubuntu dentro de WSL2, el sistema "ve" la RTX 4070 como si fuera una GPU nativa de Linux.
+
+```
+Windows 11 (host)
+├── Driver NVIDIA (Windows)
+│    └── Expone la GPU a WSL2 via passtrough
+└── WSL2 (kernel Linux Ubuntu 22.04)
+     └── Python 3.12 + TensorFlow 2.20 + CUDA
+          └── RTX 4070 → 5.888 núcleos CUDA disponibles ✅
+```
+
+**En la práctica:** se abre una terminal Ubuntu en Windows, se navega al proyecto, y se ejecuta `python train_model_v7.py`. TensorFlow detecta la GPU automáticamente y el entrenamiento arranca. Desde fuera, parece que se está usando Windows normalmente — por dentro, todo el stack de ML corre en Linux.
+
+
 
 Hay dos funciones de activación comunes para la capa de salida de una clasificación:
 
