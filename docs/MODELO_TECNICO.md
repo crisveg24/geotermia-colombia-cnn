@@ -467,14 +467,65 @@ Consiste en **reutilizar pesos** de un modelo preentrenado en un dominio fuente 
 
 ### 5.9 EfficientNet (Tan & Le, 2019)
 
-Arquitectura que optimiza simultáneamente la **profundidad, ancho y resolución** mediante un coeficiente de escalado compuesto. EfficientNetB0 (la variante base) alcanza rendimiento comparable a redes mucho más grandes con solo 4,0M parámetros.
+EfficientNet es una familia de arquitecturas de redes neuronales diseñada por investigadores de Google. La idea central: para hacer una red más precisa hay tres formas de hacerla "más grande":
+
+| Dimensión | Qué implica |
+|-----------|------------|
+| **Profundidad** | Añadir más capas |
+| **Ancho** | Más neuronas/filtros por capa |
+| **Resolución** | Darle imágenes más grandes |
+
+EfficientNet descubrió que si escala los **tres simultáneamente** con una proporción matemática fija (**compound scaling**), se obtiene el máximo rendimiento con el mínimo número de parámetros. La familia va de B0 (más pequeña) a B7 (más grande).
+
+**EfficientNetB0** es la variante base. Tiene:
+- **237 capas internas**
+- **4,0 millones de parámetros** (ResNet50 tiene 25M con peor rendimiento en ImageNet)
+- Preentrenado en **ImageNet** (1,2M imágenes, 1.000 clases)
+- Input esperado: imágenes **224×224×3 canales** (RGB) — de ahí la necesidad del Channel Adapter
 
 Su bloque fundamental es el **MBConv** (Mobile Inverted Bottleneck):
-- Convoluciones depthwise separable (eficientes en parámetros)
-- **Squeeze-and-Excitation (SE):** Calibra adaptativamente la importancia de cada canal
-- Skip connections internas
 
-### 5.10 Channel Adapter
+1. **Convoluciones depthwise-separable:** En vez de aplicar un filtro 3×3 a todos los canales a la vez (costoso), primero aplica un filtro por canal por separado (*depthwise*) y luego combina los resultados con filtros 1×1 (*pointwise*). Mismo resultado, ~8× menos cálculo.
+
+2. **Squeeze-and-Excitation (SE):** Mecanismo de atención que aprende a asignar un **peso de importancia a cada canal**. Primero "comprime" la información espacial (squeeze: promedio global), luego genera pesos entre 0 y 1 para cada canal (excitation: dos capas densas), y multiplica cada canal por su peso. Esto permite que el modelo preste más atención a las bandas que más aportan en cada contexto.
+
+3. **Skip connections internas:** Igual que en ResNet — la entrada del bloque se suma a la salida, facilitando el flujo del gradiente durante el entrenamiento.
+
+### 5.10 TensorFlow y Keras: el motor y el volante
+
+Son dos capas del mismo stack tecnológico, una encima de la otra:
+
+**TensorFlow** (Google, 2015) es el **motor de bajo nivel**. Gestiona todo lo que la GPU necesita:
+- Operaciones matemáticas sobre tensores (matrices multidimensionales)
+- Distribución del cómputo en los núcleos CUDA de la GPU
+- Backpropagation automático (autodiff): calcula gradientes sin que el programador los derive manualmente
+- Precisión mixta float16: decide qué operaciones van en 16 bits y cuáles en 32 bits
+
+El programador casi nunca lo llama directamente — trabaja por debajo de forma transparente.
+
+**Keras** (integrado en TensorFlow desde TF 2.x) es la **interfaz de alto nivel**. Es lo que realmente se escribe en el código:
+```python
+model = EfficientNetB0(weights='imagenet', include_top=False)
+model.fit(X_train, y_train, epochs=30)
+probabilidad = model.predict(imagen)
+```
+Keras traduce esas instrucciones legibles a operaciones de TensorFlow. Provee todas las capas (`Conv2D`, `Dense`, `BatchNormalization`, `Dropout`), optimizadores (`AdamW`), funciones de pérdida (`BinaryCrossentropy`), y el formato de guardado `.keras`.
+
+**En v3 concretamente:**
+
+| Responsabilidad | Quién la hace |
+|---|---|
+| Definir la arquitectura (capas, conexiones) | **Keras 3.12/3.13** |
+| Proveer EfficientNetB0 preentrenado | **Keras** (descarga pesos ImageNet automáticamente) |
+| Ejecutar los cálculos en la RTX 4070 | **TensorFlow 2.20 + CUDA** |
+| Backpropagation y cálculo de gradientes | **TensorFlow** (autodiff) |
+| Escalar a float16 durante entrenamiento | **TensorFlow** (mixed precision) |
+| Guardar/cargar el modelo `.keras` | **Keras** |
+| Lógica de entrenamiento (`fit`, callbacks) | **Keras** |
+
+La relación es: **Keras es el volante y el tablero** (lo que el programador toca). **TensorFlow es el motor** (lo que realmente mueve el coche).
+
+### 5.11 Channel Adapter
 
 Módulo convolucional diseñado para **proyectar las 7 bandas ASTER al espacio de 3 canales** esperado por EfficientNetB0 (preentrenado en RGB):
 
@@ -483,7 +534,7 @@ Módulo convolucional diseñado para **proyectar las 7 bandas ASTER al espacio d
 
 Este adapter **aprende la proyección óptima** del espacio espectral ASTER al espacio RGB de ImageNet, en lugar de seleccionar o promediar bandas manualmente.
 
-### 5.11 Técnicas de regularización
+### 5.12 Técnicas de regularización
 
 | Técnica | Qué hace | Parámetro en v3 |
 |---------|----------|:---------------:|
@@ -499,14 +550,14 @@ Este adapter **aprende la proyección óptima** del espacio espectral ASTER al e
 $$\tilde{x} = \lambda x_i + (1 - \lambda) x_j, \quad \tilde{y} = \lambda y_i + (1 - \lambda) y_j$$
 donde $\lambda \sim \text{Beta}(\alpha, \alpha)$. Suaviza la frontera de decisión y mejora la calibración.
 
-### 5.12 Mixed Precision Training (float16)
+### 5.13 Mixed Precision Training (float16)
 
 Usa aritmética de 16 bits para las operaciones forward/backward y 32 bits para la acumulación de gradientes. Beneficios:
 - **Duplica el throughput** en GPU modernas (RTX 4070)
 - **Reduce consumo de VRAM** (~50 %)
 - Sin pérdida de precisión (loss scaling automático)
 
-### 5.13 Global Average Pooling
+### 5.14 Global Average Pooling
 
 En lugar de aplanar (Flatten) la salida del backbone (que generaría millones de parámetros), se calcula el **promedio por canal**:
 
