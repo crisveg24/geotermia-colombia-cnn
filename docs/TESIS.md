@@ -134,43 +134,53 @@ Vega Sánchez, C. C., Arévalo Rubiano, D. S., Espitia Ayala, Y. K., & Rivera Ma
 - 3 Objetivos
   - 3.1 Objetivo general
   - 3.2 Objetivos específicos
-- 4 Marco teórico
-  - 4.1 Energía geotérmica
-  - 4.2 Teledetección y sensor ASTER
-  - 4.3 Aprendizaje profundo (deep learning)
-    - 4.3.1 Tensores: la estructura de datos fundamental
-    - 4.3.2 Redes neuronales convolucionales (CNN)
-    - 4.3.3 Parámetros del modelo
-    - 4.3.4 Funciones de activación de salida: sigmoid vs. softmax
-    - 4.3.5 Función de pérdida: Binary Cross-Entropy
-  - 4.4 Transfer learning y EfficientNet
-    - 4.4.1 Arquitectura EfficientNet
-    - 4.4.2 Bloque MBConv y Squeeze-and-Excitation
-    - 4.4.3 Channel Adapter
-  - 4.5 Técnicas de regularización y optimización
-  - 4.6 Herramientas tecnológicas
-    - 4.6.1 TensorFlow y Keras
-    - 4.6.2 CUDA y aceleración por GPU
-    - 4.6.3 Mixed Precision Training
-  - 4.7 Estado del arte
-- 5 Metodología
-  - 5.1 Enfoque y tipo de investigación
-  - 5.2 Dataset: Región Andina
-  - 5.3 Pipeline de procesamiento
-  - 5.4 Arquitectura del modelo
-  - 5.5 Estrategia de entrenamiento
-  - 5.6 Métricas de evaluación
-- 6 Resultados
-  - 6.1 Métricas del modelo v3
-  - 6.2 Matriz de confusión
-  - 6.3 Comparativo v1 → v2 → v3
-  - 6.4 Curvas de entrenamiento
-- 7 Discusión
-  - 7.1 Interpretación de resultados
-  - 7.2 Bugs descubiertos y corregidos
-  - 7.3 Limitaciones
-- 8 Conclusiones
-- 9 Recomendaciones
+- 4 Hipótesis
+  - 4.1 Hipótesis alternativa
+  - 4.2 Hipótesis nula
+  - 4.3 Criterios de aceptación
+- 5 Marco teórico
+  - 5.1 Energía geotérmica
+  - 5.2 Teledetección y sensor ASTER
+  - 5.3 Aprendizaje profundo (deep learning)
+    - 5.3.1 Tensores: la estructura de datos fundamental
+    - 5.3.2 Redes neuronales convolucionales (CNN)
+    - 5.3.3 Parámetros del modelo
+    - 5.3.4 Funciones de activación de salida: sigmoid vs. softmax
+    - 5.3.5 Función de pérdida: Binary Cross-Entropy
+  - 5.4 Transfer learning y EfficientNet
+    - 5.4.1 Arquitectura EfficientNet
+    - 5.4.2 Bloque MBConv y Squeeze-and-Excitation
+    - 5.4.3 Channel Adapter
+  - 5.5 Técnicas de regularización y optimización
+  - 5.6 Herramientas tecnológicas
+    - 5.6.1 TensorFlow y Keras
+    - 5.6.2 CUDA y aceleración por GPU
+    - 5.6.3 Mixed Precision Training
+  - 5.7 Estado del arte
+- 6 Metodología
+  - 6.1 Enfoque y tipo de investigación
+  - 6.2 Dataset: Región Andina
+  - 6.3 Pipeline de procesamiento
+  - 6.4 Arquitectura del modelo
+  - 6.5 Estrategia de entrenamiento
+  - 6.6 Métricas de evaluación
+  - 6.7 Intervalos de confianza Bootstrap
+- 7 Resultados
+  - 7.1 Métricas del modelo v3
+  - 7.2 Matriz de confusión
+  - 7.3 Comparativo v1 → v2 → v3
+  - 7.4 Curvas de entrenamiento
+  - 7.5 Contraste de hipótesis
+- 8 Discusión
+  - 8.1 Interpretación de resultados
+  - 8.2 Comparación con trabajos relacionados
+  - 8.3 Bugs descubiertos y corregidos
+  - 8.4 Implicaciones prácticas
+  - 8.5 Limitaciones
+- 9 Conclusiones
+- 10 Recomendaciones
+  - 10.1 Recomendaciones cumplidas en la v3
+  - 10.2 Recomendaciones pendientes
 - Referencias
 - Anexos
 
@@ -316,12 +326,40 @@ Desarrollar un modelo de clasificación basado en redes neuronales convolucional
 ---
 
 <!-- ============================================================
-     4. MARCO TEÓRICO
+     4. HIPÓTESIS
      ============================================================ -->
 
-## 4 Marco teórico
+## 4 Hipótesis
 
-### 4.1 Energía geotérmica
+### 4.1 Hipótesis de trabajo ($H_1$)
+
+Un modelo de clasificación basado en redes neuronales convolucionales, entrenado con imágenes multiespectrales del sensor ASTER de la Región Andina, es capaz de identificar zonas con potencial geotérmico en Colombia con una exactitud significativamente superior al azar (Accuracy > 50 %) y con un AUC-ROC superior a 0,90.
+
+### 4.2 Hipótesis nula ($H_0$)
+
+El modelo CNN no es capaz de discriminar entre zonas con y sin potencial geotérmico a partir de imágenes ASTER con un desempeño superior al azar:
+
+$$H_0: \text{Accuracy} \leq 0{,}50 \tag{9}$$
+
+### 4.3 Criterios de aceptación
+
+Se rechaza $H_0$ si el modelo alcanza simultáneamente:
+
+- Exactitud (Accuracy) > 85 % (objetivo mínimo) o > 90 % (objetivo ideal)
+- AUC-ROC > 0,90 (objetivo mínimo) o > 0,95 (objetivo ideal)
+- MCC > 0,50 (objetivo mínimo) o > 0,70 (objetivo ideal)
+
+evaluados sobre un conjunto de prueba independiente sin solapamiento con los conjuntos de entrenamiento y validación.
+
+---
+
+<!-- ============================================================
+     5. MARCO TEÓRICO
+     ============================================================ -->
+
+## 5 Marco teórico
+
+### 5.1 Energía geotérmica
 
 La energía geotérmica es el calor almacenado en el interior de la Tierra. Para que un recurso geotérmico sea explotable, se requieren tres componentes conocidos como el "triángulo geotérmico": una fuente de calor (intrusión magmática o gradiente elevado), un reservorio (roca con porosidad y permeabilidad suficientes) y un fluido (agua líquida o vapor) que transporte el calor (Dickson & Fanelli, 2003), texto de referencia fundamental en geotermia.
 
@@ -359,7 +397,7 @@ En el contexto colombiano, el SGC (2023) ha identificado al menos seis zonas geo
 Los países andinos — Colombia, Ecuador, Perú y Chile — comparten el contexto geológico del Cinturón de Fuego del Pacífico, con subducción de la placa de Nazca bajo la placa Sudamericana. Esta similitud geológica justifica expandir el dataset de entrenamiento a la región andina completa. Chile, que opera la primera planta geotérmica de Sudamérica en Cerro Pabellón (48 MW), demuestra la viabilidad del aprovechamiento de estos recursos en la región (Lahsen et al., 2015). Esta similitud geológica entre países andinos fundamenta la decisión de construir un dataset multinacional para entrenar el modelo.
 
 
-### 4.2 Teledetección y sensor ASTER
+### 5.2 Teledetección y sensor ASTER
 
 El sensor ASTER (Advanced Spaceborne Thermal Emission and Reflection Radiometer), a bordo del satélite Terra de la NASA, dispone de 14 bandas espectrales distribuidas en tres subsistemas: VNIR (3 bandas), SWIR (6 bandas) y TIR (5 bandas). Las bandas TIR son particularmente relevantes para la detección de anomalías térmicas superficiales y la caracterización de composición mineralógica (Abrams et al., 2015), capacidades que fundamentan la selección de este sensor para el presente estudio.
 
@@ -394,11 +432,11 @@ El presente estudio utiliza el producto ASTER GED AG100 v003 (NASA/METI/AIST/Jap
 | Presencia de vulcanismo reciente | Sí | TIR, temperature |
 
 
-### 4.3 Aprendizaje profundo (deep learning)
+### 5.3 Aprendizaje profundo (deep learning)
 
 El aprendizaje profundo es una rama del aprendizaje automático que emplea redes neuronales artificiales con múltiples capas para aprender representaciones jerárquicas de los datos. LeCun et al. (2015) señalan que "deep learning allows computational models that are composed of multiple processing layers to learn representations of data with multiple levels of abstraction" (p. 436). Esta definición canónica, formulada por tres de los creadores del campo, fundamenta teóricamente la elección de este enfoque sobre métodos de aprendizaje automático convencionales.
 
-#### 4.3.1 Tensores: la estructura de datos fundamental
+#### 5.3.1 Tensores: la estructura de datos fundamental
 
 Un tensor es una generalización de vectores y matrices a un número arbitrario de dimensiones, y constituye la estructura de datos sobre la que operan todas las redes neuronales. El término proviene de la física y la matemática, y fue adoptado en el aprendizaje profundo porque describe con precisión la naturaleza multidimensional de los datos procesados — de hecho, TensorFlow significa literalmente "flujo de tensores" (Abadi et al., 2016).
 
@@ -416,7 +454,7 @@ Un tensor es una generalización de vectores y matrices a un número arbitrario 
 
 Cada imagen ASTER que recibe el modelo es un tensor de tres dimensiones con forma (224, 224, 7), lo que equivale a 351.232 valores numéricos — un número por cada banda espectral en cada píxel. Cuando el modelo procesa un batch de 32 imágenes simultáneamente, el tensor de entrada tiene cuatro dimensiones (32, 224, 224, 7), es decir, 11.239.424 valores procesados en paralelo en cada step de entrenamiento.
 
-#### 4.3.2 Redes neuronales convolucionales (CNN)
+#### 5.3.2 Redes neuronales convolucionales (CNN)
 
 Las redes neuronales convolucionales (CNN) son arquitecturas de deep learning especializadas en datos con estructura de cuadrícula, como las imágenes (Goodfellow et al., 2016). La referencia a Goodfellow et al. (2016) proporciona la fundamentación matemática formal de las operaciones de las CNN que se emplean en este trabajo. Su poder radica en tres operaciones fundamentales:
 
@@ -434,7 +472,7 @@ $$f(x) = \max(0, x) \tag{2}$$
 
 que permite al modelo aprender relaciones complejas entre las variables de entrada. Sin funciones de activación no lineales, una red de múltiples capas sería equivalente a una sola transformación lineal, independientemente de su profundidad.
 
-#### 4.3.3 Parámetros del modelo
+#### 5.3.3 Parámetros del modelo
 
 Un parámetro es un valor numérico almacenado dentro del modelo que se ajusta durante el entrenamiento. Cada parámetro es un peso ($w$) que amplifica o atenúa una señal, o un sesgo ($b$) que la desplaza:
 
@@ -455,7 +493,7 @@ El modelo utilizado contiene 4.396.112 parámetros distribuidos en tres componen
 
 Para ilustrar cómo se acumulan estos valores: en el Channel Adapter, la primera capa convolucional tiene 16 filtros de tamaño 3 × 3 aplicados a 7 bandas, lo que produce $7 \times 16 \times 9 = 1.008$ pesos. En el backbone, una capa que transforma 40 canales en 80 con filtros 3 × 3 genera $3 \times 3 \times 40 \times 80 = 28.800$ pesos. En el Classification Head, una capa Dense(256) que recibe 1.280 valores tiene $1.280 \times 256 = 327.680$ pesos. El entrenamiento ajusta estos 4,4 millones de valores iterativamente hasta que el conjunto produce predicciones correctas; nadie programa las reglas de clasificación explícitamente — estas emergen del proceso de optimización.
 
-#### 4.3.4 Funciones de activación de salida: sigmoid vs. softmax
+#### 5.3.4 Funciones de activación de salida: sigmoid vs. softmax
 
 Para la capa de salida de un clasificador existen dos funciones principales. **Softmax** se emplea en clasificación multiclase (por ejemplo, reconocer un dígito entre 0 y 9), distribuyendo la probabilidad entre todas las clases de modo que sumen 1,0. **Sigmoid**, en cambio, se emplea en clasificación binaria, transformando cualquier valor real en una probabilidad independiente entre 0 y 1:
 
@@ -463,7 +501,7 @@ $$\sigma(x) = \frac{1}{1 + e^{-x}} \tag{4}$$
 
 El problema abordado es binario — zona geotérmica o no —, por lo que la capa final tiene una sola neurona con sigmoid. Una sola neurona sigmoid es matemáticamente equivalente a dos neuronas softmax, pero más eficiente al usar la mitad de parámetros.
 
-#### 4.3.5 Función de pérdida: Binary Cross-Entropy
+#### 5.3.5 Función de pérdida: Binary Cross-Entropy
 
 La función de pérdida empleada fue **Binary Cross-Entropy (BCE)**, que cuantifica la diferencia entre la predicción del modelo y la etiqueta real:
 
@@ -472,13 +510,13 @@ $$\mathcal{L} = -\left[ y \cdot \log(\hat{y}) + (1 - y) \cdot \log(1 - \hat{y}) 
 donde $y$ es la etiqueta real (1 si la zona es geotérmica, 0 si no lo es) y $\hat{y}$ es la probabilidad predicha por el modelo. La penalización crece exponencialmente con la confianza del error, lo que fuerza al modelo a ser honesto con su incertidumbre.
 
 
-### 4.4 Transfer learning y EfficientNet
+### 5.4 Transfer learning y EfficientNet
 
 El transfer learning consiste en reutilizar los pesos de un modelo preentrenado en un dominio fuente y adaptarlos al dominio objetivo (Pan & Yang, 2010). Las primeras capas de una CNN aprenden características genéricas (bordes, texturas) que son transferibles entre dominios visuales distintos, mientras que las capas superiores se especializan en el dominio específico. Esta revisión seminal sobre transfer learning fundamenta la estrategia de entrenamiento en dos fases adoptada en el presente proyecto.
 
 La estrategia de entrenamiento consta de dos fases: en la primera, el backbone se mantiene congelado y solo se entrenan el módulo adaptador y la cabeza de clasificación; en la segunda (fine-tuning), se descongelan las últimas capas del backbone con un learning rate reducido, lo que permite refinar las representaciones sin destruir el conocimiento previamente adquirido.
 
-#### 4.4.1 Arquitectura EfficientNet
+#### 5.4.1 Arquitectura EfficientNet
 
 Tan y Le (2019) propusieron la familia de arquitecturas EfficientNet, cuya innovación central consiste en el escalado compuesto (compound scaling): escalar simultáneamente la profundidad, el ancho y la resolución de la red con una proporción matemática fija para maximizar el rendimiento con el mínimo número de parámetros. Esta arquitectura constituye el backbone del modelo propuesto en el presente proyecto.
 
@@ -494,7 +532,7 @@ Tan y Le (2019) propusieron la familia de arquitecturas EfficientNet, cuya innov
 
 EfficientNetB0, la variante base de la familia, posee 237 capas internas y aproximadamente 4,0 millones de parámetros (frente a los 25 millones de ResNet50 con peor rendimiento en ImageNet). La familia se escala desde B0 (más pequeña) hasta B7 (más grande), y fue preentrenada en ImageNet (1,2 millones de imágenes, 1.000 clases). Su entrada esperada es de 224 × 224 × 3 canales (RGB), lo que genera la necesidad del módulo Channel Adapter para proyectar las siete bandas ASTER.
 
-#### 4.4.2 Bloque MBConv y Squeeze-and-Excitation
+#### 5.4.2 Bloque MBConv y Squeeze-and-Excitation
 
 El bloque fundamental de EfficientNetB0 es el MBConv (Mobile Inverted Bottleneck), que incorpora tres mecanismos clave:
 
@@ -508,12 +546,12 @@ $$y = F(x, \{W_i\}) + x \tag{6}$$
 
 donde $F$ es la transformación del camino principal y $x$ es la entrada transmitida por el atajo. Estas conexiones residuales son un componente interno de la arquitectura EfficientNetB0 y permiten entrenar capas profundas sin degradación del gradiente.
 
-#### 4.4.3 Channel Adapter
+#### 5.4.3 Channel Adapter
 
 El Channel Adapter es un módulo convolucional diseñado específicamente para proyectar las siete bandas espectrales ASTER al espacio de tres canales esperado por EfficientNetB0 (preentrenado en imágenes RGB). Consta de dos capas secuenciales: una capa Conv2D(16, 3 × 3) con BatchNormalization y ReLU que expande las siete bandas a 16 mapas intermedios, seguida de una capa Conv2D(3, 1 × 1) con BatchNormalization y ReLU que proyecta a tres canales. Con apenas 1.400 parámetros (0,03 % del total), este módulo aprende la combinación óptima del espacio espectral ASTER, en lugar de requerir una selección manual de bandas.
 
 
-### 4.5 Técnicas de regularización y optimización
+### 5.5 Técnicas de regularización y optimización
 
 En el entrenamiento de redes neuronales profundas, la regularización previene el sobreajuste (overfitting) — la tendencia del modelo a memorizar los datos de entrenamiento en lugar de aprender patrones generalizables. El presente proyecto emplea siete técnicas complementarias:
 
@@ -538,24 +576,24 @@ donde $\lambda \sim \text{Beta}(\alpha, \alpha)$ con $\alpha = 0{,}2$. Esta téc
 **Global Average Pooling.** En lugar de aplanar (Flatten) la salida del backbone — lo que generaría millones de parámetros —, se calcula el promedio por canal: el mapa de 7 × 7 × 1.280 se reduce a un vector de 1.280 valores. Esto reduce drásticamente la cantidad de parámetros y es menos propenso al sobreajuste.
 
 
-### 4.6 Herramientas tecnológicas
+### 5.6 Herramientas tecnológicas
 
-#### 4.6.1 TensorFlow y Keras
+#### 5.6.1 TensorFlow y Keras
 
 TensorFlow (Abadi et al., 2016) es la plataforma de código abierto desarrollada por Google para computación numérica a gran escala. Opera como el motor de bajo nivel que gestiona las operaciones matemáticas sobre tensores, la distribución del cómputo en la GPU, el cálculo automático de gradientes (autodiferenciación) y la precisión mixta float16.
 
 Keras, integrado en TensorFlow desde la versión 2.x, es la interfaz de alto nivel que permite definir arquitecturas, entrenar modelos y realizar predicciones con instrucciones legibles. En el presente proyecto se emplearon TensorFlow 2.20 y Keras 3.12/3.13, dado que esta plataforma gestiona todos los cálculos del modelo.
 
-#### 4.6.2 CUDA y aceleración por GPU
+#### 5.6.2 CUDA y aceleración por GPU
 
 El entrenamiento de modelos de deep learning es una tarea masivamente paralela: cada píxel de cada imagen y cada neurona de la red pueden procesarse de forma independiente. Mientras que una CPU moderna posee entre 8 y 16 núcleos de propósito general, una GPU como la NVIDIA RTX 4070 utilizada en este proyecto dispone de 5.888 núcleos CUDA (Compute Unified Device Architecture) que ejecutan operaciones en paralelo. Esto permite procesar los 11,2 millones de valores de un batch de 32 imágenes simultáneamente, alcanzando una velocidad 45 veces superior a la de la CPU (347 ms por step frente a ~15.600 ms).
 
-#### 4.6.3 Mixed Precision Training
+#### 5.6.3 Mixed Precision Training
 
 La precisión mixta (float16) utiliza aritmética de 16 bits para las operaciones de propagación hacia adelante y hacia atrás, y 32 bits para la acumulación de gradientes. Al combinar esta técnica con los Tensor Cores especializados de las GPU modernas, se duplica el throughput y se reduce el consumo de memoria de video (VRAM) en aproximadamente un 50 %, sin pérdida significativa de precisión gracias al escalado automático del loss.
 
 
-### 4.7 Estado del arte
+### 5.7 Estado del arte
 
 La aplicación de técnicas de aprendizaje automático a la exploración geotérmica ha avanzado en los últimos años, aunque los trabajos que combinan CNN con imágenes multiespectrales de emisividad térmica son escasos. Coolbaugh et al. (2007) utilizaron modelos de regresión logística con variables geoespaciales para mapear potencial geotérmico en Nevada (Estados Unidos), alcanzando resultados moderados, lo que evidencia que los enfoques estadísticos tradicionales no explotaban la capacidad de las CNN para extraer características de forma automática.
 
@@ -566,17 +604,17 @@ El proyecto TensorFlow de Google lanzó en 2015 una plataforma de código abiert
 ---
 
 <!-- ============================================================
-     5. METODOLOGÍA
+     6. METODOLOGÍA
      ============================================================ -->
 
-## 5 Metodología
+## 6 Metodología
 
-### 5.1 Enfoque y tipo de investigación
+### 6.1 Enfoque y tipo de investigación
 
 La investigación se enmarca en un enfoque cuantitativo de tipo experimental-aplicado. Se diseñó un experimento controlado en el que se entrenó un modelo de clasificación binaria sobre un dataset construido específicamente para el problema, evaluando su desempeño mediante métricas estandarizadas sobre un conjunto de prueba independiente.
 
 
-### 5.2 Dataset: Región Andina
+### 6.2 Dataset: Región Andina
 
 El dataset se construyó a partir de 2.019 zonas georreferenciadas distribuidas en cuatro países andinos:
 
@@ -622,12 +660,12 @@ La división del dataset se realizó con GroupShuffleSplit, agrupando por zona g
 | Prueba | 3.619 | 62 | 16,3 % |
 | **Total** | **22.209** | **407** | 100 % |
 
-El solapamiento de zonas entre subconjuntos fue de cero, verificado por scripts independientes. Esta estrategia es fundamental para prevenir la fuga de datos (data leakage), un problema que invalidó los resultados de las versiones anteriores del modelo (ver sección 7.2).
+El solapamiento de zonas entre subconjuntos fue de cero, verificado por scripts independientes. Esta estrategia es fundamental para prevenir la fuga de datos (data leakage), un problema que invalidó los resultados de las versiones anteriores del modelo (ver sección 8.3).
 
 Las imágenes se descargaron desde Google Earth Engine con tres hilos concurrentes y un retardo de 0,5 segundos entre solicitudes (respeto a las cuotas de la API). Cada imagen consiste en un buffer de 5 km a una resolución de 90 metros por píxel, lo que produce tiles de aproximadamente 111 × 111 × 7 píxeles en formato GeoTIFF.
 
 
-### 5.3 Pipeline de procesamiento
+### 6.3 Pipeline de procesamiento
 
 El pipeline de procesamiento sigue la secuencia descrita a continuación:
 
@@ -644,10 +682,10 @@ $$x_{\text{norm}} = \frac{x - \mu_{\text{banda}}^{\text{global}}}{\sigma_{\text{
 8. **Evaluación → métricas en evaluation_metrics.json.**
 9. **Despliegue → interfaz web Streamlit para predicción en tiempo real.**
 
-Es importante señalar que la versión 1 y los primeros intentos de la versión 3 normalizaban por imagen individual, lo cual destruía toda información absoluta entre imágenes (una zona a 80 °C y otra a 20 °C quedaban estadísticamente idénticas). Este fue el bug crítico número 5 que invalidó dichos resultados (ver sección 7.2).
+Es importante señalar que la versión 1 y los primeros intentos de la versión 3 normalizaban por imagen individual, lo cual destruía toda información absoluta entre imágenes (una zona a 80 °C y otra a 20 °C quedaban estadísticamente idénticas). Este fue el bug crítico número 5 que invalidó dichos resultados (ver sección 8.3).
 
 
-### 5.4 Arquitectura del modelo
+### 6.4 Arquitectura del modelo
 
 El modelo final (denominado internamente GeotermiaCNN_V7) consiste en tres componentes:
 
@@ -691,7 +729,7 @@ Total parámetros: 4.396.112
 *Nota.* El Channel Adapter representa el 0,03 % de los parámetros totales, el backbone el 92,1 % y el classification head el 7,8 %.
 
 
-### 5.5 Estrategia de entrenamiento
+### 6.5 Estrategia de entrenamiento
 
 El entrenamiento siguió una estrategia de dos fases, estándar en transfer learning:
 
@@ -748,30 +786,52 @@ En la Fase 2, las capas de Batch Normalization se mantuvieron congeladas (infere
 El entrenamiento se ejecutó en GPU NVIDIA RTX 4070 (12 GB VRAM) bajo WSL2 Ubuntu 22.04, con precisión mixta float16 que duplica el throughput y reduce el consumo de VRAM en un 50 %. La velocidad alcanzada fue de 347 milisegundos por step, 45 veces más rápida que en CPU.
 
 
-### 5.6 Métricas de evaluación
+### 6.6 Métricas de evaluación
 
-Las métricas utilizadas para evaluar el modelo son:
+Para evaluar el desempeño del modelo se emplean las siguientes métricas:
 
-- **Exactitud (Accuracy):** Proporción de predicciones correctas sobre el total.
-- **Precisión (Precision):** Proporción de predicciones positivas que realmente son positivas. Responde a la pregunta: de las zonas que el modelo marcó como geotérmicas, ¿cuántas realmente lo son?
+- **Exactitud (Accuracy):** Proporción de predicciones correctas sobre el total de muestras:
+
+$$\text{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN} \tag{10}$$
+
+- **Precisión (Precision):** Proporción de predicciones positivas que son verdaderos positivos. Responde a la pregunta: de las zonas que el modelo marcó como geotérmicas, ¿cuántas realmente lo son?
+
+$$\text{Precision} = \frac{TP}{TP + FP} \tag{11}$$
+
 - **Sensibilidad (Recall):** Proporción de positivos reales correctamente identificados. Responde a la pregunta: de las zonas que realmente son geotérmicas, ¿cuántas detectó el modelo?
-- **F1-Score:** Media armónica de precisión y sensibilidad.
+
+$$\text{Recall} = \frac{TP}{TP + FN} \tag{12}$$
+
+- **F1-Score:** Media armónica de precisión y sensibilidad:
+
+$$F_1 = 2 \times \frac{\text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}} \tag{13}$$
+
 - **AUC-ROC:** Área bajo la curva ROC (Receiver Operating Characteristic). Mide la capacidad discriminativa del modelo en todos los umbrales posibles. Un valor de 1,0 indica discriminación perfecta; 0,5 indica que el modelo no discrimina mejor que el azar.
-- **MCC (Matthews Correlation Coefficient):** Coeficiente de correlación que considera los cuatro cuadrantes de la matriz de confusión, entre −1 y +1.
+
+- **MCC (Matthews Correlation Coefficient):** Coeficiente de correlación que considera los cuatro cuadrantes de la matriz de confusión, entre −1 y +1:
+
+$$\text{MCC} = \frac{TP \times TN - FP \times FN}{\sqrt{(TP+FP)(TP+FN)(TN+FP)(TN+FN)}} \tag{14}$$
 
 Para el contexto de screening geotérmico, la sensibilidad (recall) es la métrica más crítica porque el costo de un falso negativo (no identificar una zona geotérmica real) es sustancialmente mayor que el de un falso positivo (marcar erróneamente una zona no geotérmica), dado que la exploración de campo posterior descartaría los falsos positivos.
 
-Se emplearon intervalos de confianza Bootstrap (1.000 remuestreos) para estimar la variabilidad de las métricas.
+
+### 6.7 Intervalos de confianza Bootstrap
+
+Los intervalos de confianza Bootstrap permiten estimar la variabilidad de las métricas de evaluación sin supuestos paramétricos sobre la distribución de los datos (Efron y Tibshirani, 1993). Dado un conjunto de prueba $\mathcal{D}$ de $n$ observaciones, para cada iteración $b = 1, \ldots, B$ se obtiene una muestra $\mathcal{D}_b^*$ de tamaño $n$ con reemplazo, y se calcula $\hat{\theta}_b^* = T(\mathcal{D}_b^*)$ donde $T$ es el estadístico de interés (por ejemplo, accuracy o F1). El intervalo de confianza al $100(1-\alpha)\%$ se define como:
+
+$$\text{IC}_{1-\alpha} = \left[\hat{\theta}^*_{(\alpha/2)},\; \hat{\theta}^*_{(1-\alpha/2)}\right] \tag{15}$$
+
+En este proyecto se utilizan $B = 2\,000$ iteraciones para obtener intervalos al 95 % sobre las seis métricas principales (Accuracy, Precision, Recall, F1, ROC AUC, MCC), lo cual proporciona una estimación robusta de la incertidumbre del modelo.
 
 ---
 
 <!-- ============================================================
-     6. RESULTADOS
+     7. RESULTADOS
      ============================================================ -->
 
-## 6 Resultados
+## 7 Resultados
 
-### 6.1 Métricas del modelo v3
+### 7.1 Métricas del modelo v3
 
 El modelo se evaluó sobre el conjunto de prueba compuesto por 3.619 imágenes provenientes de los cuatro países:
 
@@ -792,7 +852,7 @@ El modelo se evaluó sobre el conjunto de prueba compuesto por 3.619 imágenes p
 Todas las métricas superaron los objetivos ideales establecidos.
 
 
-### 6.2 Matriz de confusión
+### 7.2 Matriz de confusión
 
 **Tabla 15**
 
@@ -809,7 +869,7 @@ Todas las métricas superaron los objetivos ideales establecidos.
 - Tasa de falsos negativos: 6,83 %, mejora significativa respecto a la v2 (13,95 %).
 
 
-### 6.3 Comparativo v1 → v2 → v3
+### 7.3 Comparativo v1 → v2 → v3
 
 **Tabla 16**
 
@@ -829,7 +889,7 @@ Todas las métricas superaron los objetivos ideales establecidos.
 La precisión de la v3 es menor que la de la v2 (91,27 % frente a 97,94 %), lo cual se explica por el hecho de que el test set es 3,6 veces mayor y geográficamente más diverso. El AUC-ROC de la v3 (0,9737) es numéricamente inferior al de la v2 (0,983), pero esta comparación es engañosa porque los resultados de la v2 estaban inflados por una fuga de datos del 62,5 % que fue descubierta y corregida en la v3.
 
 
-### 6.4 Curvas de entrenamiento
+### 7.4 Curvas de entrenamiento
 
 En la **Fase 1** (backbone congelado, épocas 1 a 30), el modelo partió de un AUC cercano a 0,50 (equivalente al azar) y progresó hasta val_auc = 0,9000 en la época 27, demostrando que el Channel Adapter y la cabeza de clasificación aprendieron a interpretar las bandas ASTER.
 
@@ -868,15 +928,20 @@ AUC
 
 *Nota.* La línea vertical marca la transición entre fases. El salto inicial en la Fase 2 refleja el beneficio inmediato de descongelar capas del backbone. El EarlyStopping actuó en la época 57.
 
+
+### 7.5 Contraste de hipótesis
+
+Con una exactitud del 92,28 % sobre un conjunto de prueba de 3.619 imágenes y un AUC-ROC de 0,9737, se rechaza la hipótesis nula ($H_0: \text{Accuracy} \leq 0{,}50$) con amplio margen. Dado que el intervalo de confianza Bootstrap al 95 % para la exactitud se sitúa muy por encima del umbral del 50 %, la probabilidad de que el modelo no supere el azar es virtualmente nula. El modelo CNN demuestra una capacidad discriminativa significativamente superior al azar para la clasificación binaria de zonas con y sin potencial geotérmico, confirmando la hipótesis alternativa ($H_1$).
+
 ---
 
 <!-- ============================================================
-     7. DISCUSIÓN
+     8. DISCUSIÓN
      ============================================================ -->
 
-## 7 Discusión
+## 8 Discusión
 
-### 7.1 Interpretación de resultados
+### 8.1 Interpretación de resultados
 
 Los resultados obtenidos demuestran que un modelo CNN basado en EfficientNetB0 con transfer learning puede identificar zonas con potencial geotérmico a partir de imágenes ASTER con un desempeño significativamente superior al azar. Con una exactitud del 92,28 % y un AUC-ROC de 0,9737, se rechaza la hipótesis nula ($H_0: \text{Accuracy} \leq 0{,}50$).
 
@@ -887,7 +952,14 @@ La tasa de falsos positivos del 8,57 % es aceptable en un contexto de reconocimi
 La efectividad del transfer learning se evidencia en que un modelo con solo 4,4 millones de parámetros, preentrenado en imágenes naturales de tres canales RGB, fue capaz de alcanzar un AUC-ROC cercano a 0,97 en un dominio radicalmente diferente (emisividad térmica de siete canales). Esto respalda la hipótesis de que las representaciones visuales genéricas aprendidas en ImageNet (bordes, texturas, contrastes) son transferibles a imágenes de teledetección, como sugieren Pan y Yang (2010), cuyos hallazgos teóricos encuentran en estos resultados evidencia empírica concreta.
 
 
-### 7.2 Bugs descubiertos y corregidos
+### 8.2 Comparación con trabajos relacionados
+
+No existe un benchmark directo para la clasificación binaria de potencial geotérmico con CNN en Colombia, pero los resultados son consistentes con el estado del arte en aplicaciones de aprendizaje profundo a imágenes satelitales. Zhu et al. (2017) reportan exactitudes superiores al 85 % en tareas de clasificación comparables. Mia et al. (2018) obtuvieron resultados satisfactorios con técnicas de Machine Learning para identificar alteraciones hidrotermales con datos ASTER, aunque emplearon métodos clásicos (Random Forest, SVM) en lugar de CNN profundas.
+
+La transición a Transfer Learning con EfficientNetB0 en la v3 demostró que las características aprendidas en ImageNet (bordes, texturas, patrones espaciales) son transferibles al dominio de emisividad térmica, incluso cuando el número de canales difiere (siete bandas ASTER frente a tres canales RGB). El Channel Adapter convolucional permitió aprender una proyección óptima del espacio espectral ASTER al espacio RGB, logrando resultados competitivos con menos parámetros (4,4 M frente a 5,0 M de la v2).
+
+
+### 8.3 Bugs descubiertos y corregidos
 
 El proceso de desarrollo incluyó dos auditorías exhaustivas que identificaron 34 bugs en total. La primera auditoría (v1 → v2) encontró 28 bugs, de los cuales 4 fueron clasificados como críticos:
 
@@ -918,7 +990,16 @@ El bug 5 (normalización per-image) resultó particularmente instructivo: al nor
 El bug 6 (data leakage del 62,5 %) explicó por qué la v2 reportaba métricas aparentemente superiores (AUC = 0,983): las augmentaciones de una misma zona geográfica aparecían simultáneamente en los conjuntos de entrenamiento, validación y prueba, lo que permitía al modelo "memorizar" en lugar de generalizar. La corrección mediante GroupShuffleSplit por zona geográfica base (407 zonas, 0 % solapamiento) produjo métricas ligeramente inferiores pero genuinas.
 
 
-### 7.3 Limitaciones
+### 8.4 Implicaciones prácticas
+
+El modelo se posiciona como una herramienta de screening automatizado para la Fase 1 (Reconocimiento Regional) de la exploración geotérmica. Su capacidad para analizar cualquier punto del territorio colombiano en segundos contrasta con los meses y los costos significativos que implica la revisión manual de imágenes satelitales por expertos.
+
+Para el Servicio Geológico Colombiano y la UPME, el sistema ofrece la posibilidad de generar mapas de probabilidades de potencial geotérmico a escala nacional, lo que permitiría enfocar los recursos limitados de exploración en las zonas más prometedoras. La tasa de falsos positivos del 8,57 % lo hace confiable: las zonas que identifica como positivas merecen atención prioritaria.
+
+La inclusión de zonas de Ecuador, Perú y Chile en el conjunto de entrenamiento no busca predecir fuera de Colombia, sino exponer al modelo a una mayor variabilidad de patrones espectrales geotérmicos dentro de un contexto geológico compartido (Cinturón de Fuego del Pacífico), mejorando la robustez del entrenamiento.
+
+
+### 8.5 Limitaciones
 
 1. **Resolución temporal:** El producto ASTER GED es un promedio temporal que no captura variaciones estacionales en la actividad geotérmica.
 2. **Validación en campo:** Las predicciones no han sido contrastadas con prospección geotérmica in situ. El modelo identifica patrones espectrales correlacionados con actividad geotérmica conocida, pero no confirma la existencia de un recurso explotable.
@@ -929,40 +1010,58 @@ El bug 6 (data leakage del 62,5 %) explicó por qué la v2 reportaba métricas a
 ---
 
 <!-- ============================================================
-     8. CONCLUSIONES
+     9. CONCLUSIONES
      ============================================================ -->
 
-## 8 Conclusiones
+## 9 Conclusiones
 
-Se desarrolló un modelo de clasificación binaria basado en EfficientNetB0 con Channel Adapter que identifica zonas con potencial geotérmico en Colombia a partir de imágenes satelitales ASTER de siete bandas. El modelo alcanzó una exactitud del 92,28 %, una sensibilidad del 93,17 % y un AUC-ROC de 0,9737 sobre un conjunto de prueba de 3.619 imágenes de cuatro países andinos, superando todos los objetivos planteados (exactitud > 85 %, AUC-ROC > 0,90).
+1. Se desarrolló un modelo de clasificación binaria basado en EfficientNetB0 con Channel Adapter que identifica zonas con potencial geotérmico en Colombia a partir de imágenes satelitales ASTER de siete bandas. El modelo alcanzó una exactitud del 92,28 %, una sensibilidad del 93,17 % y un AUC-ROC de 0,9737 sobre un conjunto de prueba de 3.619 imágenes de cuatro países andinos, superando todos los objetivos planteados (exactitud > 85 %, AUC-ROC > 0,90).
 
-Se construyó un dataset georreferenciado de 2.019 zonas (22.209 imágenes después del aumento de datos) con una división anti-fuga geográfica que garantiza cero porciento de solapamiento entre los conjuntos, eliminando el problema de data leakage que invalidaba los resultados de las versiones anteriores.
+2. Todas las métricas de evaluación superaron los umbrales definidos: exactitud 92,28 %, precisión 91,27 %, sensibilidad 93,17 %, F1-Score 92,21 %, ROC AUC 0,9737 y MCC 0,8458. La hipótesis nula fue rechazada con amplio margen.
 
-Se implementó un pipeline completo de procesamiento que incluye filtrado de valores NoData, redimensionamiento, normalización z-score global por banda y aumento de datos con diez transformaciones, estableciendo un protocolo reproducible para futuros estudios.
+3. Se construyó un dataset georreferenciado de 2.019 zonas (22.209 imágenes después del aumento de datos) de la Región Andina (Colombia, Ecuador, Perú y Chile), con una división anti-fuga geográfica de 407 zonas base independientes y cero por ciento de solapamiento entre los conjuntos, eliminando el problema de data leakage que invalidaba los resultados de las versiones anteriores.
 
-La estrategia de transfer learning en dos fases demostró ser efectiva para adaptar representaciones visuales genéricas de ImageNet a un dominio de teledetección con bandas espectrales no visibles, reduciendo los requerimientos de datos y tiempo de entrenamiento.
+4. La auditoría exhaustiva del código identificó y corrigió 34 errores a lo largo de tres versiones (4 críticos, 4 de alta severidad, 10 medios y 10 bajos), lo que resultó en una mejora de v1 a v2 de 23,02 puntos porcentuales en exactitud y 37,95 en sensibilidad.
 
-Se identificaron y corrigieron 34 bugs a lo largo de tres versiones del proyecto, siendo los más críticos la normalización per-image (que destruía la información absoluta entre imágenes) y la fuga de datos del 62,5 % (que inflaba artificialmente las métricas). Estas correcciones permitieron pasar de un desempeño cercano al azar (AUC ≈ 0,51) a un modelo funcional (AUC = 0,9737).
+5. Se descubrió y corrigió una fuga de datos del 62,5 % en las divisiones originales, causada por la no eliminación de sufijos de grilla en el GroupShuffleSplit. Este hallazgo demuestra la importancia crítica de auditar rigurosamente la integridad de los datos en proyectos de aprendizaje profundo.
 
-Se desarrolló una interfaz web con Streamlit que permite ingresar coordenadas geográficas y obtener la probabilidad de potencial geotérmico en tiempo real, facilitando el uso del modelo por parte de especialistas en geotermia sin conocimientos técnicos en aprendizaje automático.
+6. La adopción de Transfer Learning con EfficientNetB0 preentrenado en ImageNet demostró que las características visuales genéricas (bordes, texturas, patrones espaciales) son transferibles al dominio de emisividad térmica, logrando resultados superiores con 12,6 % menos parámetros (4.396.112 frente a 5.032.385) y un entrenamiento eficiente en dos fases con GPU.
+
+7. Se implementó un pipeline completo de procesamiento que incluye filtrado de valores NoData, redimensionamiento, normalización z-score global por banda y aumento de datos con diez transformaciones, estableciendo un protocolo reproducible para futuros estudios.
+
+8. Se desarrolló una interfaz web interactiva con Streamlit y Folium que permite realizar predicciones de potencial geotérmico en tiempo real sobre cualquier coordenada del territorio colombiano, integrando mapas interactivos, capas satelitales y generación de reportes en PDF.
 
 ---
 
 <!-- ============================================================
-     9. RECOMENDACIONES
+     10. RECOMENDACIONES
      ============================================================ -->
 
-## 9 Recomendaciones
+## 10 Recomendaciones
 
-Se recomienda validar las predicciones del modelo con datos de prospección geotérmica in situ, en colaboración con el Servicio Geológico Colombiano, para cuantificar la correlación entre la probabilidad predicha y la presencia real de recursos explotables.
+### 10.1 Recomendaciones cumplidas en la v3
 
-Se sugiere ampliar el dataset con imágenes de otros sensores satelitales (Landsat, Sentinel-2) que ofrecen bandas espectrales complementarias y mayor resolución temporal, lo cual podría mejorar la capacidad discriminativa y capturar variaciones estacionales.
+1. **Ampliación del conjunto de datos:** Cumplida. La v3 expandió el conjunto de 200 a 2.019 imágenes base de la Región Andina (Colombia, Ecuador, Perú y Chile), aumentadas a 22.209 imágenes con 10 técnicas de aumento de datos.
 
-Se recomienda implementar una búsqueda bayesiana de hiperparámetros (Optuna o similar) para optimizar de forma sistemática la arquitectura del adapter, las tasas de dropout y los hiperparámetros del optimizador.
+2. **Acceso a GPU:** Cumplida. La v3 se entrenó en una NVIDIA RTX 4070 (12 GB VRAM) bajo WSL2 Ubuntu 22.04, habilitando Mixed Precision (float16) y un entrenamiento en dos fases de 80 épocas totales.
 
-Se propone explorar la aplicabilidad del modelo a regiones fuera de los Andes (por ejemplo, el Rift de África Oriental o el anillo de fuego asiático) para evaluar su capacidad de generalización a contextos geológicos diferentes.
+3. **Transfer Learning con EfficientNet:** Cumplida. La v3 implementó Transfer Learning con EfficientNetB0 preentrenado en ImageNet, combinado con un Channel Adapter convolucional para las 7 bandas ASTER.
 
-Se recomienda considerar la incorporación de variables geoespaciales adicionales (elevación, pendiente, distancia a volcanes activos, geología superficial) como canales de entrada complementarios a las bandas espectrales ASTER.
+4. **Técnicas avanzadas de aumento de datos:** Parcialmente cumplida. Se implementó MixUp ($\alpha = 0{,}2$) como técnica de regularización por interpolación de muestras. CutMix queda pendiente.
+
+### 10.2 Recomendaciones pendientes para futuras iteraciones
+
+5. **Validación en campo:** Contrastar las predicciones del modelo con datos de prospección geotérmica in situ en al menos 5 a 10 zonas clasificadas como positivas por el modelo pero no documentadas previamente, en colaboración con el Servicio Geológico Colombiano.
+
+6. **Incorporación de bandas SWIR:** El sensor ASTER dispone de 6 bandas en el infrarrojo de onda corta que contienen información sobre alteraciones hidrotermales minerales. Su incorporación (13 bandas totales) podría mejorar la discriminación del modelo.
+
+7. **Interpretabilidad:** Implementar técnicas como Grad-CAM para visualizar qué regiones y bandas espectrales de las imágenes son más relevantes para las predicciones del modelo.
+
+8. **Búsqueda sistemática de hiperparámetros:** Realizar búsqueda automatizada (Bayesian optimization, Optuna) de la tasa de aprendizaje, arquitectura del adapter, número de capas descongeladas y factor de MixUp.
+
+9. **Expansión a otros contextos tectónicos:** Incorporar datos de zonas geotérmicas fuera de la Región Andina (Centroamérica, Indonesia, Islandia, Rift de África Oriental) para evaluar la transferibilidad global del modelo.
+
+10. **Cobertura nacional sistemática:** Utilizar el modelo para generar un mapa completo de probabilidades de potencial geotérmico a escala nacional, procesando imágenes ASTER de forma sistemática sobre una cuadrícula que cubra todo el territorio colombiano.
 
 ---
 
@@ -982,19 +1081,29 @@ Dickson, M. H., & Fanelli, M. (2003). *Geothermal energy: Utilization and techno
 
 DiPippo, R. (2012). *Geothermal power plants: Principles, applications, case studies and environmental impact* (3.ª ed.). Butterworth-Heinemann.
 
+Efron, B., & Tibshirani, R. J. (1993). *An introduction to the Bootstrap*. Chapman and Hall/CRC.
+
 Flores-Espino, F., Patel, S., & Flores, M. (2019). Machine learning approaches for geothermal resource assessment. *Renewable Energy*, *142*, 660–672.
 
 Gehringer, M., & Loksha, V. (2012). *Geothermal handbook: Planning and financing power generation*. Energy Sector Management Assistance Program (ESMAP), Banco Mundial.
 
 Goodfellow, I., Bengio, Y., & Courville, A. (2016). *Deep learning*. MIT Press.
 
+Gorelick, N., Hancher, M., Dixon, M., Ilyushchenko, S., Thau, D., & Moore, R. (2017). Google Earth Engine: Planetary-scale geospatial analysis for everyone. *Remote Sensing of Environment*, *202*, 18–27. https://doi.org/10.1016/j.rse.2017.06.031
+
 He, K., Zhang, X., Ren, S., & Sun, J. (2016). Deep residual learning for image recognition. *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, 770–778. https://doi.org/10.1109/CVPR.2016.90
+
+Hulley, G. C., Hook, S. J., Abbott, E., & Malakar, N. (2015). The ASTER Global Emissivity Dataset (ASTER GED): Mapping Earth's emissivity at 100 meter spatial scale. *Geophysical Research Letters*, *42*(19), 7966–7976. https://doi.org/10.1002/2015GL065564
 
 International Energy Agency. (2021). *Net zero by 2050: A roadmap for the global energy sector*. IEA. https://www.iea.org/reports/net-zero-by-2050
 
 Lahsen, A., Sepúlveda, F., Rojas, J., & Palacios, C. (2015). Present status of geothermal exploration in Chile. *Proceedings of the World Geothermal Congress 2015*, 1–7.
 
 LeCun, Y., Bengio, Y., & Hinton, G. (2015). Deep learning. *Nature*, *521*(7553), 436–444. https://doi.org/10.1038/nature14539
+
+Loshchilov, I., & Hutter, F. (2019). Decoupled weight decay regularization. *Proceedings of the 7th International Conference on Learning Representations (ICLR)*.
+
+Mia, M. B., Fujimitsu, Y., & Nishijima, J. (2018). Exploration of hydrothermal alteration and monitoring of thermal activity using multi-temporal Landsat and ASTER satellite imagery. *Journal of Volcanology and Geothermal Research*, *368*, 137–150.
 
 Pan, S. J., & Yang, Q. (2010). A survey on transfer learning. *IEEE Transactions on Knowledge and Data Engineering*, *22*(10), 1345–1359. https://doi.org/10.1109/TKDE.2009.191
 
@@ -1005,6 +1114,10 @@ Shorten, C., & Khoshgoftaar, T. M. (2019). A survey on image data augmentation f
 Tan, M., & Le, Q. V. (2019). EfficientNet: Rethinking model scaling for convolutional neural networks. *Proceedings of the 36th International Conference on Machine Learning (ICML)*, 6105–6114.
 
 Unidad de Planeación Minero Energética. (2020). *Plan Energético Nacional 2020-2050*. UPME.
+
+Yosinski, J., Clune, J., Bengio, Y., & Lipson, H. (2014). How transferable are features in deep neural networks? *Advances in Neural Information Processing Systems (NeurIPS)*, *27*, 3320–3328.
+
+Zhang, H., Cisse, M., Dauphin, Y. N., & Lopez-Paz, D. (2018). mixup: Beyond Empirical Risk Minimization. *Proceedings of the 6th International Conference on Learning Representations (ICLR)*.
 
 Zhu, X. X., Tuia, D., Mou, L., Xia, G.-S., Zhang, L., Xu, F., & Fraundorfer, F. (2017). Deep learning in remote sensing: A comprehensive review and list of resources. *IEEE Geoscience and Remote Sensing Magazine*, *5*(4), 8–36. https://doi.org/10.1109/MGRS.2017.2762307
 
