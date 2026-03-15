@@ -171,6 +171,7 @@ Vega Sánchez, C. C., Arévalo Rubiano, D. S., Espitia Ayala, Y. K., & Rivera Ma
   - 7.3 Comparativo v1 → v2 → v3
   - 7.4 Curvas de entrenamiento
   - 7.5 Contraste de hipótesis
+  - 7.6 Ejemplo de predicción paso a paso
 - 8 Discusión
   - 8.1 Interpretación de resultados
   - 8.2 Comparación con trabajos relacionados
@@ -212,8 +213,8 @@ Vega Sánchez, C. C., Arévalo Rubiano, D. S., Espitia Ayala, Y. K., & Rivera Ma
 
 ## Lista de figuras
 
-- Figura 1. Arquitectura del modelo EfficientNetB0 + Channel Adapter
-- Figura 2. Diagrama del pipeline de procesamiento
+- Figura 1. Diagrama del pipeline de procesamiento
+- Figura 2. Arquitectura del modelo EfficientNetB0 + Channel Adapter
 - Figura 3. Curvas de entrenamiento (fases 1 y 2)
 - Figura 4. Ejemplo de predicción paso a paso
 
@@ -684,6 +685,30 @@ $$x_{\text{norm}} = \frac{x - \mu_{\text{banda}}^{\text{global}}}{\sigma_{\text{
 
 Es importante señalar que la versión 1 y los primeros intentos de la versión 3 normalizaban por imagen individual, lo cual destruía toda información absoluta entre imágenes (una zona a 80 °C y otra a 20 °C quedaban estadísticamente idénticas). Este fue el bug crítico número 5 que invalidó dichos resultados (ver sección 8.3).
 
+**Figura 1**
+
+*Diagrama del pipeline de procesamiento*
+
+```
+Descarga GEE        Aumento (×10)       Filtrado NoData
+2.019 .tif  ───►  22.209 imgs  ───►  Mediana / descarte
+(7 bandas)          (~7,9 GB)           (>50 % → fuera)
+       │                                     │
+       ▼                                     ▼
+  Redimensionar                      Normalización z-score
+  111×111 → 224×224                  global por banda
+  (bicúbica + AA)                    (Welford online)
+       │                                     │
+       ▼                                     ▼
+  Particionado .npy              Entrenamiento GPU
+  (~500 imgs/archivo)            (2 fases, 80 épocas)
+       │                                     │
+       ▼                                     ▼
+  modelo .keras (60 MB)  ───►  Evaluación  ───►  Streamlit
+```
+
+*Nota.* Las flechas indican el flujo secuencial del procesamiento. El pipeline completo tarda aproximadamente 4 horas (descarga 2 h, aumento 30 min, preprocesamiento 1 h, entrenamiento 30 min en GPU).
+
 
 ### 6.4 Arquitectura del modelo
 
@@ -695,7 +720,7 @@ El modelo final (denominado internamente GeotermiaCNN_V7) consiste en tres compo
 
 **Classification Head:** Recibe las 1.280 características tras un Global Average Pooling, y las procesa mediante Dense(256) + BatchNorm + ReLU + Dropout(0,5), Dense(64) + BatchNorm + ReLU + Dropout(0,3), y Dense(1, sigmoid) que produce la probabilidad final entre 0 y 1.
 
-**Figura 1**
+**Figura 2**
 
 *Arquitectura del modelo EfficientNetB0 + Channel Adapter*
 
@@ -932,6 +957,40 @@ AUC
 ### 7.5 Contraste de hipótesis
 
 Con una exactitud del 92,28 % sobre un conjunto de prueba de 3.619 imágenes y un AUC-ROC de 0,9737, se rechaza la hipótesis nula ($H_0: \text{Accuracy} \leq 0{,}50$) con amplio margen. Dado que el intervalo de confianza Bootstrap al 95 % para la exactitud se sitúa muy por encima del umbral del 50 %, la probabilidad de que el modelo no supere el azar es virtualmente nula. El modelo CNN demuestra una capacidad discriminativa significativamente superior al azar para la clasificación binaria de zonas con y sin potencial geotérmico, confirmando la hipótesis alternativa ($H_1$).
+
+
+### 7.6 Ejemplo de predicción paso a paso
+
+**Figura 4**
+
+*Ejemplo de predicción paso a paso*
+
+```
+Entrada: coordenadas (4.895, -75.322) — Nevado del Ruiz, Colombia
+         │
+         ▼
+1. Descarga ASTER GED (7 bandas, 111 × 111 px)
+         │
+         ▼
+2. Redimensionar a 224 × 224 px (bicúbica)
+         │
+         ▼
+3. Normalizar z-score global (band_stats_v3.json)
+         │
+         ▼
+4. Channel Adapter: 7 bandas → 3 canales
+         │
+         ▼
+5. EfficientNetB0 backbone → 1.280 features
+         │
+         ▼
+6. Classification Head → sigmoid → 0,9842
+         │
+         ▼
+Resultado: ALTO potencial geotérmico (98,42 %)
+```
+
+*Nota.* El proceso completo desde la entrada de coordenadas hasta la predicción toma menos de 3 segundos en la interfaz web Streamlit.
 
 ---
 
