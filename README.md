@@ -62,7 +62,9 @@ EfficientNetB0 (ImageNet)  ← Backbone pre-entrenado, fine-tuned últimas 39 ca
       ↓
 Global Average Pooling
       ↓
-Dense (256) + Dropout 0.3
+Dense (256) + Dropout 0.5
+      ↓
+Dense (64) + Dropout 0.3
       ↓
 Output (1, sigmoid)        ← Probabilidad geotérmica
 ```
@@ -189,8 +191,13 @@ geotermia-colombia-cnn/
 │   ├── evaluate_model.py           # Evaluación + Bootstrap CI
 │   ├── resplit_data.py             # Re-partición anti-leakage
 │   ├── predict.py                  # Predicción CLI
+│   ├── generar_figuras.py          # Genera las 4 figuras de la tesis (matplotlib)
+│   ├── generar_reporte_completo.py # Reporte automático de resultados
+│   ├── visualize_architecture.py   # Diagrama de la arquitectura
+│   ├── visualize_results.py        # Gráficos de resultados
 │   ├── _check_leakage.py           # Verificación fuga de datos
-│   └── _check_splits.py            # Verificación de splits
+│   ├── _check_splits.py            # Verificación de splits
+│   └── miniprueba/                 # Scripts de mini-prueba rápida
 │
 ├── data/
 │   ├── raw/                        # 2,019 imágenes .tif originales
@@ -198,12 +205,20 @@ geotermia-colombia-cnn/
 │   └── processed/                  # .npy particionados + band_stats
 │
 ├── docs/
-│   ├── TESIS_CONTENIDO_APA.md      # Contenido completo de la tesis (APA 7ª ed.)
-│   ├── MODELO_TECNICO.md           # Documentación técnica integral del modelo
-│   └── GUIA_REPRODUCCION.md        # Guía paso a paso para reproducir el proyecto
+│   ├── TESIS.md                    # Contenido completo de la tesis (APA 7ª ed.)
+│   ├── MODELO_TECNICO.md           # Documentación técnica del modelo
+│   ├── GUIA_REPRODUCCION.md        # Guía paso a paso para reproducir
+│   └── figuras/                    # 4 figuras PNG de la tesis (300 DPI)
+│       ├── figura_1_pipeline.png
+│       ├── figura_2_arquitectura.png
+│       ├── figura_3_curvas.png
+│       └── figura_4_prediccion.png
 │
-├── results/                        # Métricas y figuras (300 DPI)
-├── logs/                           # Logs de entrenamiento
+├── results/
+│   ├── figures/                    # Gráficos de evaluación (300 DPI)
+│   └── metrics/                    # Métricas JSON/CSV
+│
+├── logs/                           # Logs de entrenamiento (CSV, JSON)
 └── notebooks/                      # Notebooks de exploración
 ```
 
@@ -224,7 +239,7 @@ geotermia-colombia-cnn/
 
 | Documento | Descripción |
 |-----------|-------------|
-| [docs/TESIS_CONTENIDO_APA.md](docs/TESIS_CONTENIDO_APA.md) | Contenido completo de la tesis en formato APA 7ª edición |
+| [docs/TESIS.md](docs/TESIS.md) | Contenido completo de la tesis en formato APA 7ª edición |
 | [docs/MODELO_TECNICO.md](docs/MODELO_TECNICO.md) | Documentación técnica integral: arquitectura, entrenamiento, métricas, dataset, contexto geotérmico, catálogo de campos, historial de bugs (34 correcciones v1→v3) |
 | [docs/GUIA_REPRODUCCION.md](docs/GUIA_REPRODUCCION.md) | Guía paso a paso para reproducir el pipeline completo desde cero |
 
