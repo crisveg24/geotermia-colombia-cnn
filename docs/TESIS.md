@@ -159,12 +159,13 @@ Vega Sánchez, C. C., Arévalo Rubiano, D. S., Espitia Ayala, Y. K., & Rivera Ma
   - 5.7 Estado del arte
 - 6 Metodología
   - 6.1 Enfoque y tipo de investigación
-  - 6.2 Dataset: Región Andina
-  - 6.3 Pipeline de procesamiento
-  - 6.4 Arquitectura del modelo
-  - 6.5 Estrategia de entrenamiento
-  - 6.6 Métricas de evaluación
-  - 6.7 Intervalos de confianza Bootstrap
+  - 6.2 Metodología específica: CRISP-DM
+  - 6.3 Dataset: Región Andina
+  - 6.4 Pipeline de procesamiento
+  - 6.5 Arquitectura del modelo
+  - 6.6 Estrategia de entrenamiento
+  - 6.7 Métricas de evaluación
+  - 6.8 Intervalos de confianza Bootstrap
 - 7 Resultados
   - 7.1 Métricas del modelo v3
   - 7.2 Matriz de confusión
@@ -296,7 +297,7 @@ En el ámbito del aprendizaje automático aplicado a geotermia, Coolbaugh et al.
 
 ## 2 Justificación
 
-Colombia requiere diversificar su matriz energética para reducir la dependencia de la generación hidroeléctrica, que representa más del 65 % de la capacidad instalada y es vulnerable a fenómenos climáticos como El Niño (Unidad de Planeación Minero Energética [UPME], 2020). La geotermia, como fuente de generación base disponible las 24 horas del día, complementaría la generación existente sin depender de condiciones climáticas.
+Colombia requiere diversificar su matriz energética para reducir la dependencia de la generación hidroeléctrica, que representa más del 65 % de la capacidad instalada y es vulnerable a fenómenos climáticos como El Niño (Unidad de Planeación Minero Energética [UPME], 2020). Según los informes de generación del Sistema Interconectado Nacional publicados por XM (2026), la generación hidráulica domina consistentemente el despacho diario de energía en Colombia, lo que confirma la vulnerabilidad estructural de la matriz energética ante variaciones hidrológicas. La geotermia, como fuente de generación base disponible las 24 horas del día, complementaría la generación existente sin depender de condiciones climáticas.
 
 Desde la perspectiva tecnológica, el aprendizaje profundo ha demostrado ser capaz de superar el desempeño humano en tareas de clasificación de imágenes cuando se dispone de conjuntos de datos suficientemente grandes y representativos (LeCun et al., 2015). LeCun, Bengio y Hinton son considerados los padres del deep learning moderno; su revisión establece los fundamentos teóricos que respaldan la viabilidad del enfoque CNN propuesto en este trabajo.
 
@@ -320,8 +321,7 @@ Desarrollar un modelo de clasificación basado en redes neuronales convolucional
 
 - Construir un dataset georreferenciado de imágenes ASTER de siete bandas espectrales para zonas con y sin potencial geotérmico confirmado en la Región Andina (Colombia, Ecuador, Perú y Chile).
 - Diseñar e implementar un pipeline de procesamiento de imágenes que incluya filtrado de valores faltantes, redimensionamiento, normalización global y aumento de datos, con una división anti-fuga geográfica que garantice cero porciento de solapamiento entre conjuntos.
-- Implementar una arquitectura CNN basada en EfficientNetB0 con un módulo Channel Adapter que proyecte las siete bandas espectrales al espacio de tres canales requerido por el modelo base.
-- Entrenar el modelo mediante una estrategia de transfer learning en dos fases (backbone congelado y fine-tuning) y evaluar su desempeño con métricas de exactitud, sensibilidad, precisión, F1-Score y AUC-ROC.
+- Implementar una arquitectura CNN basada en EfficientNetB0 con un módulo Channel Adapter, entrenarla mediante transfer learning en dos fases (backbone congelado y fine-tuning) y evaluar su desempeño con métricas de exactitud, sensibilidad, precisión, F1-Score y AUC-ROC.
 - Desarrollar una interfaz web que permita realizar predicciones de potencial geotérmico en tiempo real a partir de coordenadas geográficas.
 
 ---
@@ -615,7 +615,28 @@ El proyecto TensorFlow de Google lanzó en 2015 una plataforma de código abiert
 La investigación se enmarca en un enfoque cuantitativo de tipo experimental-aplicado. Se diseñó un experimento controlado en el que se entrenó un modelo de clasificación binaria sobre un dataset construido específicamente para el problema, evaluando su desempeño mediante métricas estandarizadas sobre un conjunto de prueba independiente.
 
 
-### 6.2 Dataset: Región Andina
+### 6.2 Metodología CRISP-DM
+
+Como marco metodológico específico para el desarrollo del proyecto se adoptó CRISP-DM (Cross-Industry Standard Process for Data Mining), propuesto por Chapman et al. (2000). CRISP-DM es un modelo de proceso estándar abierto que estructura los proyectos de minería de datos y aprendizaje automático en seis fases iterativas, y constituye la metodología más utilizada en la industria y la academia para este tipo de proyectos. Su carácter cíclico permite revisitar fases anteriores cuando los hallazgos de una fase posterior lo requieren, tal como ocurrió en la evolución v1 → v2 → v3 de este proyecto (ver sección 8.3).
+
+A continuación se describe cada fase de CRISP-DM y su correspondencia con las actividades realizadas en el presente trabajo:
+
+**Fase 1. Comprensión del negocio (Business Understanding).** Se identificó la necesidad de una herramienta automatizada de screening para la fase de reconocimiento regional de la exploración geotérmica en Colombia. Se definieron los objetivos del proyecto (exactitud > 85 %, AUC-ROC > 0,90), la pregunta de investigación y los criterios de éxito. Esta fase se documenta en las secciones 1 (Planteamiento del problema), 2 (Justificación) y 3 (Objetivos).
+
+**Fase 2. Comprensión de los datos (Data Understanding).** Se exploraron las bandas espectrales del producto ASTER GED AG100 v003, se analizó la distribución geográfica de las zonas geotérmicas conocidas en la Región Andina y se evaluó la calidad de las imágenes (presencia de NoData, resolución espacial, cobertura temporal). Se identificaron 2.019 zonas georreferenciadas en cuatro países andinos. Esta fase se documenta en la sección 6.3 (Dataset: Región Andina).
+
+**Fase 3. Preparación de los datos (Data Preparation).** Se implementó un pipeline completo que incluye descarga desde Google Earth Engine, aumento de datos con diez transformaciones, filtrado de valores NoData, redimensionamiento a 224 × 224 píxeles, normalización z-score global por banda y particionado anti-fuga geográfica con GroupShuffleSplit. Esta fase se documenta en la sección 6.4 (Pipeline de procesamiento).
+
+**Fase 4. Modelado (Modeling).** Se diseñó la arquitectura EfficientNetB0 con Channel Adapter para proyectar las siete bandas ASTER a tres canales. Se implementó una estrategia de transfer learning en dos fases (backbone congelado seguido de fine-tuning) con siete técnicas de regularización. Se evaluó el modelo con seis métricas (Accuracy, Precision, Recall, F1-Score, ROC AUC y MCC) sobre un conjunto de prueba independiente de 3.619 imágenes, complementado con intervalos de confianza Bootstrap de 2.000 iteraciones y un contraste formal de hipótesis. Esta fase se documenta en las secciones 6.5 (Arquitectura del modelo), 6.6 (Estrategia de entrenamiento), 6.7 (Métricas de evaluación) y 6.8 (Intervalos de confianza Bootstrap), y los resultados se presentan en la sección 7.
+
+**Fase 5. Evaluación (Evaluation).** Los resultados obtenidos en la fase de modelado se contrastaron con los criterios de aceptación definidos en la comprensión del negocio (exactitud > 85 %, AUC-ROC > 0,90, MCC > 0,50). Se realizó un contraste formal de hipótesis y se verificó que todas las métricas superaron los umbrales objetivo. La evaluación de versiones anteriores (v1, v2) reveló errores críticos que obligaron a iterar sobre las fases previas. Los resultados finales de la v3 se presentan en la sección 7.
+
+**Fase 6. Despliegue (Deployment).** Se desarrolló una interfaz web interactiva con Streamlit y Folium que permite realizar predicciones en tiempo real sobre cualquier coordenada del territorio colombiano, integrando mapas interactivos, capas satelitales y generación de reportes en PDF. El despliegue se documenta en la sección 6.4, paso 9 del pipeline.
+
+**Iteratividad del proceso.** CRISP-DM contempla la revisión de fases anteriores ante hallazgos posteriores. En este proyecto, la auditoría de la Fase 5 (Evaluación) reveló una fuga de datos del 62,5 % en la v2, lo que obligó a rediseñar completamente las fases 2 y 3 (comprensión y preparación de los datos) para la v3, reconstruyendo el dataset y el pipeline desde cero. Esta iteración demuestra la aplicación práctica del carácter cíclico de CRISP-DM.
+
+
+### 6.3 Dataset: Región Andina
 
 El dataset se construyó a partir de 2.019 zonas georreferenciadas distribuidas en cuatro países andinos:
 
@@ -666,7 +687,7 @@ El solapamiento de zonas entre subconjuntos fue de cero, verificado por scripts 
 Las imágenes se descargaron desde Google Earth Engine con tres hilos concurrentes y un retardo de 0,5 segundos entre solicitudes (respeto a las cuotas de la API). Cada imagen consiste en un buffer de 5 km a una resolución de 90 metros por píxel, lo que produce tiles de aproximadamente 111 × 111 × 7 píxeles en formato GeoTIFF.
 
 
-### 6.3 Pipeline de procesamiento
+### 6.4 Pipeline de procesamiento
 
 El pipeline de procesamiento sigue la secuencia descrita a continuación:
 
@@ -710,7 +731,7 @@ Descarga GEE        Aumento (×10)       Filtrado NoData
 *Nota.* Las flechas indican el flujo secuencial del procesamiento. El pipeline completo tarda aproximadamente 4 horas (descarga 2 h, aumento 30 min, preprocesamiento 1 h, entrenamiento 30 min en GPU).
 
 
-### 6.4 Arquitectura del modelo
+### 6.5 Arquitectura del modelo
 
 El modelo final (denominado internamente GeotermiaCNN_V7) consiste en tres componentes:
 
@@ -754,7 +775,7 @@ Total parámetros: 4.396.112
 *Nota.* El Channel Adapter representa el 0,03 % de los parámetros totales, el backbone el 92,1 % y el classification head el 7,8 %.
 
 
-### 6.5 Estrategia de entrenamiento
+### 6.6 Estrategia de entrenamiento
 
 El entrenamiento siguió una estrategia de dos fases, estándar en transfer learning:
 
@@ -811,7 +832,7 @@ En la Fase 2, las capas de Batch Normalization se mantuvieron congeladas (infere
 El entrenamiento se ejecutó en GPU NVIDIA RTX 4070 (12 GB VRAM) bajo WSL2 Ubuntu 22.04, con precisión mixta float16 que duplica el throughput y reduce el consumo de VRAM en un 50 %. La velocidad alcanzada fue de 347 milisegundos por step, 45 veces más rápida que en CPU.
 
 
-### 6.6 Métricas de evaluación
+### 6.7 Métricas de evaluación
 
 Para evaluar el desempeño del modelo se emplean las siguientes métricas:
 
@@ -840,7 +861,7 @@ $$\text{MCC} = \frac{TP \times TN - FP \times FN}{\sqrt{(TP+FP)(TP+FN)(TN+FP)(TN
 Para el contexto de screening geotérmico, la sensibilidad (recall) es la métrica más crítica porque el costo de un falso negativo (no identificar una zona geotérmica real) es sustancialmente mayor que el de un falso positivo (marcar erróneamente una zona no geotérmica), dado que la exploración de campo posterior descartaría los falsos positivos.
 
 
-### 6.7 Intervalos de confianza Bootstrap
+### 6.8 Intervalos de confianza Bootstrap
 
 Los intervalos de confianza Bootstrap permiten estimar la variabilidad de las métricas de evaluación sin supuestos paramétricos sobre la distribución de los datos (Efron y Tibshirani, 1993). Dado un conjunto de prueba $\mathcal{D}$ de $n$ observaciones, para cada iteración $b = 1, \ldots, B$ se obtiene una muestra $\mathcal{D}_b^*$ de tamaño $n$ con reemplazo, y se calcula $\hat{\theta}_b^* = T(\mathcal{D}_b^*)$ donde $T$ es el estadístico de interés (por ejemplo, accuracy o F1). El intervalo de confianza al $100(1-\alpha)\%$ se define como:
 
@@ -1134,6 +1155,8 @@ Abadi, M., Barham, P., Chen, J., Chen, Z., Davis, A., Dean, J., Devin, M., Ghema
 
 Abrams, M., Tsu, H., Hulley, G., Iwao, K., Pieri, D., Cudahy, T., & Kargel, J. (2015). The Advanced Spaceborne Thermal Emission and Reflection Radiometer (ASTER) after fifteen years: Review of global products. *International Journal of Applied Earth Observation and Geoinformation*, *38*, 292–301. https://doi.org/10.1016/j.jag.2015.01.013
 
+Chapman, P., Clinton, J., Kerber, R., Khabaza, T., Reinartz, T., Shearer, C., & Wirth, R. (2000). *CRISP-DM 1.0: Step-by-step data mining guide*. SPSS Inc.
+
 Coolbaugh, M. F., Raines, G. L., Zehner, R. E., Shevenell, L., & Williams, C. F. (2007). Prediction and discovery of new geothermal resources in the Great Basin: Multiple evidence of a large undiscovered resource base. *Geothermal Resources Council Transactions*, *31*, 1–5.
 
 Dickson, M. H., & Fanelli, M. (2003). *Geothermal energy: Utilization and technology*. UNESCO Publishing.
@@ -1173,6 +1196,8 @@ Shorten, C., & Khoshgoftaar, T. M. (2019). A survey on image data augmentation f
 Tan, M., & Le, Q. V. (2019). EfficientNet: Rethinking model scaling for convolutional neural networks. *Proceedings of the 36th International Conference on Machine Learning (ICML)*, 6105–6114.
 
 Unidad de Planeación Minero Energética. (2020). *Plan Energético Nacional 2020-2050*. UPME.
+
+XM S.A. E.S.P. (2026). *Informe de generación del Sistema Interconectado Nacional (SIN)*. https://sinergox.xm.com.co/oferta/Paginas/Informes/GeneracionSIN.aspx
 
 Yosinski, J., Clune, J., Bengio, Y., & Lipson, H. (2014). How transferable are features in deep neural networks? *Advances in Neural Information Processing Systems (NeurIPS)*, *27*, 3320–3328.
 
