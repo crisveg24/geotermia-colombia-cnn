@@ -54,33 +54,22 @@ Implementación de un **modelo de Deep Learning basado en Redes Neuronales Convo
 
 ---
 
-## Interfaz Web Interactiva (React + Vite)
+## Interfaz Web Interactiva
 
-El proyecto incluye una **aplicación web** modernizada desarrollada con React y TailwindCSS para:
+El proyecto incluye una **aplicación web** desarrollada con Streamlit para:
 
-- **Predicción por coordenadas en tiempo real**: Interactúa con el modelo predictivo de Python de fondo usando Flask.
-- **Mapa interactivo**: Selecciona zonas libremente usando Leaflet.
-- **Métricas del modelo**: Gráficos interactivos de rendimiento usando Recharts.
-- **Arquitectura animada**: Gráficos interactivos motorizados por GSAP.
+- **Predicción por coordenadas**: Ingresa latitud/longitud y obtén predicción de potencial geotérmico
+- **Mapa interactivo**: Visualiza zonas geotérmicas de Colombia
+- **Métricas del modelo**: Gráficos interactivos de rendimiento
+- **Arquitectura**: Diagrama visual de la red neuronal
 
-### Ejecutar la Interfaz Web (React)
-
-Primero debes correr el servidor API de Python que expondrá el modelo a la web:
+### Ejecutar la interfaz
 
 ```bash
-# Iniciar backend
-python api.py
+streamlit run app.py
 ```
 
-Luego, en una nueva terminal, inicia el frontend en React:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-La aplicación estará disponible en `http://localhost:5173`
+La aplicación estará disponible en `http://localhost:8501`
 
 ---
 
@@ -623,3 +612,24 @@ Vega Sánchez, C. C., Arévalo Rubiano, D. S., Espitia Ayala, Y. K., & Rivera Ma
 ---
 
 Si este proyecto es de utilidad para su investigación, puede citarlo usando el formato BibTeX o APA indicado arriba.
+
+## ?? Iniciar la Interfaz Web (React Frontend)
+
+Para iniciar el dashboard interactivo del modelo, aseg�rate de tener [Node.js](https://nodejs.org/) instalado.
+
+### 1. Iniciar la API de Python
+El frontend de React se comunica con el modelo a trav�s de Flask. Para iniciar la API:
+``bash
+python api.py
+``
+
+### 2. Iniciar el servidor de desarrollo de React
+Abre una nueva terminal, navega al directorio del frontend e inicia el servidor de Vite:
+``bash
+cd frontend
+npm install # Solo la primera vez
+npm run dev
+``
+
+Abre tu navegador en http://localhost:5173 para visualizar el dashboard.
+

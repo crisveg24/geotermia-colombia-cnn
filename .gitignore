@@ -97,3 +97,7 @@ token*
 # Archivos temporales
 *.tmp
 *.temp
+
+# Node
+node_modules/
+
