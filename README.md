@@ -54,22 +54,33 @@ Implementación de un **modelo de Deep Learning basado en Redes Neuronales Convo
 
 ---
 
-## Interfaz Web Interactiva
+## Interfaz Web Interactiva (React + Vite)
 
-El proyecto incluye una **aplicación web** desarrollada con Streamlit para:
+El proyecto incluye una **aplicación web** modernizada desarrollada con React y TailwindCSS para:
 
-- **Predicción por coordenadas**: Ingresa latitud/longitud y obtén predicción de potencial geotérmico
-- **Mapa interactivo**: Visualiza zonas geotérmicas de Colombia
-- **Métricas del modelo**: Gráficos interactivos de rendimiento
-- **Arquitectura**: Diagrama visual de la red neuronal
+- **Predicción por coordenadas en tiempo real**: Interactúa con el modelo predictivo de Python de fondo usando Flask.
+- **Mapa interactivo**: Selecciona zonas libremente usando Leaflet.
+- **Métricas del modelo**: Gráficos interactivos de rendimiento usando Recharts.
+- **Arquitectura animada**: Gráficos interactivos motorizados por GSAP.
 
-### Ejecutar la interfaz
+### Ejecutar la Interfaz Web (React)
+
+Primero debes correr el servidor API de Python que expondrá el modelo a la web:
 
 ```bash
-streamlit run app.py
+# Iniciar backend
+python api.py
 ```
 
-La aplicación estará disponible en `http://localhost:8501`
+Luego, en una nueva terminal, inicia el frontend en React:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+La aplicación estará disponible en `http://localhost:5173`
 
 ---
 
