@@ -1,3 +1,5 @@
+# Copyright (c) 2025-2026 Vega Sánchez · Arévalo Rubiano · Espitia Ayala · Rivera Martín
+# Universidad de San Buenaventura — Bogotá | github.com/crisveg24/geotermia-colombia-cnn
 """
 CNN Architecture for Geothermal Potential Classification
 =========================================================
@@ -26,6 +28,13 @@ Universidad de San Buenaventura - Bogotá
 Programa: Ingeniería de Sistemas (Pregrado)
 Fecha: 2025-2026
 """
+
+__author__      = "Cristian Camilo Vega Sánchez, Daniel Santiago Arévalo Rubiano, Yuliet Katerin Espitia Ayala, Laura Sophie Rivera Martín"
+__institution__ = "Universidad de San Buenaventura — Bogotá | Ingeniería de Sistemas"
+__advisor__     = "Prof. Yeison Eduardo Conejo Sandoval"
+__copyright__   = "Copyright (c) 2025-2026"
+__repository__  = "https://github.com/crisveg24/geotermia-colombia-cnn"
+__license__     = "MIT"
 
 import tensorflow as tf
 from tensorflow import keras
@@ -62,7 +71,7 @@ class GeotermiaCNN:
     
     def __init__(
         self,
-        input_shape: Tuple[int, int, int] = (224, 224, 5),
+        input_shape: Tuple[int, int, int] = (224, 224, 7),
         num_classes: int = 2,
         dropout_rate: float = 0.5,
         l2_reg: float = 0.0001,
@@ -73,7 +82,7 @@ class GeotermiaCNN:
         
         Args:
             input_shape: Dimensiones de entrada (height, width, channels)
-                Por defecto: (224, 224, 5) para 5 bandas térmicas ASTER
+                Por defecto: (224, 224, 7) para 7 bandas ASTER (5 TIR + temperature + NDVI)
             num_classes: Número de clases de salida (2 para binario)
             dropout_rate: Tasa de dropout para regularización
             l2_reg: Factor de regularización L2
@@ -109,12 +118,13 @@ class GeotermiaCNN:
         Returns:
             Tensor procesado
         """
+        # v2: kernel_regularizer eliminado — AdamW weight_decay ya aplica
+        # regularización L2 decoupled. Usar ambos sobre-regulariza el modelo.
         x = layers.Conv2D(
             filters=filters,
             kernel_size=kernel_size,
             strides=strides,
             padding='same',
-            kernel_regularizer=regularizers.l2(self.l2_reg),
             name=f'{name}_conv'
         )(x)
         
@@ -154,7 +164,6 @@ class GeotermiaCNN:
             filters=filters,
             kernel_size=3,
             padding='same',
-            kernel_regularizer=regularizers.l2(self.l2_reg),
             name=f'{name}_2_conv'
         )(x)
         
@@ -162,6 +171,7 @@ class GeotermiaCNN:
             x = layers.BatchNormalization(name=f'{name}_2_bn')(x)
         
         # Ajustar dimensiones del shortcut si es necesario
+        # v2: Agregar BatchNorm al shortcut para igualar escalas con la rama principal
         if shortcut.shape[-1] != filters:
             shortcut = layers.Conv2D(
                 filters=filters,
@@ -169,6 +179,8 @@ class GeotermiaCNN:
                 padding='same',
                 name=f'{name}_shortcut'
             )(shortcut)
+            if self.use_batch_norm:
+                shortcut = layers.BatchNormalization(name=f'{name}_shortcut_bn')(shortcut)
         
         # Conexión residual
         x = layers.Add(name=f'{name}_add')([x, shortcut])
@@ -181,7 +193,7 @@ class GeotermiaCNN:
         Construye la arquitectura CNN completa.
         
         Arquitectura:
-            1. Input Layer (224x224x5)
+            1. Input Layer (224x224x7)
             2. Initial Conv Block (32 filters)
             3. Residual Block 1 (64 filters) + MaxPooling
             4. Residual Block 2 (128 filters) + MaxPooling
@@ -198,8 +210,10 @@ class GeotermiaCNN:
         
         inputs = layers.Input(shape=self.input_shape, name='input_layer')
         
-        # Normalización de entrada
-        x = layers.Rescaling(1./255, name='rescaling')(inputs)
+        # v2: Rescaling(1./255) eliminado — los datos ASTER de emisividad NO son
+        # imágenes RGB [0,255]. La normalización z-score se aplica en el
+        # preprocesamiento (prepare_dataset.py / app.py) antes de alimentar al modelo.
+        x = inputs
         
         # Bloque convolucional inicial
         x = self._conv_block(x, filters=32, kernel_size=7, strides=2, name='initial_conv')
@@ -220,10 +234,9 @@ class GeotermiaCNN:
         # Global Average Pooling (reduce parámetros vs Flatten)
         x = layers.GlobalAveragePooling2D(name='global_avg_pool')(x)
         
-        # Dense layers con regularización
+        # Dense layers (v2: sin kernel_regularizer, AdamW weight_decay es suficiente)
         x = layers.Dense(
             256,
-            kernel_regularizer=regularizers.l2(self.l2_reg),
             name='dense_1'
         )(x)
         
@@ -248,7 +261,7 @@ class GeotermiaCNN:
             ]
             # Agregar F1Score si está disponible (TensorFlow 2.13+)
             if HAS_F1_METRIC:
-                metrics.append(F1Score(name='f1_score', threshold=0.5))
+                metrics.append(F1Score(name='f1_score', threshold=0.5, average='micro'))
         else:
             # Clasificación multiclase
             outputs = layers.Dense(self.num_classes, activation='softmax', name='output')(x)
@@ -256,12 +269,16 @@ class GeotermiaCNN:
             metrics = ['accuracy']
         
         # Crear modelo
-        model = models.Model(inputs=inputs, outputs=outputs, name='GeotermiaCNN')
+        model = models.Model(inputs=inputs, outputs=outputs, name='GeotermiaCNN_USB_Bogota_Vega_Arevalo_Espitia_Rivera_2026')
         
         # AdamW: Mejor regularización que Adam estándar (weight decay correcto)
+        # v3.3: Usar LR fijo aquí. El schedule se aplica DESPUÉS en train_model.py
+        # cuando se conoce el steps_per_epoch real (depende del tamaño del dataset).
+        # Antes estaba hardcodeado 100*60=6000 steps pero el dataset real tiene
+        # ~690 steps/epoch → 69000 steps totales, no 6000.
         optimizer = keras.optimizers.AdamW(
-            learning_rate=0.001,
-            weight_decay=0.0001, # Regularización L2 correcta
+            learning_rate=0.001,  # Se reemplaza con CosineDecay en train_model.py
+            weight_decay=0.0001,  # Regularización L2 decoupled (única fuente de L2)
             beta_1=0.9,
             beta_2=0.999,
             epsilon=1e-07
@@ -330,12 +347,12 @@ class GeotermiaCNN:
             x = inputs
         
         # Aplicar modelo base pre-entrenado
-        x = base_model(x, training=False)
+        # v2: training=not freeze_base para que BN actualice estadísticas en fine-tuning
+        x = base_model(x, training=not freeze_base)
         
-        # Capas de clasificación personalizadas
+        # Capas de clasificación personalizadas (v2: sin kernel_regularizer)
         x = layers.Dense(
             256,
-            kernel_regularizer=regularizers.l2(self.l2_reg),
             activation='relu',
             name='dense_1'
         )(x)
@@ -343,7 +360,6 @@ class GeotermiaCNN:
         
         x = layers.Dense(
             128,
-            kernel_regularizer=regularizers.l2(self.l2_reg),
             activation='relu',
             name='dense_2'
         )(x)
@@ -352,7 +368,7 @@ class GeotermiaCNN:
         # Capa de salida
         if self.num_classes == 2:
             outputs = layers.Dense(1, activation='sigmoid', name='output')(x)
-            loss = 'binary_crossentropy'
+            loss = keras.losses.BinaryCrossentropy(label_smoothing=0.1)
             metrics = [
                 'accuracy',
                 keras.metrics.Precision(name='precision'),
@@ -361,14 +377,18 @@ class GeotermiaCNN:
             ]
         else:
             outputs = layers.Dense(self.num_classes, activation='softmax', name='output')(x)
-            loss = 'categorical_crossentropy'
+            loss = keras.losses.CategoricalCrossentropy(label_smoothing=0.1)
             metrics = ['accuracy']
         
         # Crear y compilar modelo
+        # v2: Usar AdamW + label_smoothing consistente con modelo custom (BUG 27)
         model = models.Model(inputs=inputs, outputs=outputs, name=f'GeotermiaCNN_{base_model_name}')
         
         model.compile(
-            optimizer=keras.optimizers.Adam(learning_rate=0.001),
+            optimizer=keras.optimizers.AdamW(
+                learning_rate=0.001,
+                weight_decay=0.0001,
+            ),
             loss=loss,
             metrics=metrics
         )
@@ -424,7 +444,7 @@ def get_cosine_decay_schedule(
 
 
 def create_geotermia_model(
-    input_shape: Tuple[int, int, int] = (224, 224, 5),
+    input_shape: Tuple[int, int, int] = (224, 224, 7),
     num_classes: int = 2,
     model_type: str = 'custom',
     **kwargs
@@ -442,7 +462,7 @@ def create_geotermia_model(
         Modelo Keras compilado
     
     Example:
-        >>> model = create_geotermia_model(input_shape=(224, 224, 5))
+        >>> model = create_geotermia_model(input_shape=(224, 224, 7))
         >>> model.summary()
     """
     cnn = GeotermiaCNN(
@@ -469,7 +489,7 @@ if __name__ == '__main__':
     # Crear modelo custom
     print("\n1. Modelo Custom CNN:")
     model_custom = create_geotermia_model(
-        input_shape=(224, 224, 5),
+        input_shape=(224, 224, 7),
         num_classes=2,
         model_type='custom'
     )
@@ -478,7 +498,7 @@ if __name__ == '__main__':
     # Crear modelo con Transfer Learning (opcional)
     print("\n2. Modelo con Transfer Learning (EfficientNetB0):")
     model_transfer = create_geotermia_model(
-        input_shape=(224, 224, 5),
+        input_shape=(224, 224, 7),
         num_classes=2,
         model_type='transfer_learning',
         base_model_name='efficientnet'

@@ -1,3 +1,5 @@
+# Copyright (c) 2025-2026 Vega Sánchez · Arévalo Rubiano · Espitia Ayala · Rivera Martín
+# Universidad de San Buenaventura — Bogotá | github.com/crisveg24/geotermia-colombia-cnn
 """
 Interfaz Grafica - CNN Geotermia Colombia
 ==========================================
@@ -25,6 +27,7 @@ import sys
 from pathlib import Path
 import json
 import io
+import logging
 from datetime import datetime
 
 # Ruta raiz del proyecto (app.py esta en la raiz)
@@ -429,7 +432,21 @@ st.markdown("""
 def cargar_modelo():
     """Carga el modelo CNN. Prueba varias rutas posibles."""
     tf = _importar_tensorflow()
+
+    # Monkey-patch de Dense para ignorar quantization_config.
+    # Keras 3 >= 3.4 guarda este campo en el config pero versiones anteriores
+    # no lo reconocen. custom_objects no funciona para capas built-in en Keras 3
+    # porque la deserialización va por module path, no por nombre de clase.
+    _orig_dense_init = tf.keras.layers.Dense.__init__
+    def _dense_compat_init(self, *args, quantization_config=None, **kwargs):
+        _orig_dense_init(self, *args, **kwargs)
+    tf.keras.layers.Dense.__init__ = _dense_compat_init
+
     rutas = [
+        # V3: EfficientNetB0 + adapter (prioridad)
+        PROJECT_ROOT / "models" / "saved_models" / "geotermia_v7_phase2_best.keras",
+        PROJECT_ROOT / "models" / "saved_models" / "geotermia_v7_final.keras",
+        # V2: Custom ResNet (fallback)
         PROJECT_ROOT / "models" / "saved_models" / "geotermia_cnn_custom_best.keras",
         PROJECT_ROOT / "models" / "saved_models" / "best_model.keras",
         PROJECT_ROOT / "models" / "saved_models" / "mini_model_best.keras",
@@ -437,8 +454,12 @@ def cargar_modelo():
     for r in rutas:
         if r.exists():
             try:
-                return tf.keras.models.load_model(str(r))
-            except Exception:
+                model = tf.keras.models.load_model(str(r), compile=False)
+                st.session_state["modelo_cargado_nombre"] = r.name
+                logging.info(f"Modelo cargado: {r.name}")
+                return model
+            except Exception as e:
+                logging.warning(f"No se pudo cargar {r.name}: {e}")
                 continue
     return None
 
@@ -491,16 +512,32 @@ def zonas_geotermicas():
     ]
 
 
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """
+    Distancia en km entre dos puntos usando fórmula de Haversine.
+    v2: Reemplaza distancia Euclidea en grados × 111 (BUG 13).
+    """
+    from math import radians, sin, cos, sqrt, atan2
+    R = 6371.0  # Radio de la Tierra en km
+    dlat = radians(lat2 - lat1)
+    dlon = radians(lon2 - lon1)
+    a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
+    return 2 * R * atan2(sqrt(a), sqrt(1 - a))
+
+
 def predecir_por_proximidad(lat: float, lon: float, zonas: list):
     """
     Prediccion deterministica basada en proximidad a zonas geotermicas.
     Usa sigmoide invertida sobre la distancia a la zona mas cercana.
     Solo se usa como FALLBACK si el modelo CNN o Earth Engine no estan disponibles.
     """
-    dists = [np.sqrt((lat - z["lat"])**2 + (lon - z["lon"])**2) for z in zonas]
-    idx = int(np.argmin(dists))
-    d = dists[idx]
+    # v2: Usar Haversine en vez de Euclidea en grados (BUG 13)
+    dists_km = [_haversine_km(lat, lon, z["lat"], z["lon"]) for z in zonas]
+    idx = int(np.argmin(dists_km))
+    d_km = dists_km[idx]
     z = zonas[idx]
+    # Convertir km a "grados equivalentes" para compatibilidad con sigmoide existente
+    d = d_km / 111.0
     pred = float(1.0 / (1.0 + np.exp(8.0 * (d - 0.5))))
     if z["potencial"] == "Alto" and d < 0.3:
         pred = min(pred * 1.1, 0.99)
@@ -512,7 +549,11 @@ def _inicializar_earth_engine():
     """Inicializa Earth Engine una sola vez (cacheado)."""
     try:
         import ee
-        ee.Initialize(project='alpine-air-469115-f0')
+        # v2: Usar GEE_PROJECT centralizado desde config.py (BUG 10)
+        import sys
+        sys.path.insert(0, str(PROJECT_ROOT))
+        from config import cfg
+        ee.Initialize(project=cfg.GEE_PROJECT)
         return True
     except Exception:
         return False
@@ -528,6 +569,9 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
     """
     import tempfile
     import time
+    import sys
+    sys.path.insert(0, str(PROJECT_ROOT))
+    from config import cfg
     try:
         import ee
         import geemap
@@ -545,12 +589,12 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
         # Descargar imagen ASTER
         point = ee.Geometry.Point([lon, lat])
         roi = point.buffer(5000)
-        thermal_bands = [
+        aster_bands = [
             'emissivity_band10', 'emissivity_band11',
             'emissivity_band12', 'emissivity_band13',
-            'emissivity_band14'
+            'emissivity_band14', 'temperature', 'ndvi'
         ]
-        image = ee.Image('NASA/ASTER_GED/AG100_003').select(thermal_bands).clip(roi)
+        image = ee.Image('NASA/ASTER_GED/AG100_003').select(aster_bands).clip(roi)
 
         tmp_path = Path(tempfile.gettempdir()) / f'pred_{lat:.4f}_{lon:.4f}.tif'
         geemap.ee_export_image(
@@ -571,41 +615,110 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
             crs = str(src.crs) if src.crs else "N/A"
             img_shape_orig = img.shape
 
-        # Asegurar 5 bandas
-        if img.shape[2] < 5:
-            pad = np.zeros((img.shape[0], img.shape[1], 5 - img.shape[2]), dtype=np.float32)
+        # Asegurar 7 bandas (5 emisividad + temperature + NDVI)
+        n_bands = cfg.NUM_BANDS  # 7
+        if img.shape[2] < n_bands:
+            pad = np.zeros((img.shape[0], img.shape[1], n_bands - img.shape[2]), dtype=np.float32)
             img = np.concatenate([img, pad], axis=2)
-        elif img.shape[2] > 5:
-            img = img[:, :, :5]
+        elif img.shape[2] > n_bands:
+            img = img[:, :, :n_bands]
 
         # Estadisticas por banda (antes de normalizar)
         band_stats = []
-        for i in range(5):
+        for i in range(n_bands):
             b = img[:, :, i]
-            band_stats.append({
-                "min": float(np.min(b)),
-                "max": float(np.max(b)),
-                "mean": float(np.mean(b)),
-                "std": float(np.std(b)),
-            })
-
-        # Resize a 224x224
-        img_resized = resize(img, (224, 224, 5), preserve_range=True, anti_aliasing=True).astype(np.float32)
-
-        # Normalizar por banda (z-score)
-        for i in range(5):
-            band = img_resized[:, :, i]
-            mean, std = band.mean(), band.std()
-            if std > 0:
-                img_resized[:, :, i] = (band - mean) / std
+            # v2: Filtrar NoData (-9999) de estadísticas y normalización
+            valid = b[b > -9999]
+            if len(valid) > 0:
+                band_stats.append({
+                    "min": float(np.min(valid)),
+                    "max": float(np.max(valid)),
+                    "mean": float(np.mean(valid)),
+                    "std": float(np.std(valid)),
+                    "nodata_pct": float((b <= -9999).mean() * 100),
+                })
             else:
-                img_resized[:, :, i] = band - mean
+                band_stats.append({"min": 0, "max": 0, "mean": 0, "std": 0, "nodata_pct": 100.0})
 
-        # Prediccion
+        # v2: Reemplazar NoData con mediana por banda antes de resize
+        for i in range(n_bands):
+            band = img[:, :, i]
+            valid = band[band > -9999]
+            if len(valid) > 0:
+                band[band <= -9999] = np.median(valid)
+            else:
+                band[band <= -9999] = 0
+
+        # 1. No hacemos resize directo a 224x224 para Sliding Window
+        # Mantenemos las proporciones
+        img_resized = img.astype(np.float32)
+
+        # Normalizar por banda (v3 FIX: usar stats globales del dataset, prioridad processed_v2)
+        band_stats_path = PROJECT_ROOT / "data" / "processed" / "band_stats_v3.json"
+        if not band_stats_path.exists():
+            band_stats_path = PROJECT_ROOT / "data" / "processed" / "band_stats.json"
+        if band_stats_path.exists():
+            import json as _json
+            with open(band_stats_path) as _f:
+                _stats = _json.load(_f)
+            _band_means = np.array(_stats['band_means'], dtype=np.float32)
+            _band_stds = np.array(_stats['band_stds'], dtype=np.float32)
+            for i in range(n_bands):
+                img_resized[:, :, i] = (img_resized[:, :, i] - _band_means[i]) / _band_stds[i]
+        else:
+            # Fallback per-image (solo si no hay band_stats.json)
+            for i in range(n_bands):
+                band = img_resized[:, :, i]
+                mean, std = band.mean(), band.std()
+                if std > 0:
+                    img_resized[:, :, i] = (band - mean) / std
+                else:
+                    img_resized[:, :, i] = band - mean
+
+        # Prediccion con Sliding Window si es mas grande que 224x224
         t_pred = time.time()
-        input_tensor = np.expand_dims(img_resized, axis=0)
-        prediction = modelo.predict(input_tensor, verbose=0)
-        probability = float(prediction[0, 0])
+        
+        h_img, w_img, c = img_resized.shape
+        h_win, w_win = (224, 224)
+        stride = 112
+        
+        if h_img <= h_win and w_img <= w_win:
+            # Padding si es mas pequeña
+            padded = np.zeros((h_win, w_win, c), dtype=np.float32)
+            padded[:h_img, :w_img, :] = img_resized
+            input_tensor = np.expand_dims(padded, axis=0)
+            prediction = modelo.predict(input_tensor, verbose=0)
+            probability = float(prediction[0, 0])
+        else:
+            # Sliding window real
+            windows = []
+            for y in range(0, h_img - h_win + 1, stride):
+                for x in range(0, w_img - w_win + 1, stride):
+                    windows.append(img_resized[y:y+h_win, x:x+w_win, :])
+            
+            # Asegurar bordes
+            if (h_img - h_win) % stride != 0:
+                for x in range(0, w_img - w_win + 1, stride):
+                    windows.append(img_resized[-h_win:, x:x+w_win, :])
+            if (w_img - w_win) % stride != 0:
+                for y in range(0, h_img - h_win + 1, stride):
+                    windows.append(img_resized[y:y+h_win, -w_win:, :])
+            if (h_img - h_win) % stride != 0 and (w_img - w_win) % stride != 0:
+                windows.append(img_resized[-h_win:, -w_win:, :])
+                
+            if not windows:
+                padded = np.zeros((h_win, w_win, c), dtype=np.float32)
+                padded[:h_img, :w_img, :] = img_resized
+                windows.append(padded)
+                
+            batch = np.array(windows)
+            predictions = modelo.predict(batch, batch_size=32, verbose=0)
+            
+            if predictions.shape[1] == 1:
+                probability = float(np.max(predictions))
+            else:
+                probability = float(np.max(predictions[:, 1]))
+                
         t_pred = time.time() - t_pred
 
         t_total = time.time() - t0
@@ -628,12 +741,15 @@ def predecir_con_modelo_cnn(lat: float, lon: float, modelo):
             "t_total": t_total,
             "buffer_m": 5000,
             "scale_m": 90,
-            "n_bands": 5,
+            "n_bands": n_bands,
             "dataset": "NASA/ASTER_GED/AG100_003",
         }
 
-    except Exception:
-        return {"prob": 0.0, "ok": False}
+    except Exception as e:
+        # v2: Registrar error en vez de silenciarlo (BUG 7)
+        import traceback
+        logging.error(f"Error en predicción CNN: {e}\n{traceback.format_exc()}")
+        return {"prob": 0.0, "ok": False, "error": str(e)}
 
 
 def generar_reporte_texto(p: dict) -> str:
@@ -681,19 +797,22 @@ def generar_reporte_texto(p: dict) -> str:
             "",
             "--- IMAGEN SATELITAL ---",
             f"Dataset:          {p.get('dataset', 'ASTER GED v003')}",
-            f"Bandas:           {p.get('n_bands', 5)} TIR (emisividad)",
+            f"Bandas:           {p.get('n_bands', 7)} (5 TIR + temperature + NDVI)",
             f"Resolucion:       {p.get('scale_m', 90)} m/pixel",
             f"Area analizada:   {p.get('buffer_m', 5000)/1000:.0f} km de radio",
             f"Imagen original:  {p.get('img_shape', (0,0,0))[0]}x{p.get('img_shape', (0,0,0))[1]} px",
-            f"Entrada modelo:   224x224x5",
+            f"Entrada modelo:   224x224x7",
             f"Tamano archivo:   {p.get('img_size_kb', 0):.1f} KB",
             "",
             "--- ESTADISTICAS DE BANDAS ---",
             f"{'Banda':<16} {'Min':>10} {'Max':>10} {'Media':>10} {'Desv.Est':>10}",
         ]
-        band_names = ["B10 (8.3um)", "B11 (8.6um)", "B12 (9.1um)", "B13 (10.6um)", "B14 (11.3um)"]
+        band_names = [
+            "B10 (8.29um)", "B11 (8.63um)", "B12 (9.08um)",
+            "B13 (10.66um)", "B14 (11.32um)", "Temperatura", "NDVI",
+        ]
         for i, bs in enumerate(p["band_stats"]):
-            bn = band_names[i] if i < len(band_names) else f"B{i+10}"
+            bn = band_names[i] if i < len(band_names) else f"Banda {i+1}"
             lines.append(
                 f"{bn:<16} {bs['min']:>10.4f} {bs['max']:>10.4f} {bs['mean']:>10.4f} {bs['std']:>10.4f}"
             )
@@ -714,16 +833,30 @@ def generar_reporte_texto(p: dict) -> str:
                 f"{zd['Zona']:<25} {zd['Tipo']:<18} {zd['Potencial']:<10} {zd['Distancia (km)']:>10.1f}"
             )
 
+    # v2: Leer métricas dinámicamente si están disponibles (BUG 15)
+    met = cargar_metricas()
+    if met:
+        acc_str = f"{met.get('accuracy', 0)*100:.2f}%"
+        prec_str = f"{met.get('precision', 0)*100:.2f}%"
+        roc_str = f"{met.get('roc_auc', 0):.4f}"
+        f1_str = f"{met.get('f1_score', 0)*100:.2f}%"
+        epoch_str = "ver historial"
+    else:
+        acc_str = "N/A (sin métricas)"
+        prec_str = "N/A"
+        roc_str = "N/A"
+        f1_str = "N/A"
+        epoch_str = "N/A"
+
     lines += [
         "",
         "--- MODELO ---",
-        "Arquitectura:     CNN personalizada",
-        "Dataset:          2,635 imagenes (85 orig + augmentation)",
-        "Mejor epoca:      8 / 23",
-        "Accuracy:         68.43%",
-        "Precision:        86.32%",
-        "ROC AUC:          0.8198",
-        "F1-Score:         61.77%",
+        "Arquitectura:     EfficientNetB0 + Channel Adapter (7→16→3)",
+        "Version:          V3 (transfer learning, two-phase training)",
+        f"Accuracy:         {acc_str}",
+        f"Precision:        {prec_str}",
+        f"ROC AUC:          {roc_str}",
+        f"F1-Score:         {f1_str}",
         "Normalizacion:    Z-score por banda",
         "",
         "=" * 60,
@@ -735,10 +868,133 @@ def generar_reporte_texto(p: dict) -> str:
     return "\n".join(lines)
 
 
+def generar_reporte_historial(historial: list) -> str:
+    """Genera informe completo con todas las zonas analizadas en la sesion."""
+    n_pos = sum(1 for h in historial if h["valor"] >= 0.5)
+    n_neg = len(historial) - n_pos
+
+    lines = [
+        "=" * 70,
+        "   INFORME COMPLETO DE ANALISIS GEOTERMICO",
+        "   CNN Geotermia Colombia — Universidad de San Buenaventura",
+        "=" * 70,
+        "",
+        f"Fecha de generacion:     {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}",
+        f"Total zonas analizadas:  {len(historial)}",
+        f"Zonas con potencial:     {n_pos} ({n_pos/len(historial)*100:.0f}%)" if historial else "",
+        f"Zonas sin potencial:     {n_neg} ({n_neg/len(historial)*100:.0f}%)" if historial else "",
+        "",
+        "-" * 70,
+        "RESUMEN DE ZONAS ANALIZADAS",
+        "-" * 70,
+        "",
+        f"{'#':<4} {'Latitud':>9} {'Longitud':>10} {'Prob':>7} {'Resultado':<25} {'Zona cercana':<20}",
+    ]
+
+    for i, h in enumerate(historial):
+        pos = h["valor"] >= 0.5
+        lines.append(
+            f"{i+1:<4} {h['lat']:>9.4f} {h['lon']:>10.4f} {h['valor']:>6.1%} "
+            f"{'CON POTENCIAL':<25} {h.get('zona', 'N/A'):<20}"
+            if pos else
+            f"{i+1:<4} {h['lat']:>9.4f} {h['lon']:>10.4f} {h['valor']:>6.1%} "
+            f"{'BAJO POTENCIAL':<25} {h.get('zona', 'N/A'):<20}"
+        )
+
+    lines += ["", "-" * 70, "DETALLE POR ZONA", "-" * 70]
+
+    for i, h in enumerate(historial):
+        pos = h["valor"] >= 0.5
+        dist_km = h.get("dist", 0) * 111.0
+
+        if h["valor"] >= 0.80:
+            nivel = "ALTA"
+        elif h["valor"] >= 0.60:
+            nivel = "MEDIA-ALTA"
+        elif h["valor"] >= 0.50:
+            nivel = "MEDIA"
+        elif h["valor"] >= 0.35:
+            nivel = "MEDIA-BAJA"
+        elif h["valor"] >= 0.20:
+            nivel = "BAJA"
+        else:
+            nivel = "MUY BAJA"
+
+        lines += [
+            "",
+            f"=== ZONA #{i+1} ===",
+            f"Coordenadas:     {h['lat']:.4f}, {h['lon']:.4f}",
+            f"Probabilidad:    {h['valor']:.1%}",
+            f"Resultado:       {'CON POTENCIAL GEOTERMICO' if pos else 'BAJO POTENCIAL GEOTERMICO'}",
+            f"Confianza:       {nivel}",
+            f"Zona cercana:    {h.get('zona', 'N/A')} ({h.get('tipo', 'N/A')})",
+            f"Distancia:       {dist_km:.1f} km",
+            f"Metodo:          {h.get('metodo', 'N/A')}",
+            f"Hora:            {h.get('timestamp', 'N/A')}",
+        ]
+
+        if h.get("band_stats"):
+            lines.append(f"Bandas:          {h.get('n_bands', 7)}")
+            img_shape = h.get('img_shape', (0, 0, 0))
+            lines.append(f"Imagen:          {img_shape[0]}x{img_shape[1]} px")
+            lines.append(f"Tiempo total:    {h.get('t_total', 0):.1f}s")
+
+    # Descripcion de capas
+    lines += [
+        "",
+        "=" * 70,
+        "DESCRIPCION DE CAPAS SATELITALES ASTER (7 bandas)",
+        "=" * 70,
+        "",
+        "B10 (8.29 um)   Emisividad TIR — Cuarzo y feldespato (silicatos)",
+        "B11 (8.63 um)   Emisividad TIR — Silice y carbonatos",
+        "B12 (9.08 um)   Emisividad TIR — Sulfatos (indicador alteracion hidrotermal)",
+        "B13 (10.66 um)  Emisividad TIR — Temperatura superficial principal",
+        "B14 (11.32 um)  Emisividad TIR — Correccion atmosferica + temperatura",
+        "Temperatura      LST (Kelvin x100) — Anomalias de calor directas",
+        "NDVI             Indice de vegetacion — Estres termico = posible geotermal",
+    ]
+
+    # Modelo
+    met = cargar_metricas()
+    if met:
+        lines += [
+            "",
+            "=" * 70,
+            "MODELO UTILIZADO",
+            "=" * 70,
+            "",
+            "Arquitectura:     EfficientNetB0 + Channel Adapter (7→16→3)",
+            "Version:          V3 (transfer learning, two-phase training)",
+            "Parametros:       4,396,112 (57.9 MB)",
+            f"Accuracy:         {met.get('accuracy', 0)*100:.2f}%",
+            f"Precision:        {met.get('precision', 0)*100:.2f}%",
+            f"Recall:           {met.get('recall', 0)*100:.2f}%",
+            f"F1-Score:         {met.get('f1_score', 0)*100:.2f}%",
+            f"ROC AUC:          {met.get('roc_auc', 0):.4f}",
+            "Dataset:          22,209 imagenes (2,019 originales, 407 zonas, zero leakage)",
+            "Test set:         3,619 imagenes (62 zonas exclusivas)",
+            "Bandas:           7 (5 TIR emisividad + temperatura + NDVI)",
+            "Normalizacion:    Z-score global por banda (band_stats_v3.json)",
+        ]
+
+    lines += [
+        "",
+        "=" * 70,
+        "Autores: C.Vega, D.Arevalo, Y.Espitia, L.Rivera",
+        "Asesor: Prof. Yeison Eduardo Conejo Sandoval",
+        "Universidad de San Buenaventura — Bogota — 2025-2026",
+        "=" * 70,
+    ]
+    return "\n".join(lines)
+
+
 def crear_mapa_heatmap(zonas, predicciones_hist=None):
     """Mapa con capa de calor basada en predicciones realizadas."""
     m = folium.Map(location=[4.57, -74.30], zoom_start=6, tiles="CartoDB positron")
 
+    # Grupo de zonas conocidas
+    fg_zonas = folium.FeatureGroup(name="Zonas conocidas")
     colores = {"Alto": "red", "Medio": "orange"}
     for z in zonas:
         c = colores.get(z["potencial"], "blue")
@@ -754,11 +1010,13 @@ def crear_mapa_heatmap(zonas, predicciones_hist=None):
             ),
             tooltip=z["nombre"], color=c, fill=True, fillColor=c, fillOpacity=0.7,
             weight=2,
-        ).add_to(m)
+        ).add_to(fg_zonas)
+    fg_zonas.add_to(m)
 
     # Capa de calor con predicciones
     if predicciones_hist:
         heat_data = []
+        fg_markers = folium.FeatureGroup(name="Predicciones (marcadores)")
         for h in predicciones_hist:
             heat_data.append([h["lat"], h["lon"], h["valor"]])
             # Marcador por cada prediccion
@@ -777,15 +1035,21 @@ def crear_mapa_heatmap(zonas, predicciones_hist=None):
                     f"<span style='font-size:11px;color:#666'>{h.get('zona', '')}</span></div>",
                     max_width=180,
                 ),
-            ).add_to(m)
+            ).add_to(fg_markers)
+        fg_markers.add_to(m)
 
-        if len(heat_data) >= 2:
+        # Crear heatmap (funciona desde 1 punto)
+        if len(heat_data) >= 1:
+            fg_heat = folium.FeatureGroup(name="Mapa de calor")
             HeatMap(
                 heat_data,
-                min_opacity=0.3, max_val=1.0,
-                radius=30, blur=25,
-                gradient={0.2: '#1565c0', 0.4: '#42a5f5', 0.6: '#ffca28', 0.8: '#ff6d00', 1.0: '#d32f2f'},
-            ).add_to(m)
+                min_opacity=0.4,
+                radius=45, blur=35,
+                gradient={0.0: '#1565c0', 0.25: '#42a5f5', 0.5: '#ffca28', 0.75: '#ff6d00', 1.0: '#d32f2f'},
+            ).add_to(fg_heat)
+            fg_heat.add_to(m)
+
+    folium.LayerControl(position="topright", collapsed=False).add_to(m)
 
     legend = (
         '<div style="position:fixed;bottom:30px;left:30px;z-index:9999;'
@@ -804,8 +1068,18 @@ def crear_mapa_heatmap(zonas, predicciones_hist=None):
 
 
 def crear_mapa(zonas, usuario=None, pred_valor=None):
-    """Mapa interactivo de Colombia."""
-    m = folium.Map(location=[4.57, -74.30], zoom_start=6, tiles="CartoDB positron")
+    """Mapa interactivo de Colombia con capas base seleccionables."""
+    m = folium.Map(location=[4.57, -74.30], zoom_start=6, tiles=None)
+    folium.TileLayer("CartoDB positron", name="🗺️ Mapa limpio").add_to(m)
+    folium.TileLayer(
+        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        attr="Esri", name="🛰️ Satelite",
+    ).add_to(m)
+    folium.TileLayer("OpenStreetMap", name="📍 Calles").add_to(m)
+    folium.TileLayer(
+        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+        attr="Esri", name="🏔️ Topografico",
+    ).add_to(m)
 
     colores = {"Alto": "red", "Medio": "orange"}
     for z in zonas:
@@ -844,6 +1118,7 @@ def crear_mapa(zonas, usuario=None, pred_valor=None):
         '<span style="color:green;font-size:14px">&#9872;</span> Consulta</div>'
     )
     m.get_root().html.add_child(folium.Element(legend))
+    folium.LayerControl(position="topright").add_to(m)
     return m
 
 
@@ -889,8 +1164,8 @@ def pagina_inicio():
             '<div class="info-card">'
             '<span class="card-icon">🧠</span>'
             '<h3>Modelo</h3>'
-            '<p>CNN ResNet-inspired con SpatialDropout2D, AdamW optimizer, '
-            'Label Smoothing y ~5 millones de parametros entrenables.</p>'
+            '<p>EfficientNetB0 con Channel Adapter (7→3 bandas), Transfer Learning, '
+            'MixUp, AdamW optimizer y ~4.4 millones de parametros. Accuracy 92.28%.</p>'
             '</div>',
             unsafe_allow_html=True,
         )
@@ -913,7 +1188,7 @@ def pagina_inicio():
     with st.expander("Ver detalle de todas las zonas"):
         df_zonas = pd.DataFrame(zonas)
         df_zonas.columns = ["Zona", "Latitud", "Longitud", "Tipo", "Potencial"]
-        st.dataframe(df_zonas, use_container_width=True, hide_index=True)
+        st.dataframe(df_zonas, width="stretch", hide_index=True)
 
     st.write("")
     st.divider()
@@ -1017,11 +1292,22 @@ def pagina_prediccion():
     if metodo == "🗺️ Clic en mapa":
         st.caption("Haz clic en cualquier punto del mapa para seleccionar coordenadas.")
 
-        # Crear mapa selector interactivo
+        # Crear mapa selector interactivo con capas base
         mapa_sel = folium.Map(
             location=[4.57, -74.30], zoom_start=6,
-            tiles="CartoDB positron",
+            tiles=None,
         )
+        # Capas base seleccionables (icono de capas en esquina superior derecha)
+        folium.TileLayer("CartoDB positron", name="🗺️ Mapa limpio").add_to(mapa_sel)
+        folium.TileLayer(
+            tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+            attr="Esri", name="🛰️ Satelite",
+        ).add_to(mapa_sel)
+        folium.TileLayer("OpenStreetMap", name="📍 Calles").add_to(mapa_sel)
+        folium.TileLayer(
+            tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+            attr="Esri", name="🏔️ Topografico",
+        ).add_to(mapa_sel)
 
         # Agregar zonas geotermicas como referencia
         colores_z = {"Alto": "red", "Medio": "orange"}
@@ -1054,41 +1340,51 @@ def pagina_prediccion():
         )
         mapa_sel.get_root().html.add_child(folium.Element(leyenda_sel))
 
+        folium.LayerControl(position="topright").add_to(mapa_sel)
+
         map_data = st_folium(
-            mapa_sel, height=380, width=None,
+            mapa_sel, height=450, width=None,
             returned_objects=["last_clicked"],
         )
 
         # Actualizar coordenadas si hubo clic
         if map_data and map_data.get("last_clicked"):
-            st.session_state["pred_lat"] = round(map_data["last_clicked"]["lat"], 4)
-            st.session_state["pred_lon"] = round(map_data["last_clicked"]["lng"], 4)
+            clicked_lat = round(map_data["last_clicked"]["lat"], 4)
+            clicked_lon = round(map_data["last_clicked"]["lng"], 4)
+            # Solo re-ejecutar si las coordenadas cambiaron
+            if (clicked_lat != st.session_state.get("pred_lat") or
+                    clicked_lon != st.session_state.get("pred_lon")):
+                st.session_state["pred_lat"] = clicked_lat
+                st.session_state["pred_lon"] = clicked_lon
+                # Sincronizar los widgets de number_input
+                st.session_state["input_lat_mapa"] = clicked_lat
+                st.session_state["input_lon_mapa"] = clicked_lon
+                st.rerun()
 
-        latitud = st.session_state["pred_lat"]
-        longitud = st.session_state["pred_lon"]
-
-        # Coordenadas seleccionadas + boton
+        # Coordenadas editables (se sincronizan con clic en el mapa)
         sc1, sc2, sc3 = st.columns([1, 1, 1])
         with sc1:
-            st.markdown(
-                f'<div style="background:#f0f4f8;border-radius:8px;padding:10px 14px;text-align:center;">'
-                f'<div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:0.5px;">Latitud</div>'
-                f'<div style="font-size:1.3rem;font-weight:700;color:#1a1a2e;">{latitud:.4f}</div></div>',
-                unsafe_allow_html=True,
+            latitud = st.number_input(
+                "Latitud:", -4.0, 12.0,
+                value=st.session_state["pred_lat"], step=0.0001, format="%.4f",
+                key="input_lat_mapa",
             )
         with sc2:
-            st.markdown(
-                f'<div style="background:#f0f4f8;border-radius:8px;padding:10px 14px;text-align:center;">'
-                f'<div style="font-size:0.75rem;color:#888;text-transform:uppercase;letter-spacing:0.5px;">Longitud</div>'
-                f'<div style="font-size:1.3rem;font-weight:700;color:#1a1a2e;">{longitud:.4f}</div></div>',
-                unsafe_allow_html=True,
+            longitud = st.number_input(
+                "Longitud:", -82.0, -66.0,
+                value=st.session_state["pred_lon"], step=0.0001, format="%.4f",
+                key="input_lon_mapa",
             )
         with sc3:
             st.write("")
+            st.write("")
             analizar = st.button(
-                "🔬 Analizar Potencial", type="primary", use_container_width=True,
+                "🔬 Analizar Potencial", type="primary", width="stretch",
                 key="btn_mapa",
             )
+        # Sincronizar number_input → session state
+        st.session_state["pred_lat"] = latitud
+        st.session_state["pred_lon"] = longitud
 
     elif metodo == "📝 Coordenadas":
         mc1, mc2, mc3 = st.columns([1, 1, 1])
@@ -1106,7 +1402,7 @@ def pagina_prediccion():
             st.write("")
             st.write("")
             analizar = st.button(
-                "🔬 Analizar Potencial", type="primary", use_container_width=True,
+                "🔬 Analizar Potencial", type="primary", width="stretch",
                 key="btn_manual",
             )
         st.session_state["pred_lat"] = latitud
@@ -1132,7 +1428,7 @@ def pagina_prediccion():
             st.write("")
             st.write("")
             analizar = st.button(
-                "🔬 Analizar Potencial", type="primary", use_container_width=True,
+                "🔬 Analizar Potencial", type="primary", width="stretch",
                 key="btn_zona",
             )
         st.session_state["pred_lat"] = latitud
@@ -1150,8 +1446,7 @@ def pagina_prediccion():
                 _, zona_c, dist = predecir_por_proximidad(latitud, longitud, zonas)
                 todas_dist = []
                 for z in zonas:
-                    d = float(np.sqrt((latitud - z["lat"])**2 + (longitud - z["lon"])**2))
-                    d_km = d * 111.0
+                    d_km = _haversine_km(latitud, longitud, z["lat"], z["lon"])
                     todas_dist.append({
                         "Zona": z["nombre"], "Tipo": z["tipo"],
                         "Potencial": z["potencial"],
@@ -1314,7 +1609,7 @@ def pagina_prediccion():
                     f'<tr><td style="padding:2px 0;"><b>Fuente</b></td>'
                     f'<td style="text-align:right;">NASA/USGS via GEE</td></tr>'
                     f'<tr><td style="padding:2px 0;"><b>Bandas</b></td>'
-                    f'<td style="text-align:right;">{p.get("n_bands", 5)} TIR (emisividad)</td></tr>'
+                    f'<td style="text-align:right;">{p.get("n_bands", 7)} (5 TIR + temp + NDVI)</td></tr>'
                     f'<tr><td style="padding:2px 0;"><b>Resolucion</b></td>'
                     f'<td style="text-align:right;">{p.get("scale_m", 90)} m/pixel</td></tr>'
                     f'<tr><td style="padding:2px 0;"><b>Area</b></td>'
@@ -1330,22 +1625,22 @@ def pagina_prediccion():
                 st.markdown(
                     '<div style="background:#f0f4f8;border-radius:10px;padding:12px 14px;margin-bottom:10px;">'
                     '<div style="font-weight:600;color:#1a1a2e;margin-bottom:6px;font-size:0.9rem;">'
-                    '⚙️ Modelo CNN</div>'
+                    '⚙️ Modelo CNN V3</div>'
                     '<table style="width:100%;font-size:0.82rem;color:#444;">'
                     '<tr><td style="padding:2px 0;"><b>Arquitectura</b></td>'
-                    '<td style="text-align:right;">CNN personalizada</td></tr>'
+                    '<td style="text-align:right;">EfficientNetB0 + Adapter</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>Dataset</b></td>'
-                    '<td style="text-align:right;">2,635 imagenes</td></tr>'
+                    '<td style="text-align:right;">22,209 imagenes (zero leakage)</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>Mejor epoca</b></td>'
-                    '<td style="text-align:right;">8 / 23</td></tr>'
+                    '<td style="text-align:right;">50 / 50 (Phase 2)</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>Accuracy</b></td>'
-                    '<td style="text-align:right;">68.43%</td></tr>'
+                    '<td style="text-align:right;">92.28%</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>Precision</b></td>'
-                    '<td style="text-align:right;">86.32%</td></tr>'
+                    '<td style="text-align:right;">91.27%</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>ROC AUC</b></td>'
-                    '<td style="text-align:right;">0.8198</td></tr>'
+                    '<td style="text-align:right;">0.9737</td></tr>'
                     '<tr><td style="padding:2px 0;"><b>F1-Score</b></td>'
-                    '<td style="text-align:right;">61.77%</td></tr>'
+                    '<td style="text-align:right;">92.21%</td></tr>'
                     '</table></div>',
                     unsafe_allow_html=True,
                 )
@@ -1377,27 +1672,77 @@ def pagina_prediccion():
 
         # ---- Expanders con datos adicionales (solo CNN) ----
         if metodo_txt == "CNN" and p.get("band_stats"):
-            band_names = ["B10 (8.3 um)", "B11 (8.6 um)", "B12 (9.1 um)", "B13 (10.6 um)", "B14 (11.3 um)"]
+            band_names = [
+                "B10 (8.29 µm) Emisividad",
+                "B11 (8.63 µm) Emisividad",
+                "B12 (9.08 µm) Emisividad",
+                "B13 (10.66 µm) Emisividad",
+                "B14 (11.32 µm) Emisividad",
+                "Temperatura (LST)",
+                "NDVI (Vegetacion)",
+            ]
             band_data = []
             for i, bs in enumerate(p["band_stats"]):
                 band_data.append({
-                    "Banda": band_names[i] if i < len(band_names) else f"B{i+10}",
+                    "Banda": band_names[i] if i < len(band_names) else f"Banda {i+1}",
                     "Min": f'{bs["min"]:.4f}',
                     "Max": f'{bs["max"]:.4f}',
                     "Media": f'{bs["mean"]:.4f}',
                     "Desv. Est.": f'{bs["std"]:.4f}',
                 })
-            with st.expander("📊 Estadisticas de bandas termicas ASTER"):
+            with st.expander("📊 Estadisticas y descripcion de capas satelitales ASTER"):
                 st.markdown(
                     '<div style="font-size:0.85rem;color:#666;margin-bottom:8px;">'
-                    'Valores de emisividad termica por banda antes de la normalizacion. '
-                    'Estas bandas TIR (Thermal Infrared) capturan la radiacion termica '
-                    'emitida por la superficie terrestre.</div>',
+                    'Valores medidos por cada capa satelital antes de la normalizacion.</div>',
                     unsafe_allow_html=True,
                 )
                 st.dataframe(
                     pd.DataFrame(band_data).set_index("Banda"),
-                    use_container_width=True,
+                    width="stretch",
+                )
+
+                st.markdown("---")
+                st.markdown("##### ¿Que mide cada capa satelital?")
+                st.markdown(
+                    '<div style="font-size:0.85rem;color:#666;margin-bottom:10px;">'
+                    'El modelo CNN analiza <b>7 capas</b> del sensor <b>NASA ASTER</b> '
+                    '(Advanced Spaceborne Thermal Emission and Reflection Radiometer). '
+                    'Cada capa captura informacion diferente de la superficie terrestre:</div>',
+                    unsafe_allow_html=True,
+                )
+                capas_info = pd.DataFrame([
+                    {"Capa": "B10 — Emisividad TIR", "Longitud de onda": "8.29 µm",
+                     "Que mide": "Emisividad termica. Detecta cuarzo y feldespato (silicatos).",
+                     "Relevancia geotermica": "🔴 Alta"},
+                    {"Capa": "B11 — Emisividad TIR", "Longitud de onda": "8.63 µm",
+                     "Que mide": "Emisividad termica. Detecta silice y carbonatos.",
+                     "Relevancia geotermica": "🔴 Alta"},
+                    {"Capa": "B12 — Emisividad TIR", "Longitud de onda": "9.08 µm",
+                     "Que mide": "Emisividad termica. Detecta sulfatos (yeso, alunita) — indicadores de alteracion hidrotermal.",
+                     "Relevancia geotermica": "🔴 Muy alta"},
+                    {"Capa": "B13 — Emisividad TIR", "Longitud de onda": "10.66 µm",
+                     "Que mide": "Banda principal de temperatura superficial. Maxima sensibilidad a anomalias termicas.",
+                     "Relevancia geotermica": "🔴 Muy alta"},
+                    {"Capa": "B14 — Emisividad TIR", "Longitud de onda": "11.32 µm",
+                     "Que mide": "Complemento de B13. Correccion atmosferica y estimacion termal precisa.",
+                     "Relevancia geotermica": "🔴 Alta"},
+                    {"Capa": "Temperatura (LST)", "Longitud de onda": "Derivado TIR",
+                     "Que mide": "Temperatura superficial del suelo (Land Surface Temperature) en Kelvin × 100. Detecta anomalias de calor directas.",
+                     "Relevancia geotermica": "🔴 Muy alta"},
+                    {"Capa": "NDVI", "Longitud de onda": "Derivado VNIR",
+                     "Que mide": "Indice de vegetacion normalizado (-1 a 1). Zonas geotermicas suelen tener NDVI bajo por estres termico.",
+                     "Relevancia geotermica": "🟡 Media"},
+                ])
+                st.dataframe(capas_info.set_index("Capa"), use_container_width=True)
+                st.markdown(
+                    '<div style="background:#f0f4f8;border-radius:8px;padding:12px 14px;margin-top:10px;font-size:0.83rem;">'
+                    '<b>💡 ¿Por que estas 7 capas?</b><br>'
+                    'Las 5 bandas TIR (B10-B14) miden la <b>emisividad termica</b> de la superficie: '
+                    'cambia segun la composicion mineral. En zonas geotermicas, la alteracion hidrotermal '
+                    'modifica los minerales (cuarzo → silice → sulfatos), creando firmas termicas unicas. '
+                    'La <b>temperatura (LST)</b> detecta anomalias de calor directamente, y el <b>NDVI</b> '
+                    'identifica zonas donde la vegetacion esta estresada por calor subterraneo.</div>',
+                    unsafe_allow_html=True,
                 )
 
             if p.get("todas_dist"):
@@ -1409,45 +1754,102 @@ def pagina_prediccion():
                         unsafe_allow_html=True,
                     )
                     df_zonas = pd.DataFrame(p["todas_dist"])
-                    st.dataframe(df_zonas.set_index("Zona"), use_container_width=True)
+                    st.dataframe(df_zonas.set_index("Zona"), width="stretch")
 
-        # ---- Historial de predicciones ----
-        if st.session_state.get("pred_historial") and len(st.session_state["pred_historial"]) > 1:
-            with st.expander(f"🕐 Historial de predicciones ({len(st.session_state['pred_historial'])})"):
+        # ---- Historial de zonas analizadas ----
+        if st.session_state.get("pred_historial") and len(st.session_state["pred_historial"]) > 0:
+            with st.expander(
+                f"🕐 Historial de zonas analizadas ({len(st.session_state['pred_historial'])})",
+                expanded=len(st.session_state["pred_historial"]) > 1,
+            ):
                 hist_data = []
-                for h in st.session_state["pred_historial"]:
+                for i, h in enumerate(st.session_state["pred_historial"]):
                     hist_data.append({
+                        "#": i + 1,
                         "Hora": h.get("timestamp", "-"),
                         "Latitud": f'{h["lat"]:.4f}',
                         "Longitud": f'{h["lon"]:.4f}',
                         "Probabilidad": f'{h["valor"]:.1%}',
-                        "Resultado": "Con potencial" if h["valor"] >= 0.5 else "Bajo potencial",
+                        "Resultado": "🌋 Con potencial" if h["valor"] >= 0.5 else "🏔️ Bajo potencial",
                         "Zona cercana": h.get("zona", "-"),
+                        "Metodo": h.get("metodo", "-"),
                     })
-                st.dataframe(pd.DataFrame(hist_data), use_container_width=True, hide_index=True)
+                st.dataframe(pd.DataFrame(hist_data), width="stretch", hide_index=True)
 
-        # ---- Exportar reporte ----
+                # --- Selector para ver detalles de una zona especifica ---
+                if len(st.session_state["pred_historial"]) >= 1:
+                    st.markdown("---")
+                    st.markdown("##### Detalle de zona analizada")
+                    opciones_hist = [
+                        f"#{i+1} — {h['lat']:.4f}, {h['lon']:.4f} ({h['valor']:.1%}) — {h.get('zona', '')}"
+                        for i, h in enumerate(st.session_state["pred_historial"])
+                    ]
+                    sel_hist = st.selectbox(
+                        "Selecciona una zona:", opciones_hist,
+                        key="sel_hist_zona", label_visibility="collapsed",
+                    )
+                    idx_hist = opciones_hist.index(sel_hist)
+                    h_sel = st.session_state["pred_historial"][idx_hist]
+
+                    # Mostrar info de la zona seleccionada
+                    es_pos_h = h_sel["valor"] >= 0.5
+                    col_h1, col_h2 = st.columns([1, 2])
+                    with col_h1:
+                        cls_h = "result-pos" if es_pos_h else "result-neg"
+                        st.markdown(
+                            f'<div class="result-card {cls_h}" style="padding:1rem;">'
+                            f'<h2 style="font-size:0.8rem;">{"CON POTENCIAL" if es_pos_h else "BAJO POTENCIAL"}</h2>'
+                            f'<div class="big" style="font-size:2rem;">{"🌋" if es_pos_h else "🏔️"} {h_sel["valor"]:.1%}</div>'
+                            f'<p style="font-size:0.8rem;">{h_sel["lat"]:.4f}, {h_sel["lon"]:.4f}</p></div>',
+                            unsafe_allow_html=True,
+                        )
+                    with col_h2:
+                        dist_h_km = h_sel.get("dist", 0) * 111.0
+                        st.markdown(
+                            f'<div style="background:#f0f4f8;border-radius:10px;padding:12px 14px;">'
+                            f'<table style="width:100%;font-size:0.85rem;color:#444;">'
+                            f'<tr><td><b>Hora</b></td><td style="text-align:right;">{h_sel.get("timestamp", "-")}</td></tr>'
+                            f'<tr><td><b>Zona cercana</b></td><td style="text-align:right;">{h_sel.get("zona", "-")}</td></tr>'
+                            f'<tr><td><b>Tipo</b></td><td style="text-align:right;">{h_sel.get("tipo", "-")}</td></tr>'
+                            f'<tr><td><b>Distancia</b></td><td style="text-align:right;">{dist_h_km:.1f} km</td></tr>'
+                            f'<tr><td><b>Metodo</b></td><td style="text-align:right;">{h_sel.get("metodo", "-")}</td></tr>'
+                            f'<tr><td><b>Bandas</b></td><td style="text-align:right;">{h_sel.get("n_bands", "7")}</td></tr>'
+                            f'</table></div>',
+                            unsafe_allow_html=True,
+                        )
+                    # Descargar reporte de esta zona
+                    st.download_button(
+                        f"📄 Descargar reporte de zona #{idx_hist+1}",
+                        data=generar_reporte_texto(h_sel),
+                        file_name=f"reporte_{h_sel['lat']:.4f}_{h_sel['lon']:.4f}.txt",
+                        mime="text/plain",
+                        key=f"dl_zona_{idx_hist}",
+                    )
+
+        # ---- Exportar reportes ----
         st.write("")
-        exp1, exp2, _ = st.columns([1, 1, 2])
+        st.markdown("##### Descargar resultados")
+        exp1, exp2, exp3 = st.columns([1, 1, 1])
         with exp1:
             reporte_txt = generar_reporte_texto(p)
             st.download_button(
-                "📄 Descargar reporte (.txt)",
+                "📄 Reporte zona actual (.txt)",
                 data=reporte_txt,
                 file_name=f"reporte_geotermico_{p['lat']:.4f}_{p['lon']:.4f}.txt",
                 mime="text/plain",
-                use_container_width=True,
+                width="stretch",
             )
         with exp2:
             if st.session_state.get("pred_historial"):
                 csv_rows = []
                 for h in st.session_state["pred_historial"]:
                     csv_rows.append({
-                        "timestamp": h.get("timestamp", ""),
+                        "fecha": datetime.now().strftime("%Y-%m-%d"),
+                        "hora": h.get("timestamp", ""),
                         "latitud": h["lat"],
                         "longitud": h["lon"],
                         "probabilidad": round(h["valor"], 4),
-                        "resultado": "positivo" if h["valor"] >= 0.5 else "negativo",
+                        "resultado": "CON POTENCIAL" if h["valor"] >= 0.5 else "BAJO POTENCIAL",
                         "confianza": (
                             "alta" if h["valor"] >= 0.8 else
                             "media-alta" if h["valor"] >= 0.6 else
@@ -1456,20 +1858,31 @@ def pagina_prediccion():
                             "baja" if h["valor"] >= 0.2 else "muy_baja"
                         ),
                         "zona_cercana": h.get("zona", ""),
+                        "tipo_zona": h.get("tipo", ""),
                         "distancia_km": round(h.get("dist", 0) * 111.0, 1),
                         "metodo": h.get("metodo", ""),
                     })
                 csv_df = pd.DataFrame(csv_rows)
                 st.download_button(
-                    "📊 Descargar historial (.csv)",
+                    "📊 Historial completo (.csv)",
                     data=csv_df.to_csv(index=False),
-                    file_name="historial_predicciones.csv",
+                    file_name=f"historial_geotermia_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
                     mime="text/csv",
-                    use_container_width=True,
+                    width="stretch",
+                )
+        with exp3:
+            if st.session_state.get("pred_historial") and len(st.session_state["pred_historial"]) > 0:
+                reporte_completo = generar_reporte_historial(st.session_state["pred_historial"])
+                st.download_button(
+                    "📋 Informe completo (.txt)",
+                    data=reporte_completo,
+                    file_name=f"informe_geotermia_{datetime.now().strftime('%Y%m%d_%H%M')}.txt",
+                    mime="text/plain",
+                    width="stretch",
                 )
 
         # ---- Mapa de calor (heatmap) ----
-        if st.session_state.get("pred_historial") and len(st.session_state["pred_historial"]) >= 2:
+        if st.session_state.get("pred_historial") and len(st.session_state["pred_historial"]) >= 1:
             st.write("")
             with st.expander("🔥 Mapa de calor de predicciones realizadas"):
                 st.markdown(
@@ -1480,7 +1893,7 @@ def pagina_prediccion():
                     unsafe_allow_html=True,
                 )
                 mapa_heat = crear_mapa_heatmap(zonas, st.session_state["pred_historial"])
-                st_folium(mapa_heat, width=None, height=450, returned_objects=[])
+                st_folium(mapa_heat, width=700, height=450, returned_objects=[])
 
         # ---- Modo comparacion ----
         st.write("")
@@ -1503,7 +1916,7 @@ def pagina_prediccion():
                 cmp_lat_b = st.number_input("Latitud B:", -4.0, 12.0, 5.7781, 0.0001, format="%.4f", key="cmp_lat_b")
                 cmp_lon_b = st.number_input("Longitud B:", -82.0, -66.0, -73.1124, 0.0001, format="%.4f", key="cmp_lon_b")
 
-            cmp_btn = st.button("🔬 Comparar ambas ubicaciones", type="primary", use_container_width=True, key="btn_cmp")
+            cmp_btn = st.button("🔬 Comparar ambas ubicaciones", type="primary", width="stretch", key="btn_cmp")
 
             if cmp_btn and usa_cnn and modelo is not None:
                 cmp_r1, cmp_r2 = st.columns(2, gap="medium")
@@ -1637,13 +2050,20 @@ def pagina_metricas():
             )
             fig.update_xaxes(showgrid=False)
             fig.update_yaxes(showgrid=True, gridcolor="rgba(0,0,0,0.05)")
-            st.plotly_chart(fig, use_container_width=True, key="bar_metricas")
+            st.plotly_chart(fig, width="stretch", key="bar_metricas")
 
         with c2:
             st.markdown("#### Curva ROC")
             auc = metricas.get("auc_roc", metricas.get("roc_auc", metricas.get("auc", 0.5)))
-            fpr = np.linspace(0, 1, 200)
-            tpr = 1 - (1 - fpr) ** (1 / max(auc, 0.51))
+            # v2: Usar curva ROC real del evaluate_model si está disponible (BUG 14)
+            roc_data = metricas.get("roc_curve")
+            if roc_data and "fpr" in roc_data and "tpr" in roc_data:
+                fpr = np.array(roc_data["fpr"])
+                tpr = np.array(roc_data["tpr"])
+            else:
+                # Fallback: aproximación matemática
+                fpr = np.linspace(0, 1, 200)
+                tpr = 1 - (1 - fpr) ** (1 / max(auc, 0.51))
             fig = go.Figure()
             fig.add_trace(go.Scatter(
                 x=fpr, y=tpr,
@@ -1668,7 +2088,7 @@ def pagina_metricas():
             )
             fig.update_xaxes(showgrid=True, gridcolor="rgba(0,0,0,0.05)")
             fig.update_yaxes(showgrid=True, gridcolor="rgba(0,0,0,0.05)")
-            st.plotly_chart(fig, use_container_width=True, key="roc")
+            st.plotly_chart(fig, width="stretch", key="roc")
 
     # Historial
     if historial:
@@ -1699,7 +2119,7 @@ def pagina_metricas():
             )
             fig.update_xaxes(showgrid=True, gridcolor="rgba(0,0,0,0.05)")
             fig.update_yaxes(showgrid=True, gridcolor="rgba(0,0,0,0.05)")
-            st.plotly_chart(fig, use_container_width=True, key="loss")
+            st.plotly_chart(fig, width="stretch", key="loss")
 
         with c2:
             fig = go.Figure()
@@ -1716,7 +2136,7 @@ def pagina_metricas():
             )
             fig.update_xaxes(showgrid=True, gridcolor="rgba(0,0,0,0.05)")
             fig.update_yaxes(showgrid=True, gridcolor="rgba(0,0,0,0.05)")
-            st.plotly_chart(fig, use_container_width=True, key="acc")
+            st.plotly_chart(fig, width="stretch", key="acc")
 
     # Figuras PNG
     figs_dir = PROJECT_ROOT / "results" / "figures"
@@ -1726,7 +2146,7 @@ def pagina_metricas():
         st.markdown("#### Visualizaciones Generadas")
         cols = st.columns(min(len(imgs), 3), gap="medium")
         for i, img in enumerate(imgs[:6]):
-            cols[i % len(cols)].image(str(img), caption=img.stem.replace("_", " ").title(), use_container_width=True)
+            cols[i % len(cols)].image(str(img), caption=img.stem.replace("_", " ").title(), width="stretch")
 
 
 def pagina_arquitectura():
@@ -1739,9 +2159,10 @@ def pagina_arquitectura():
     )
     st.markdown(
         '<div class="info-box">'
-        'Arquitectura <b>ResNet-inspired</b> con bloques residuales, '
-        'SpatialDropout2D para regularizacion espacial y Global Average Pooling. '
-        'Disenada para clasificacion binaria de imagenes termicas ASTER de 5 bandas.'
+        'Arquitectura <b>EfficientNetB0</b> con Channel Adapter (7→16→3 canales), '
+        'Transfer Learning desde ImageNet, MixUp regularization y two-phase training. '
+        'Disenada para clasificacion binaria de imagenes ASTER de 7 bandas (5 TIR + temperatura + NDVI). '
+        '<b>Accuracy: 92.28%, ROC AUC: 0.9737</b>.'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -1751,27 +2172,24 @@ def pagina_arquitectura():
 
     capas = pd.DataFrame({
         "Capa": [
-            "Input", "Conv2D + BN + ReLU", "SpatialDropout2D", "MaxPooling2D",
-            "Residual Block 1", "SpatialDropout2D + MaxPool",
-            "Residual Block 2", "SpatialDropout2D + MaxPool",
-            "Residual Block 3", "SpatialDropout2D + MaxPool",
-            "Residual Block 4", "SpatialDropout2D",
-            "Global Average Pooling", "Dense + BN + Dropout", "Output (Sigmoid)",
+            "Input", "Conv2D 3x3 (Adapter 1) + BN + ReLU", "Conv2D 1x1 (Adapter 2) + BN + ReLU",
+            "EfficientNetB0 (ImageNet)", "Global Average Pooling",
+            "Dense 256 + BN + ReLU + Dropout(0.5)",
+            "Dense 64 + BN + ReLU + Dropout(0.3)",
+            "Output (Sigmoid)",
         ],
         "Filtros": [
-            "—", "32 (7x7)", "—", "—",
-            "64", "—", "128", "—",
-            "256", "—", "512", "—",
-            "—", "256", "1",
+            "—", "16 (3x3)", "3 (1x1)",
+            "ImageNet pretrained", "—",
+            "256", "64", "1",
         ],
         "Salida": [
-            "224x224x5", "224x224x32", "224x224x32", "112x112x32",
-            "112x112x64", "56x56x64", "56x56x128", "28x28x128",
-            "28x28x256", "14x14x256", "14x14x512", "14x14x512",
-            "512", "256", "1",
+            "224x224x7", "224x224x16", "224x224x3",
+            "224x224x...", "1280",
+            "256", "64", "1",
         ],
     })
-    st.dataframe(capas, use_container_width=True, hide_index=True)
+    st.dataframe(capas, width="stretch", hide_index=True)
 
     st.write("")
 
@@ -1781,13 +2199,11 @@ def pagina_arquitectura():
 
     colors = [
         "#4FC3F7",  # Input - azul claro
-        "#81C784", "#A5D6A7", "#66BB6A",  # Conv + spatial + pool - verdes
-        "#FF8A65", "#FFAB91",  # Res Block 1 - naranjas
-        "#EF5350", "#EF9A9A",  # Res Block 2 - rojos
-        "#AB47BC", "#CE93D8",  # Res Block 3 - morados
-        "#5C6BC0", "#9FA8DA",  # Res Block 4 - indigo
+        "#81C784", "#66BB6A",  # Adapter stages - verdes
+        "#FF8A65",  # EfficientNetB0 - naranja
         "#FDD835",  # GAP - amarillo
-        "#26A69A",  # Dense - teal
+        "#AB47BC",  # Dense 256 - morado
+        "#5C6BC0",  # Dense 64 - indigo
         "#E94560",  # Output - rojo acento
     ]
 
@@ -1808,7 +2224,7 @@ def pagina_arquitectura():
         height=560, margin=dict(l=5, r=5, t=5, b=5),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
     )
-    st.plotly_chart(fig, use_container_width=True, key="arch")
+    st.plotly_chart(fig, width="stretch", key="arch")
 
     st.divider()
 
@@ -1818,13 +2234,16 @@ def pagina_arquitectura():
         st.markdown("""
 | Parametro | Valor |
 |-----------|-------|
-| Optimizador | **AdamW** (weight_decay=1e-4) |
-| Learning Rate | 0.001 |
+| Backbone | **EfficientNetB0** (ImageNet) |
+| Adapter | Conv2D 7→16→3 canales |
+| Optimizador | **AdamW** (weight_decay=1e-3) |
+| Learning Rate | Phase 1: 1e-3, Phase 2: 1e-4 |
 | Loss | BinaryCrossentropy (label_smoothing=0.1) |
-| Dropout | 0.5 (Dense) · 0.1-0.3 (Spatial) |
+| Dropout | 0.5 (Dense 256) · 0.3 (Dense 64) |
 | Batch Size | 32 |
-| Epocas | 100 (EarlyStopping, patience=15) |
-| Parametros | 5,025,409 |
+| Entrenamiento | Phase 1: 30 ep (frozen) + Phase 2: 50 ep (fine-tune) |
+| Regularizacion | MixUp (α=0.2) + online augmentation |
+| Parametros | 4,396,112 (57.9 MB) |
 """)
     with c2:
         st.markdown("#### Datos de Entrada")
@@ -1833,10 +2252,10 @@ def pagina_arquitectura():
 |----------------|-------|
 | Fuente | NASA ASTER Global Emissivity Dataset (AG100) V003 |
 | Resolucion | 100 metros |
-| Bandas | 10, 11, 12, 13, 14 (TIR) |
-| Entrada | 224 x 224 x 5 |
-| Normalizacion | 0-1 (Rescaling) |
-| Dataset | 5,518 imagenes (augmentadas) |
+| Bandas | 10, 11, 12, 13, 14 (TIR) + temperature + NDVI |
+| Entrada | 224 x 224 x 7 |
+| Normalizacion | Z-score global por banda |
+| Dataset | 22,209 imagenes (2,019 originales, 407 zonas, zero leakage) |
 """)
 
 
@@ -1878,7 +2297,7 @@ satelitales termicas del sensor **NASA ASTER**.
 
 2. **Especificos:**
    - Recopilar y procesar imagenes ASTER de zonas geotermicas colombianas.
-   - Disenar una arquitectura CNN optimizada con bloques residuales.
+   - Disenar una arquitectura CNN con Transfer Learning (EfficientNetB0).
    - Entrenar y evaluar con metricas estandar de clasificacion.
    - Desarrollar interfaz web interactiva para visualizacion y prediccion.
 
@@ -1890,15 +2309,15 @@ satelitales termicas del sensor **NASA ASTER**.
     met_data = pd.DataFrame({
         "Fase": ["Adquisicion", "Augmentacion", "Preparacion", "Modelado", "Evaluacion", "Despliegue"],
         "Descripcion": [
-            "Google Earth Engine → 85 imagenes ASTER",
-            "30 transformaciones → 5,518 imagenes",
-            "Normalizacion + split 70/15/15 estratificado",
-            "CNN ResNet-inspired (5 M parametros)",
-            "Accuracy, Precision, Recall, F1, ROC-AUC, PR-AUC",
+            "Google Earth Engine -> 2,019 imagenes ASTER (7 bandas, 407 zonas)",
+            "~11 transformaciones/imagen -> 22,209 imagenes",
+            "Normalizacion global + GroupShuffleSplit por zona (zero leakage)",
+            "EfficientNetB0 + Channel Adapter (4.4 M parametros)",
+            "Accuracy 92.28%, ROC-AUC 0.9737, F1 92.21%",
             "Streamlit + Folium + Plotly",
         ],
     })
-    st.dataframe(met_data, use_container_width=True, hide_index=True)
+    st.dataframe(met_data, width="stretch", hide_index=True)
 
     st.markdown("""
 ---

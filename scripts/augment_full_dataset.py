@@ -1,3 +1,5 @@
+# Copyright (c) 2025-2026 Vega Sánchez · Arévalo Rubiano · Espitia Ayala · Rivera Martín
+# Universidad de San Buenaventura — Bogotá | github.com/crisveg24/geotermia-colombia-cnn
 """
 Script para Aplicar Data Augmentation al Dataset Completo Descargado
 ====================================================================
@@ -80,13 +82,28 @@ class FullDatasetAugmenter:
         }
 
     def load_image(self, image_path: Path) -> Tuple[np.ndarray, dict]:
-        """Cargar imagen GeoTIFF."""
+        """Cargar imagen GeoTIFF con filtrado de NoData."""
         with rasterio.open(image_path) as src:
             image = src.read()
             metadata = src.meta.copy()
 
         if image.ndim == 3:
             image = np.transpose(image, (1, 2, 0))
+
+        # v2: Filtrar valores NoData (-9999) antes de augmentación
+        # Sin esto, augment_brightness/contrast usan min/max que incluyen -9999
+        nodata_mask = image <= -9999
+        if nodata_mask.any():
+            for b in range(image.shape[-1] if image.ndim == 3 else 1):
+                if image.ndim == 3:
+                    band = image[:, :, b]
+                else:
+                    band = image
+                valid = band[band > -9999]
+                if len(valid) > 0:
+                    band[band <= -9999] = np.median(valid)
+                else:
+                    band[band <= -9999] = 0
 
         return image, metadata
 
@@ -139,7 +156,9 @@ class FullDatasetAugmenter:
     def augment_noise(self, image: np.ndarray, sigma: float = 0.01) -> np.ndarray:
         """Agregar ruido gaussiano."""
         noise = np.random.normal(0, sigma * image.std(), image.shape)
-        return image + noise
+        # v2: Clampear al rango de valores originales (BUG 23)
+        noisy = image + noise
+        return np.clip(noisy, image.min(), image.max())
 
     def augment_gaussian_blur(self, image: np.ndarray, sigma: float = 1.0) -> np.ndarray:
         """Aplicar desenfoque gaussiano."""
@@ -214,7 +233,9 @@ class FullDatasetAugmenter:
         # Generar augmentaciones
         for aug_name, aug_func in augmentations[:num_augmentations]:
             try:
-                aug_image = aug_func(image.copy())
+                # v2: Convertir a float32 para evitar que transform.rotate/resize
+                # produzcan float64 (duplica tamaño en disco) — BUG 11
+                aug_image = aug_func(image.copy()).astype(np.float32)
                 filename = f"{base_name}_{aug_name}.tif"
                 output_path = output_dir / filename
 
@@ -396,7 +417,7 @@ def main():
     total_orig = pos_orig + neg_orig
 
     # Configuración
-    NUM_AUG_PER_IMAGE = 30
+    NUM_AUG_PER_IMAGE = cfg.NUM_AUGMENTATIONS
     logger.info("Configuracion:")
     logger.info(f" - Imagenes originales: {total_orig} ({pos_orig} positivas + {neg_orig} negativas)")
     logger.info(f" - Augmentaciones por imagen: {NUM_AUG_PER_IMAGE}")

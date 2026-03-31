@@ -206,7 +206,7 @@ def generar_reporte():
     pdf.subtitulo('3.1 Arquitectura CNN')
     pdf.cuerpo_texto(
         'El modelo utiliza una arquitectura inspirada en ResNet con bloques residuales:\n\n'
-        '- Input: 224 x 224 x 5 (5 bandas termicas ASTER)\n'
+        '- Input: 224 x 224 x 7 (7 bandas ASTER: 5 TIR + temperatura + NDVI)\n'
         '- Bloque inicial: Conv2D 32 filtros + BatchNorm + ReLU\n'
         '- Bloque Residual 1: 64 filtros + MaxPooling\n'
         '- Bloque Residual 2: 128 filtros + MaxPooling\n'

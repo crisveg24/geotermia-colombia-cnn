@@ -77,14 +77,14 @@ def download_aster_image(name: str, lon: float, lat: float, label: int, output_d
         point = ee.Geometry.Point([lon, lat])
         region = point.buffer(5000).bounds() # 5km buffer
         
-        # Cargar dataset ASTER Global Emissivity (5 bandas térmicas)
+        # Cargar dataset ASTER Global Emissivity (7 bandas: 5 TIR + temperatura + NDVI)
         aster = ee.Image('NASA/ASTER_GED/AG100_003')
         
-        # Seleccionar bandas térmicas (emisividad)
+        # Seleccionar 7 bandas ASTER
         thermal_bands = aster.select([
             'emissivity_band10', 'emissivity_band11', 
             'emissivity_band12', 'emissivity_band13', 
-            'emissivity_band14'
+            'emissivity_band14', 'temperature', 'ndvi'
         ])
         
         # Definir nombre del archivo

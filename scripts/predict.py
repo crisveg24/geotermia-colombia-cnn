@@ -1,3 +1,5 @@
+# Copyright (c) 2025-2026 Vega Sánchez · Arévalo Rubiano · Espitia Ayala · Rivera Martín
+# Universidad de San Buenaventura — Bogotá | github.com/crisveg24/geotermia-colombia-cnn
 """
 Prediction Script for Geothermal CNN
 =====================================
@@ -37,7 +39,8 @@ class GeotermalPredictor:
     def __init__(
         self,
         model_path: str,
-        target_size: Tuple[int, int] = (224, 224)
+        target_size: Tuple[int, int] = (224, 224),
+        band_stats_path: Optional[str] = None
         ):
         """
         Inicializa el predictor.
@@ -45,10 +48,34 @@ class GeotermalPredictor:
         Args:
         model_path: Ruta al modelo entrenado (.keras)
         target_size: Tamaño objetivo de las imágenes
+        band_stats_path: Ruta al archivo band_stats.json con mean/std
+                         globales por banda.  Si es None, busca en
+                         data/processed/band_stats.json.
         """
         self.model_path = Path(model_path)
         self.target_size = target_size
         self.model = None
+
+        # Cargar estadísticas globales por banda (v4 FIX)
+        if band_stats_path is None:
+            band_stats_path = (
+                Path(__file__).resolve().parent.parent
+                / "data" / "processed" / "band_stats.json"
+            )
+        band_stats_path = Path(band_stats_path)
+        if band_stats_path.exists():
+            with open(band_stats_path) as f:
+                stats = json.load(f)
+            self._band_means = np.array(stats['band_means'], dtype=np.float32)
+            self._band_stds = np.array(stats['band_stds'], dtype=np.float32)
+            logger.info(f"Stats globales cargadas desde {band_stats_path}")
+        else:
+            self._band_means = None
+            self._band_stds = None
+            logger.warning(
+                f"band_stats.json no encontrado en {band_stats_path}. "
+                "Se usará normalización per-image (NO recomendado)."
+            )
 
         logger.info("GeotermalPredictor inicializado")
 
@@ -90,6 +117,19 @@ class GeotermalPredictor:
                 # Stack de bandas
                 image = np.stack(bands, axis=-1)
 
+            # v2: Filtrar valores NoData (-9999)
+            nodata_mask = image <= -9999
+            if nodata_mask.any():
+                nodata_pct = nodata_mask.any(axis=-1).mean() * 100
+                logger.info(f"NoData detectado: {nodata_pct:.1f}% píxeles, interpolando con mediana")
+                for b in range(image.shape[-1]):
+                    band = image[:, :, b]
+                    valid = band[band > -9999]
+                    if len(valid) > 0:
+                        band[band <= -9999] = np.median(valid)
+                    else:
+                        band[band <= -9999] = 0
+
             logger.info(f"Imagen cargada: {image.shape}")
             return image
         except Exception as e:
@@ -108,7 +148,7 @@ class GeotermalPredictor:
         """
         from skimage.transform import resize
 
-        # 1. Resize
+        # 1. Resize a target_size (mismo resize que prepare_dataset.py)
         target_shape = (*self.target_size, image.shape[-1])
         resized = resize(
             image,
@@ -116,20 +156,28 @@ class GeotermalPredictor:
             mode='reflect',
             anti_aliasing=True,
             preserve_range=True
-        )
+        ).astype(np.float32)
 
-        # 2. Normalización por banda
-        normalized = np.zeros_like(resized, dtype=np.float32)
-
-        for i in range(resized.shape[-1]):
-            band = resized[:, :, i]
-            mean = np.mean(band)
-            std = np.std(band)
-
-            if std > 0:
-                normalized[:, :, i] = (band - mean) / std
-            else:
-                normalized[:, :, i] = band - mean
+        # 2. Normalización por banda (v4 FIX: stats globales del dataset)
+        if self._band_means is not None and self._band_stds is not None:
+            normalized = np.zeros_like(resized, dtype=np.float32)
+            for i in range(resized.shape[-1]):
+                normalized[:, :, i] = (
+                    (resized[:, :, i] - self._band_means[i])
+                    / self._band_stds[i]
+                )
+        else:
+            # Fallback per-image (solo si no hay band_stats.json)
+            logger.warning("Usando normalización per-image (sin stats globales)")
+            normalized = np.zeros_like(resized, dtype=np.float32)
+            for i in range(resized.shape[-1]):
+                band = resized[:, :, i]
+                mean = np.mean(band)
+                std = np.std(band)
+                if std > 0:
+                    normalized[:, :, i] = (band - mean) / std
+                else:
+                    normalized[:, :, i] = band - mean
 
         return normalized
 
@@ -163,13 +211,11 @@ class GeotermalPredictor:
         if image is None:
             return None
 
-        # 2. Preprocesar
+        # 2. Preprocesar (resize a 224x224 + normalización z-score)
         processed = self.preprocess_image(image)
 
-        # 3. Añadir dimensión de batch
+        # 3. Añadir dimensión de batch y predecir
         input_tensor = np.expand_dims(processed, axis=0)
-
-        # 4. Predicción
         prediction = self.model.predict(input_tensor, verbose=0)
 
         # 5. Interpretar resultado

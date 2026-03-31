@@ -1,3 +1,5 @@
+# Copyright (c) 2025-2026 Vega Sánchez · Arévalo Rubiano · Espitia Ayala · Rivera Martín
+# Universidad de San Buenaventura — Bogotá | github.com/crisveg24/geotermia-colombia-cnn
 """
 Script para visualizar la arquitectura del modelo CNN de geotermia.
 Genera diagramas y resúmenes detallados de la arquitectura.
@@ -75,7 +77,7 @@ class ArchitectureVisualizer:
 
         # Crear modelo
         model = create_geotermia_model(
-            input_shape=(224, 224, 5),
+            input_shape=(224, 224, 7),
             model_type=model_type,
             num_classes=1
         )
@@ -123,7 +125,7 @@ class ArchitectureVisualizer:
             'total_params': int(total_params),
             'trainable_params': int(trainable_params),
             'non_trainable_params': int(total_params - trainable_params),
-            'input_shape': (224, 224, 5),
+            'input_shape': (224, 224, 7),
             'output_shape': (1,),
             'layers': layers_info
         }
@@ -141,8 +143,8 @@ class ArchitectureVisualizer:
         """Genera resumen manual cuando TensorFlow no está disponible."""
         if model_type == 'custom':
             layers_info = [
-                {'name': 'input', 'type': 'InputLayer', 'output_shape': '(None, 224, 224, 5)', 'params': 0},
-                {'name': 'rescaling', 'type': 'Rescaling', 'output_shape': '(None, 224, 224, 5)', 'params': 0},
+                {'name': 'input', 'type': 'InputLayer', 'output_shape': '(None, 224, 224, 7)', 'params': 0},
+                {'name': 'batch_norm_input', 'type': 'BatchNormalization', 'output_shape': '(None, 224, 224, 7)', 'params': 0},
                 {'name': 'conv2d_initial', 'type': 'Conv2D', 'output_shape': '(None, 109, 109, 32)', 'params': 7872},
                 {'name': 'batch_norm_initial', 'type': 'BatchNormalization', 'output_shape': '(None, 109, 109, 32)', 'params': 128},
                 {'name': 'max_pooling2d', 'type': 'MaxPooling2D', 'output_shape': '(None, 54, 54, 32)', 'params': 0},
@@ -171,7 +173,7 @@ class ArchitectureVisualizer:
                 'total_params': total_params,
                 'trainable_params': total_params,
                 'non_trainable_params': 0,
-                'input_shape': (224, 224, 5),
+                'input_shape': (224, 224, 7),
                 'output_shape': (1,),
                 'layers': layers_info
             }
@@ -182,7 +184,7 @@ class ArchitectureVisualizer:
                 'total_params': 5300000, # Aproximado
                 'trainable_params': 4500000,
                 'non_trainable_params': 800000,
-                'input_shape': (224, 224, 5),
+                'input_shape': (224, 224, 7),
                 'output_shape': (1,),
                 'layers': [
                     {'name': 'efficientnetb0', 'type': 'EfficientNetB0', 'output_shape': '(None, 7, 7, 1280)', 'params': 4049564},

@@ -1,3 +1,5 @@
+# Copyright (c) 2025-2026 Vega Sánchez · Arévalo Rubiano · Espitia Ayala · Rivera Martín
+# Universidad de San Buenaventura — Bogotá | github.com/crisveg24/geotermia-colombia-cnn
 """
 Configuración Centralizada del Proyecto Geotermia CNN
 =====================================================
@@ -81,7 +83,14 @@ class ProjectConfig:
         self.scripts_dir = PROJECT_ROOT / "scripts"
 
         # 4. Hiperparámetros por defecto
-        self.INPUT_SHAPE = (224, 224, 5)
+        # 7 bandas: emissivity_band10-14 (TIR) + temperature + NDVI
+        self.INPUT_SHAPE = (224, 224, 7)
+        self.BAND_NAMES = [
+            'emissivity_band10', 'emissivity_band11',
+            'emissivity_band12', 'emissivity_band13',
+            'emissivity_band14', 'temperature', 'ndvi'
+        ]
+        self.NUM_BANDS = 7
         self.BATCH_SIZE = 32
         self.EPOCHS = 100
         self.TEST_SIZE = 0.15
@@ -89,7 +98,15 @@ class ProjectConfig:
         self.RANDOM_STATE = 42
         self.LEARNING_RATE = 1e-3
         self.WEIGHT_DECAY = 1e-4
+
+        # Augmentación: con ~2045 imgs base, 10 aug/img dan ~22495 total
+        # Sweet spot para CNN robusta (buena cobertura de 8 tipos de aug).
+        # Con <300 imgs base, subir a 30 para compensar.
+        self.NUM_AUGMENTATIONS = 10
         self.LABEL_SMOOTHING = 0.1
+
+        # 5. Google Earth Engine (v2: centralizado, BUG 10)
+        self.GEE_PROJECT = os.environ.get("GEE_PROJECT", "alpine-air-469115-f0")
 
     # ── utilidades ──────────────────────────────────────────
 
@@ -139,14 +156,14 @@ class ProjectConfig:
             "CONFIGURACIÓN DEL PROYECTO GEOTERMIA CNN",
             "=" * 60,
             f"Fuente de datos : {v['source']}",
-            f"Disco externo : {'SÍ' if v['is_external'] else 'NO'}",
+            f"Disco externo : {'SI' if v['is_external'] else 'NO'}",
             f"Data root : {v['data_root']}",
             "",
         ]
         for name, info in v["dirs"].items():
             mark = "[OK]" if info["exists"] else "[--]"
             detail = f"{info['tif_files']} .tif, {info['npy_files']} .npy" if info["exists"] else "no existe"
-            lines.append(f"  {mark} {name:20s} → {detail}")
+            lines.append(f"  {mark} {name:20s} -> {detail}")
         lines.append("=" * 60)
         return "\n".join(lines)
 

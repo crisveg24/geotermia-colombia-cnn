@@ -34,17 +34,17 @@ def load_and_preprocess_image(image_path):
         bands = [src.read(i) for i in range(1, src.count + 1)]
         image = np.stack(bands, axis=-1).astype(np.float32)
     
-    # Asegurar 5 bandas
-    while image.shape[-1] < 5:
+    # Asegurar 7 bandas
+    while image.shape[-1] < 7:
         image = np.concatenate([image, image[..., -1:]], axis=-1)
-    if image.shape[-1] > 5:
-        image = image[..., :5]
+    if image.shape[-1] > 7:
+        image = image[..., :7]
     
     # Resize a 224x224
-    image = resize(image, (224, 224, 5), preserve_range=True)
+    image = resize(image, (224, 224, 7), preserve_range=True)
     
     # Normalizar
-    for i in range(5):
+    for i in range(7):
         band = image[:, :, i]
         min_val, max_val = np.min(band), np.max(band)
         if max_val - min_val > 0:
@@ -97,10 +97,10 @@ def main():
             'confianza': confidence
         })
         
-        print(f"{img_path.stem:30} → {pred_class} (conf: {confidence:.1%})")
+        print(f"{img_path.stem:30} -> {pred_class} (conf: {confidence:.1%})")
     
     # Resumen
-    geo_count = sum(1 for r in results if "GEOTÉRMICO" in r['prediccion'])
+    geo_count = sum(1 for r in results if "GEOTERMICO" in r['prediccion'])
     no_geo_count = len(results) - geo_count
     
     print("\n" + "=" * 60)

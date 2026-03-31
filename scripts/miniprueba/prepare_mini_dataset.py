@@ -28,7 +28,7 @@ TARGET_SIZE = (224, 224) # Tamaño que espera la CNN
 
 
 def load_tif_image(file_path: Path) -> np.ndarray:
-    """Carga imagen .tif y retorna array con 5 bandas."""
+    """Carga imagen .tif y retorna array con 7 bandas."""
     try:
         with rasterio.open(file_path) as src:
             bands = []
@@ -38,11 +38,11 @@ def load_tif_image(file_path: Path) -> np.ndarray:
             
             image = np.stack(bands, axis=-1)
             
-            # Asegurar 5 bandas
-            while image.shape[-1] < 5:
+            # Asegurar 7 bandas
+            while image.shape[-1] < 7:
                 image = np.concatenate([image, image[..., -1:]], axis=-1)
-            if image.shape[-1] > 5:
-                image = image[..., :5]
+            if image.shape[-1] > 7:
+                image = image[..., :7]
             
             return image.astype(np.float32)
     except Exception as e:

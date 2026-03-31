@@ -83,7 +83,7 @@ def main():
     X_train, y_train, X_val, y_val, X_test, y_test = load_data()
     
     # Verificar forma de entrada
-    input_shape = X_train.shape[1:] # (224, 224, 5)
+    input_shape = X_train.shape[1:] # (224, 224, 7)
     print(f"\nInput shape: {input_shape}")
     print(f"Clases: 2 (binario)")
     
