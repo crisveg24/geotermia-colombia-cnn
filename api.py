@@ -106,6 +106,11 @@ def _importar_tensorflow():
     global _tf
     if _tf is not None:
         return _tf
+
+    # Reducir uso de memoria de TF en entornos limitados (Render free = 512MB)
+    os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
+    os.environ.setdefault("TF_ENABLE_ONEDNN_OPTS", "0")
+
     import tensorflow as tf_mod
     _tf = tf_mod
 
