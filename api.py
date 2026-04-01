@@ -4,6 +4,7 @@ Integra el modelo CNN real (EfficientNetB0 + Channel Adapter) con
 fallback a predicción por proximidad. Cumple OWASP Top 10 2025.
 """
 
+import gc
 import os
 import sys
 import json
@@ -286,7 +287,7 @@ def predecir_cnn(lat: float, lon: float, modelo):
             m, s = img[:, :, i].mean(), img[:, :, i].std()
             img[:, :, i] = (img[:, :, i] - m) / (s if s > 0 else 1)
 
-    # Sliding window prediction
+    # Sliding window prediction (memory-optimized for 512MB Render)
     t_pred = time.time()
     h, w, c = img.shape
     hw, ww = 224, 224
@@ -295,25 +296,27 @@ def predecir_cnn(lat: float, lon: float, modelo):
     if h <= hw and w <= ww:
         padded = np.zeros((hw, ww, c), dtype=np.float32)
         padded[:h, :w, :] = img
+        del img
         prob = float(modelo.predict(np.expand_dims(padded, 0), verbose=0)[0, 0])
+        del padded
     else:
-        windows = []
-        for y in range(0, h - hw + 1, stride):
-            for x in range(0, w - ww + 1, stride):
-                windows.append(img[y:y+hw, x:x+ww, :])
-        if (h - hw) % stride != 0:
-            for x in range(0, w - ww + 1, stride):
-                windows.append(img[-hw:, x:x+ww, :])
-        if (w - ww) % stride != 0:
-            for y in range(0, h - hw + 1, stride):
-                windows.append(img[y:y+hw, -ww:, :])
-        if not windows:
+        # Procesar ventanas una a una para ahorrar RAM
+        max_prob = 0.0
+        has_windows = False
+        for y in range(0, max(h - hw + 1, 1), stride):
+            for x in range(0, max(w - ww + 1, 1), stride):
+                patch = img[y:y+hw, x:x+ww, :]
+                if patch.shape[0] == hw and patch.shape[1] == ww:
+                    p = float(modelo.predict(np.expand_dims(patch, 0), verbose=0)[0, 0])
+                    max_prob = max(max_prob, p)
+                    has_windows = True
+        if not has_windows:
             padded = np.zeros((hw, ww, c), dtype=np.float32)
-            padded[:h, :w, :] = img
-            windows.append(padded)
-
-        preds = modelo.predict(np.array(windows), batch_size=32, verbose=0)
-        prob = float(np.max(preds[:, 0]) if preds.shape[1] == 1 else np.max(preds[:, 1]))
+            padded[:min(h, hw), :min(w, ww), :] = img[:min(h, hw), :min(w, ww), :]
+            max_prob = float(modelo.predict(np.expand_dims(padded, 0), verbose=0)[0, 0])
+            del padded
+        del img
+        prob = max_prob
 
     t_pred = time.time() - t_pred
 
@@ -321,6 +324,7 @@ def predecir_cnn(lat: float, lon: float, modelo):
         tmp_path.unlink()
     except Exception:
         pass
+    gc.collect()
 
     return {
         "prob": float(np.clip(prob, 0.01, 0.99)),
@@ -409,6 +413,7 @@ def predict():
     modelo = _cargar_modelo()
     if modelo is not None:
         resultado = predecir_cnn(lat, lon, modelo)
+        gc.collect()  # Liberar RAM después de CNN
         if resultado["ok"]:
             pred, zona, dist = predecir_por_proximidad(lat, lon)
             return jsonify({
