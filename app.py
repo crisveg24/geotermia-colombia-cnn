@@ -44,6 +44,17 @@ def _importar_tensorflow():
     if _tf is None:
         import tensorflow as tf_mod
         _tf = tf_mod
+
+        # Monkey-patch Dense para ignorar quantization_config.
+        # Keras 3 >= 3.4 guarda este campo en el config pero versiones anteriores
+        # no lo reconocen.
+        _orig_dense_init = tf_mod.keras.layers.Dense.__init__
+        def _dense_compat_init(self, *args, quantization_config=None, **kwargs):
+            _orig_dense_init(self, *args, **kwargs)
+        tf_mod.keras.layers.Dense.__init__ = _dense_compat_init
+
+        # Establecer mixed_float16 para compatibilidad con modelos EfficientNet
+        tf_mod.keras.mixed_precision.set_global_policy('mixed_float16')
     return _tf
 
 
@@ -433,15 +444,6 @@ def cargar_modelo():
     """Carga el modelo CNN. Prueba varias rutas posibles."""
     tf = _importar_tensorflow()
 
-    # Monkey-patch de Dense para ignorar quantization_config.
-    # Keras 3 >= 3.4 guarda este campo en el config pero versiones anteriores
-    # no lo reconocen. custom_objects no funciona para capas built-in en Keras 3
-    # porque la deserialización va por module path, no por nombre de clase.
-    _orig_dense_init = tf.keras.layers.Dense.__init__
-    def _dense_compat_init(self, *args, quantization_config=None, **kwargs):
-        _orig_dense_init(self, *args, **kwargs)
-    tf.keras.layers.Dense.__init__ = _dense_compat_init
-
     rutas = [
         # V3: EfficientNetB0 + adapter (prioridad)
         PROJECT_ROOT / "models" / "saved_models" / "geotermia_v7_phase2_best.keras",
@@ -454,7 +456,7 @@ def cargar_modelo():
     for r in rutas:
         if r.exists():
             try:
-                model = tf.keras.models.load_model(str(r), compile=False)
+                model = tf.keras.models.load_model(str(r), compile=False, safe_mode=False)
                 st.session_state["modelo_cargado_nombre"] = r.name
                 logging.info(f"Modelo cargado: {r.name}")
                 return model

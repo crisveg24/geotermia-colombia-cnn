@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: api-geotermia
+    runtime: python
+    buildCommand: pip install -r requirements-api.txt
+    startCommand: gunicorn api:app --bind 0.0.0.0:$PORT --timeout 120 --workers 1
+    envVars:
+      - key: CORS_ORIGINS
+        sync: false
+      - key: GEE_PROJECT
+        value: alpine-air-469115-f0
+      - key: GEE_SERVICE_ACCOUNT_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.10.14"

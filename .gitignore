@@ -56,6 +56,14 @@ leer_pdf.py
 ANALISIS_PROYECTO.md
 ESTRUCTURA.md
 
+# Credenciales y secretos (NUNCA subir al repo)
+*.json.key
+*-credentials.json
+service-account*.json
+gee-key*.json
+.env.local
+.env.*.local
+
 # Archivos de sistema
 .DS_Store
 Thumbs.db
