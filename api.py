@@ -14,7 +14,6 @@ from pathlib import Path
 
 import numpy as np
 from flask import Flask, request, jsonify
-from flask_cors import CORS
 
 # ---------------------------------------------------------------------------
 # Configuración
@@ -26,25 +25,36 @@ ALLOWED_ORIGINS = os.environ.get(
     "CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
 ).split(",")
 
-# Patrón para aceptar cualquier subdominio de vercel.app (previews)
-_VERCEL_PATTERN = re.compile(r"^https://[a-z0-9\-]+\.vercel\.app$")
-
-
-def _cors_origin_check(origin):
-    """Permite orígenes explícitos + cualquier *.vercel.app."""
-    if origin in ALLOWED_ORIGINS:
-        return origin
-    if _VERCEL_PATTERN.match(origin or ""):
-        return origin
-    return None
-
+# Patrón para aceptar previews de Vercel (subdominios dinámicos)
+_VERCEL_RE = re.compile(r"^https://[a-z0-9\-]+\.vercel\.app$")
 
 # Límites geográficos de Colombia (con margen)
 LAT_MIN, LAT_MAX = -5.0, 14.0
 LON_MIN, LON_MAX = -82.0, -66.0
 
 app = Flask(__name__)
-CORS(app, origins=_cors_origin_check, supports_credentials=False)
+
+
+@app.after_request
+def _add_cors_headers(response):
+    origin = request.headers.get("Origin", "")
+    if origin in ALLOWED_ORIGINS or _VERCEL_RE.match(origin):
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    return response
+
+
+@app.before_request
+def _handle_preflight():
+    if request.method == "OPTIONS":
+        origin = request.headers.get("Origin", "")
+        if origin in ALLOWED_ORIGINS or _VERCEL_RE.match(origin):
+            resp = app.make_default_options_response()
+            resp.headers["Access-Control-Allow-Origin"] = origin
+            resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+            resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+            return resp
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
