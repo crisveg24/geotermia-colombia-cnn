@@ -200,8 +200,13 @@ def predecir_cnn(lat: float, lon: float, modelo):
     from config import cfg
 
     t0 = time.time()
-    point = ee.Geometry.Point([lon, lat])
-    roi = point.buffer(5000)
+    try:
+        point = ee.Geometry.Point([lon, lat])
+        roi = point.buffer(5000)
+    except Exception as exc:
+        logging.error("Error creando geometría GEE: %s", exc)
+        return {"prob": 0.0, "ok": False, "error": f"GEE geometry error: {exc}"}
+
     aster_bands = [
         "emissivity_band10", "emissivity_band11",
         "emissivity_band12", "emissivity_band13",
@@ -210,7 +215,11 @@ def predecir_cnn(lat: float, lon: float, modelo):
     image = ee.Image("NASA/ASTER_GED/AG100_003").select(aster_bands).clip(roi)
 
     tmp_path = Path(tempfile.gettempdir()) / f"pred_{lat:.4f}_{lon:.4f}.tif"
-    geemap.ee_export_image(image, filename=str(tmp_path), scale=90, region=roi, file_per_band=False)
+    try:
+        geemap.ee_export_image(image, filename=str(tmp_path), scale=90, region=roi, file_per_band=False)
+    except Exception as exc:
+        logging.error("Error descargando imagen ASTER: %s", exc)
+        return {"prob": 0.0, "ok": False, "error": f"ASTER download error: {exc}"}
 
     if not tmp_path.exists():
         return {"prob": 0.0, "ok": False, "error": "No se descargó imagen ASTER"}
