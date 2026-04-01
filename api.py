@@ -19,17 +19,32 @@ from flask_cors import CORS
 # ---------------------------------------------------------------------------
 # Configuración
 # ---------------------------------------------------------------------------
+import re
+
 PROJECT_ROOT = Path(__file__).resolve().parent
 ALLOWED_ORIGINS = os.environ.get(
     "CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
 ).split(",")
+
+# Patrón para aceptar cualquier subdominio de vercel.app (previews)
+_VERCEL_PATTERN = re.compile(r"^https://[a-z0-9\-]+\.vercel\.app$")
+
+
+def _cors_origin_check(origin):
+    """Permite orígenes explícitos + cualquier *.vercel.app."""
+    if origin in ALLOWED_ORIGINS:
+        return origin
+    if _VERCEL_PATTERN.match(origin or ""):
+        return origin
+    return None
+
 
 # Límites geográficos de Colombia (con margen)
 LAT_MIN, LAT_MAX = -5.0, 14.0
 LON_MIN, LON_MAX = -82.0, -66.0
 
 app = Flask(__name__)
-CORS(app, origins=ALLOWED_ORIGINS)
+CORS(app, origins=_cors_origin_check, supports_credentials=False)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
