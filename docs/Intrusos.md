@@ -175,9 +175,9 @@ Desde la perspectiva académica, este proyecto aporta una metodología reproduci
 
 El alcance del presente proyecto comprende:
 
-- La implementación de una versión web funcional del sistema de clasificación de zonas con potencial geotérmico, accesible desde navegador web mediante una interfaz Streamlit desplegable en servidor.
-- La aplicación de los controles de seguridad correspondientes a los diez riesgos del estándar **OWASP Top 10 2025**, incluyendo gestión de autenticación y autorización, protección contra inyección, cifrado de comunicaciones y control de acceso.
-- La protección de los datos personales de los usuarios registrados en el sistema, mediante cifrado en tránsito (HTTPS/TLS), gestión segura de sesiones, almacenamiento con hashing de credenciales y política de tratamiento de datos conforme a la Ley 1581 de 2012.
+- La implementación de una aplicación web de acceso público para la clasificación de zonas con potencial geotérmico, compuesta por un frontend React/Vite desplegado en Vercel y una API REST Flask desplegada en Render.
+- La aplicación de los controles de seguridad correspondientes a los diez riesgos del estándar **OWASP Top 10 2025**, incluyendo control de acceso vía CORS, protección contra inyección, cifrado de comunicaciones, rate limiting y cabeceras de seguridad HTTP.
+- La documentación del tratamiento de datos conforme a la Ley 1581 de 2012, con énfasis en el principio de minimización: la aplicación no recopila ni persiste datos personales de los usuarios.
 - La evaluación de seguridad del sistema mediante análisis estático (SAST) y dinámico (DAST), con reporte de hallazgos y remediaciones implementadas para cada riesgo OWASP catalogado.
 - La documentación completa de las decisiones de diseño de seguridad, controles implementados y resultados de las pruebas realizadas.
 
@@ -251,17 +251,38 @@ Como marco metodológico para el desarrollo del proyecto se adoptó **CRISP-DM**
 
 A continuación se describe cada fase y su correspondencia con las actividades realizadas en el presente trabajo:
 
-**Fase 1. Comprensión del negocio (Business Understanding).** Se identificó la necesidad de exponer el modelo CNN de clasificación geotérmica a través de una interfaz web segura, accesible por múltiples usuarios con diferentes roles. Se definieron los objetivos del proyecto: implementar una interfaz Streamlit desplegable en servidor, aplicar los diez controles del estándar OWASP Top 10 2025, proteger los datos personales de los usuarios conforme a la Ley 1581 de 2012, y evaluar la seguridad de la aplicación mediante SAST y DAST. Esta fase se documenta en las secciones de Planteamiento del problema, Justificación y Objetivos.
+**Fase 1. Comprensión del negocio (Business Understanding).** Se identificó la necesidad de exponer el modelo CNN de clasificación geotérmica a través de una aplicación web pública y segura. Se definieron los objetivos del proyecto: implementar una SPA React/Vite + API Flask desplegadas en Vercel y Render respectivamente, aplicar los diez controles del estándar OWASP Top 10 2025, documentar el tratamiento de datos conforme a la Ley 1581 de 2012 (principio de minimización), y evaluar la seguridad de la aplicación mediante SAST y DAST. Esta fase se documenta en las secciones de Planteamiento del problema, Justificación y Objetivos.
 
-**Fase 2. Comprensión de los datos (Data Understanding).** Se analizó el modelo preentrenado (GeotermiaCNN_V7, 4.396.112 parámetros, 60 MB, formato `.keras`) y sus requerimientos de entrada: imágenes ASTER de 224 × 224 × 7 bandas espectrales normalizadas con las estadísticas globales almacenadas en `band_stats_v3.json`. Se caracterizaron también los datos de usuario que la aplicación web gestionará: credenciales (correo y contraseña), historial de predicciones (coordenadas, resultados, fecha) y datos de sesión.
+**Fase 2. Comprensión de los datos (Data Understanding).** Se analizó el modelo preentrenado (GeotermiaCNN_V7, 4.396.112 parámetros, 60 MB, formato `.keras`) y sus requerimientos de entrada: imágenes ASTER de 224 × 224 × 7 bandas espectrales normalizadas con las estadísticas globales almacenadas en `band_stats_v3.json`. Se caracterizaron los datos procesados por la aplicación: únicamente coordenadas geográficas (lat/lon) ingresadas por el usuario en cada solicitud; sin datos de identidad ni credenciales de usuario (aplicación pública).
 
-**Fase 3. Preparación de los datos (Data Preparation).** Se configuró el entorno de despliegue seguro: generación de certificados TLS para HTTPS, configuración de la política CORS, definición del esquema de base de datos para usuarios y predicciones, y reutilización del pipeline de normalización existente (`band_stats_v3.json`) para garantizar que las imágenes descargadas desde Google Earth Engine en tiempo de inferencia reciban el mismo preprocesamiento que las imágenes de entrenamiento.
+**Fase 3. Preparación de los datos (Data Preparation).** Se configuró el entorno de despliegue seguro: HTTPS automático en Vercel y Render (TLS), configuración de la política CORS (allowlist en `CORS_ORIGINS` + regex para Vercel), almacenamiento de credenciales GEE como variable de entorno cifrada en Render (`GEE_SERVICE_ACCOUNT_KEY`), y reutilización del pipeline de normalización existente (`band_stats_v3.json`) para garantizar que las imágenes descargadas desde Google Earth Engine en tiempo de inferencia reciban el mismo preprocesamiento que las imágenes de entrenamiento.
 
-**Fase 4. Modelado (Modeling).** Se diseñó e implementó la arquitectura de la aplicación web: módulo de autenticación con hashing bcrypt, control de acceso basado en roles (RBAC), validación y sanitización de entradas de usuario, integración segura con la API de Google Earth Engine para descarga de imágenes ASTER, inferencia sobre el modelo CNN, y visualización de resultados mediante mapas interactivos Folium y generación de reportes en PDF. Para cada uno de los diez riesgos del OWASP Top 10 2025 se diseñó e implementó el control de seguridad correspondiente.
+**Fase 4. Modelado (Modeling).** Se diseñó e implementó la arquitectura desacoplada: frontend SPA con React 18 + Vite 5 (5 páginas, mapas Leaflet, gráficas Recharts) y backend API REST con Flask (endpoints `POST /predict`, `GET /zonas`, `GET /health`). Se implementaron los controles de seguridad para cada uno de los diez riesgos del OWASP Top 10 2025: CORS con allowlist, cabeceras de seguridad en ambas capas (`_security_headers()` en Flask y `vercel.json` en Vercel), validación estricta de coordenadas (`_validar_coordenadas`), y rate limiting en memoria (30 req/60 s por IP).
 
 **Fase 5. Evaluación (Evaluation).** Se verificó el cumplimiento de los controles OWASP mediante análisis estático del código (SAST) con Bandit y Semgrep, y análisis dinámico de la aplicación en ejecución (DAST) con OWASP ZAP. Se documentaron los hallazgos encontrados en cada herramienta y las remediaciones implementadas. Se verificó que la aplicación no presentara ningún hallazgo de severidad alta o crítica al finalizar el ciclo de evaluación.
 
-**Fase 6. Despliegue (Deployment).** La aplicación se desplegó en un servidor con HTTPS/TLS, cabeceras de seguridad HTTP (CSP, HSTS, X-Frame-Options), gestión segura de variables de entorno (sin credenciales en código fuente), política de tratamiento de datos conforme a la Ley 1581 de 2012, y monitoreo de eventos de seguridad mediante registro estructurado de logs.
+**Fase 6. Despliegue (Deployment).** El **frontend React/Vite** se desplegó como sitio estático en **Vercel** (Hobby, plan gratuito), con cabeceras de seguridad configuradas en `vercel.json` (CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy). El **backend Flask** se desplegó en **Render** (Web Service, plan gratuito) vía `gunicorn api:app --workers 1 --timeout 120`, con configuración declarativa en `render.yaml`. Ambos servicios se integran con **GitHub** mediante webhooks: cada push a `main` desencadena un nuevo despliegue, precedido por el pipeline SAST de GitHub Actions. Se gestionan secretos exclusivamente como variables de entorno en Render (sin credenciales en el repositorio), y se monitorea la actividad mediante logging estructurado en `api.py`.
+
+#### Metodología de desarrollo seguro (SDL)
+
+La **metodología de desarrollo seguro** — también denominada *Secure Development Lifecycle* (SDL), propuesta por Microsoft (Howard & Lipner, 2006) — es un enfoque que integra controles de seguridad en cada fase del ciclo de vida del software, en lugar de tratarlos como una etapa final o como parches posteriores a la implementación. Su principio rector es la **seguridad por diseño** (*security by design*): las decisiones de seguridad se toman desde la concepción del sistema, no después.
+
+En el presente proyecto el SDL se adopta como complemento **transversal** al marco CRISP-DM: cada fase del proceso de desarrollo incorpora actividades de seguridad paralelas, tal como se muestra en la Tabla 1.
+
+**Tabla 1**
+
+*Integración SDL–CRISP-DM en el presente proyecto*
+
+| Fase CRISP-DM | Actividad SDL integrada |
+|---|---|
+| Business Understanding | Modelado de amenazas (STRIDE): identificación de actores maliciosos, vectores de ataque y activos a proteger (credenciales, clave GEE, modelo CNN) |
+| Data Understanding | Clasificación de datos por sensibilidad: credenciales de acceso (alta), coordenadas consultadas (media), logs de eventos (baja) |
+| Data Preparation | Definición de controles de entrada: validación de coordenadas (rango colombiano) y tipado estricto en Flask (`_validar_coordenadas`); política de variables de entorno en Render (`GEE_SERVICE_ACCOUNT_KEY`, `CORS_ORIGINS`); `vercel.json` con cabeceras CSP para el frontend |
+| Modeling | Diseño seguro: separación frontend (React/Vite) – backend (Flask API); CORS con allowlist + expresión regular para previews de Vercel; rate limiting 30 req/60 s por IP en memoria; HTTPS automático en Vercel y Render; principio de privilegio mínimo (GEE accedido solo desde el backend) |
+| Evaluation | Revisión de seguridad automatizada: análisis estático (SAST) con Bandit y Semgrep integrado en GitHub Actions; análisis dinámico (DAST) con OWASP ZAP |
+| Deployment | Hardening: cabeceras HTTP de seguridad, secretos almacenados en variables de entorno de Render, pipeline SAST obligatorio antes de cada despliegue |
+
+Esta integración garantiza que la seguridad se previene sistemáticamente desde el diseño y no depende de encontrar vulnerabilidades al final del proyecto (Howard & Lipner, 2006).
 
 ---
 
@@ -273,122 +294,272 @@ En este capítulo se describen los procedimientos realizados para implementar la
 
 ---
 
-#### 2.1 Arquitectura de la interfaz web
+#### 2.1 Arquitectura de la interfaz web y entorno de despliegue
 
-La interfaz web se implementó con **Streamlit**, un framework Python de código abierto orientado al despliegue rápido de aplicaciones de datos. Se eligió Streamlit porque el modelo ya estaba desarrollado en Python (TensorFlow/Keras), lo que permite integrar directamente la lógica de inferencia sin necesidad de serializar el modelo a una API REST separada, reduciendo la superficie de ataque.
+La aplicación se implementó con una arquitectura desacoplada (decoupled architecture) que separa completamente la capa de presentación de la lógica de negocio e inferencia:
 
-La arquitectura de la aplicación se organiza en tres capas:
+- **Frontend:** aplicación de página única (SPA) construida con **React 18 + Vite 5**, usando Tailwind CSS para estilos, React Router v7 para navegación, Leaflet/react-leaflet para mapas interactivos y Recharts para visualización de métricas. Se despliega como sitio estático en **Vercel**.
+- **Backend:** API REST construida con **Flask** (Python), que integra TensorFlow/Keras para la inferencia CNN y Google Earth Engine para la descarga de imágenes ASTER. Se despliega en **Render** usando Gunicorn como servidor WSGI, con la configuración declarativa del archivo `render.yaml`.
+
+Esta separación reduce la superficie de ataque: el frontend no tiene acceso directo al modelo ni a las credenciales de GEE; toda interacción con recursos sensibles ocurre en el backend.
 
 **Tabla 2**
 
-*Capas de la arquitectura de la aplicación web*
+*Stack tecnológico de la aplicación*
+
+| Capa | Tecnología | Versión | Hosting |
+|---|---|---|---|
+| **Frontend** | React + Vite | 18.2 / 5.2 | Vercel (estático) |
+| **Estilos** | Tailwind CSS | 3.4 | — |
+| **Routing** | React Router | 7.13 | — |
+| **Mapas** | Leaflet + react-leaflet | 1.9 / 4.2 | — |
+| **Gráficas** | Recharts | 3.8 | — |
+| **Backend** | Flask | 3.x | Render (Web Service) |
+| **Servidor WSGI** | Gunicorn | latest | Render |
+| **ML** | TensorFlow / Keras | 2.21 | — |
+| **Geodatos** | Google Earth Engine SDK | latest | — |
+| **CI/CD + Repo** | GitHub + GitHub Actions | — | GitHub |
+
+**Stack tecnológico de despliegue**
+
+| Herramienta | Plan | Función en el proyecto |
+|---|---|---|
+| **GitHub** | Gratuito | Repositorio del código fuente (rama `main`); webhook que activa Render y Vercel en cada push |
+| **GitHub Actions** | Gratuito (2 000 min/mes) | Pipeline CI/CD: SAST con Bandit (backend Flask) y ESLint (frontend React) antes de cada despliegue; bloquea el push si se detectan hallazgos de severidad media o alta |
+| **Render** | Gratuito (Web Service) | Hosting de la API Flask (`api.py`) vía Gunicorn; configuración declarativa en `render.yaml`; gestión segura de variables de entorno (`GEE_SERVICE_ACCOUNT_KEY`, `CORS_ORIGINS`) |
+| **Vercel** | Gratuito (Hobby) | Hosting del frontend React/Vite como sitio estático; HTTPS automático; cabeceras de seguridad configuradas en `vercel.json` (CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy) |
+
+**Figura 2a**
+
+*Pipeline CI/CD — ¿cómo llega el código del desarrollador a los servidores?*
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                                                                         │
+│  PASO 1 ── El desarrollador sube el código                              │
+│                                                                         │
+│   Desarrollador  ──── git push ────►  GitHub (rama main)               │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  PASO 2 ── GitHub activa el análisis automático de seguridad            │
+│                                                                         │
+│   GitHub  ──────────────►  GitHub Actions                              │
+│                                 │                                       │
+│                    ┌────────────┴────────────┐                         │
+│                    │                         │                         │
+│              Bandit (Python)           ESLint (React)                  │
+│              Revisa api.py             Revisa frontend/                 │
+│                    │                         │                         │
+│                    └────────────┬────────────┘                         │
+│                                 │                                       │
+│                    ┌────────────┴────────────┐                         │
+│                    │                         │                         │
+│               SIN errores             CON errores                      │
+│                    │                         │                         │
+│                    ▼                         ▼                         │
+│              APROBADO ✓              BLOQUEADO ✗                       │
+│                                    (el despliegue                      │
+│                                     no avanza)                         │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  PASO 3 ── Solo si fue aprobado: despliegue en paralelo                 │
+│                                                                         │
+│   GitHub Actions  ──────────────────────────────────────               │
+│                         │                         │                    │
+│                         ▼                         ▼                    │
+│                  ┌─────────────┐         ┌─────────────┐              │
+│                  │   RENDER    │         │   VERCEL    │              │
+│                  │  (Backend)  │         │ (Frontend)  │              │
+│                  └──────┬──────┘         └──────┬──────┘              │
+│                         │                       │                      │
+│                         ▼                       ▼                      │
+│                   API Flask                Sitio React                 │
+│                   HTTPS auto.              HTTPS auto.                 │
+│                   render.yaml              vercel.json                 │
+│                   Clave GEE                Cabeceras CSP               │
+│                   (var. entorno)                                       │
+│                         │                       │                      │
+│                         └───────────────────────┘                      │
+│                                    │                                   │
+│                        Se comunican entre sí                           │
+│                        vía HTTPS + CORS                                │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+*Nota.* Las credenciales del satélite (GEE) se guardan únicamente como variable de entorno en Render; nunca se escriben en el código ni en el repositorio de GitHub.
+
+---
+
+**Figura 2b**
+
+*¿Qué ocurre paso a paso cuando el usuario pide una predicción?*
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                                                                         │
+│   USUARIO                                                               │
+│   ─────────────────────────────────────────────────────────────────    │
+│   Abre el sitio web y hace clic sobre un punto del mapa de Colombia.   │
+│   El sitio envía las coordenadas (latitud y longitud) al servidor.     │
+│                                                                         │
+│   Sitio web  ──── POST /predict { lat, lon } (HTTPS) ────►  API Flask  │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│   API FLASK  (servidor en Render)                                       │
+│   ─────────────────────────────────────────────────────────────────    │
+│                                                                         │
+│   Verificación 1 — ¿Las coordenadas son válidas?                       │
+│      • ¿Son números?  ¿Están dentro del territorio colombiano?         │
+│        NO  →  responde "error 400 – coordenadas inválidas"             │
+│        SI  →  continúa                                                  │
+│                                                                         │
+│   Verificación 2 — ¿El usuario está abusando del sistema?              │
+│      • Si el mismo IP envió 30 o más solicitudes en 60 segundos:       │
+│        →  responde "error 429 – demasiadas solicitudes"                │
+│        →  continúa                                                      │
+│                                                                         │
+│   Obtención de la imagen satelital                                      │
+│      ┌─────────────────────────┐    ┌──────────────────────────────┐  │
+│      │  Caso normal            │    │  Caso de respaldo            │  │
+│      │  Google Earth Engine    │    │  (si GEE no está disponible) │  │
+│      │  disponible             │    │                              │  │
+│      │                         │    │  Se usan las 10 zonas        │  │
+│      │  Descarga imagen ASTER  │    │  geotérmicas conocidas de    │  │
+│      │  del punto pedido:      │    │  Colombia.                   │  │
+│      │  • 7 bandas espectrales │    │  Se calcula cuál queda más   │  │
+│      │  • Área de 5 km         │    │  cerca del punto pedido      │  │
+│      │  • 90 m por píxel       │    │  (fórmula de Haversine).     │  │
+│      │         │               │    │  La probabilidad se estima   │  │
+│      │         ▼               │    │  en función de esa distancia.│  │
+│      │   Modelo CNN            │    │                              │  │
+│      │   EfficientNetB0        │    │                              │  │
+│      │   Analiza 224×224 px    │    │                              │  │
+│      │   Devuelve probabilidad │    │                              │  │
+│      └──────────┬──────────────┘    └───────────────┬──────────────┘  │
+│                 └───────────────────────────────────┘                  │
+│                                     │                                  │
+│                                     ▼                                  │
+│   Respuesta al sitio web                                               │
+│      • Porcentaje de potencial geotérmico  (ej. 78 %)                 │
+│      • Zona conocida más cercana           (ej. Nevado del Ruiz)      │
+│      • Tiempo de respuesta y metadatos de la imagen                   │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│   SITIO WEB  (React en Vercel)                                          │
+│   ─────────────────────────────────────────────────────────────────    │
+│   Muestra el resultado sobre el mapa con un marcador de color:         │
+│      Verde  →  potencial alto       Amarillo  →  potencial medio       │
+│      Rojo   →  potencial bajo       Gris      →  sin datos             │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+*Nota.* La aplicación no guarda ningún dato del usuario. Las coordenadas se procesan en memoria durante la solicitud y se descartan al responder.
+
+**Arquitectura lógica de la aplicación (tres capas)**
+
+**Tabla 3**
+
+*Capas lógicas de la aplicación web*
 
 | Capa | Componente | Responsabilidad |
 |---|---|---|
-| Presentación | Streamlit + Folium | Formularios, mapas interactivos, reportes PDF |
-| Lógica de negocio | Python (TensorFlow/Keras + GEE) | Autenticación, autorización, inferencia CNN |
-| Datos | SQLite / PostgreSQL + archivos .npy | Usuarios, historial de predicciones, estadísticas |
+| Presentación | React 18 + Vite (Vercel) | 5 páginas SPA: Inicio, Predicción, Métricas, Arquitectura CNN, Proyecto; mapas Leaflet; gráficas Recharts |
+| API / Lógica de negocio | Flask + Gunicorn (Render) | Validación de entradas, rate limiting, CORS, cabeceras de seguridad, inferencia CNN, fallback por proximidad |
+| Modelo + Geodatos | TensorFlow/Keras + GEE | Descarga ASTER desde NASA/ASTER_GED/AG100_003, normalización z-score, predicción EfficientNetB0 |
 
-El flujo de una predicción autenticada sigue los pasos descritos a continuación:
+**Páginas del frontend y endpoints del backend**
 
-1. El usuario introduce sus credenciales en el formulario de inicio de sesión.
-2. La aplicación verifica la contraseña contra el hash bcrypt almacenado en la base de datos.
-3. Se genera un token de sesión seguro (UUID v4, almacenado en `st.session_state`) con tiempo de expiración de 30 minutos.
-4. El usuario ingresa coordenadas geográficas (latitud, longitud) para la zona a evaluar.
-5. La aplicación solicita la imagen ASTER AG100 v003 a Google Earth Engine mediante la clave de servicio almacenada como variable de entorno (nunca en código fuente).
-6. La imagen descargada se procesa a través del pipeline de normalización (`band_stats_v3.json`) y se redimensiona a 224 × 224 × 7.
-7. El modelo GeotermiaCNN_V7 produce una probabilidad de potencial geotérmico entre 0 y 1.
-8. El resultado se visualiza en un mapa Folium con marcador codificado por color (verde ≥ 0,50 / rojo < 0,50) y se registra en el historial del usuario.
-9. El usuario puede descargar un reporte en PDF con los metadatos de la predicción.
+El frontend expone cinco páginas con React Router:
 
-**Figura 2**
+| Ruta | Componente | Descripción |
+|---|---|---|
+| `/` | `HomePage` | Presentación del proyecto con animaciones GSAP |
+| `/prediccion` | `PrediccionPage` | Mapa Leaflet interactivo; envía `POST /predict` al backend |
+| `/metricas` | `MetricasPage` | Métricas del modelo (Accuracy, Precision, Recall, F1, curva ROC) en Recharts |
+| `/arquitectura` | `ArquitecturaPage` | Diagrama de la arquitectura CNN (EfficientNetB0 + Channel Adapter) |
+| `/proyecto` | `ProyectoPage` | Descripción del proyecto y equipo |
 
-*Diagrama de flujo de la aplicación web*
+El backend expone tres endpoints REST:
 
-```
-Usuario (navegador)
-        │  HTTPS/TLS
-        ▼
-┌─────────────────────────────────┐
-│  Streamlit Web Server           │
-│  ┌──────────┐  ┌─────────────┐  │
-│  │  Auth    │  │  RBAC       │  │
-│  │  bcrypt  │  │  (roles)    │  │
-│  └────┬─────┘  └──────┬──────┘  │
-│       │               │         │
-│       ▼               ▼         │
-│  ┌─────────────────────────┐    │
-│  │  Lógica de Inferencia   │    │
-│  │  GEE → pipeline → CNN   │    │
-│  └──────────┬──────────────┘    │
-│             │                   │
-│             ▼                   │
-│  ┌──────────────────────────┐   │
-│  │  Base de datos (cifrada) │   │
-│  │  Usuarios + historial    │   │
-│  └──────────────────────────┘   │
-└─────────────────────────────────┘
-```
+| Endpoint | Método | Descripción |
+|---|---|---|
+| `/predict` | `POST` | Recibe `{"lat": float, "lon": float}`; ejecuta CNN o fallback; devuelve porcentaje, zona cercana, metadatos ASTER y tiempos |
+| `/zonas` | `GET` | Devuelve la lista de 10 zonas geotérmicas conocidas en Colombia |
+| `/health` | `GET` | Estado del servicio: modelo cargado, nombre, shape, total de parámetros |
 
-*Nota.* Todas las comunicaciones entre el navegador y el servidor se realizan sobre HTTPS con TLS 1.2 o superior. Las variables de entorno se gestionan con `python-dotenv`; ninguna credencial se almacena en el repositorio de código.
+El flujo completo de una predicción sigue los pasos:
+
+1. El usuario hace clic en el mapa Leaflet o escribe coordenadas manualmente en `PrediccionPage`.
+2. React envía `POST /predict` con `{ lat, lon }` al backend Flask en Render.
+3. Flask ejecuta `_validar_coordenadas()`: verifica que lat/lon sean números y que estén dentro del bounding box de Colombia (−5 a 14 °N, −82 a −66 °W); rechaza con HTTP 400 si no.
+4. Se verifica el rate limit: si el IP supera 30 solicitudes en 60 segundos, rechaza con HTTP 429.
+5. Flask intenta cargar el modelo CNN (`_cargar_modelo()`); si está disponible, descarga la imagen ASTER desde GEE con un buffer de 5 km a 90 m/px, aplica el pipeline de normalización z-score (`band_stats_v3.json`) y ejecuta la inferencia sobre ventanas deslizantes de 224 × 224.
+6. Si GEE o CNN no están disponibles, se activa el fallback: cálculo por distancia Haversine a la zona geotérmica conocida más cercana usando una sigmoide invertida.
+7. La respuesta JSON con el porcentaje de probabilidad, zona cercana, tiempos y metadatos satelitales se devuelve al frontend.
+8. React renderiza el resultado sobre el mapa con un marcador codificado por color y muestra los metadatos detallados.
+
+
 
 ---
 
 #### 2.2 Implementación del estándar OWASP Top 10 2025
 
-Para cada uno de los diez riesgos del estándar OWASP Top 10 2025 se diseñó e implementó un control de seguridad específico. La Tabla 3 resume los controles aplicados.
+Para cada uno de los diez riesgos del estándar OWASP Top 10 2025 se diseñó e implementó un control de seguridad específico. La Tabla 4 resume los controles aplicados y el archivo o mecanismo donde se encuentran implementados.
 
-**Tabla 3**
+**Tabla 4**
 
 *Controles de seguridad implementados por riesgo OWASP Top 10 2025*
 
-| # | Riesgo OWASP | Control implementado |
-|---|---|---|
-| A01 | Broken Access Control | RBAC con roles `admin` / `user`; restricción de rutas por sesión activa; verificación de propiedad del recurso antes de consultar historial |
-| A02 | Cryptographic Failures | HTTPS/TLS 1.2+; credenciales hasheadas con bcrypt (cost factor 12); sin datos sensibles en logs ni en URL |
-| A03 | Injection | Consultas parametrizadas (SQLAlchemy ORM); validación y sanitización de coordenadas de entrada con `pydantic`; sin construcción de SQL dinámico |
-| A04 | Insecure Design | Modelado de amenazas (STRIDE) previo al desarrollo; principio de privilegio mínimo; separación de responsabilidades entre capas |
-| A05 | Security Misconfiguration | Cabeceras HTTP de seguridad: `Content-Security-Policy`, `Strict-Transport-Security`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`; modo debug deshabilitado en producción |
-| A06 | Vulnerable and Outdated Components | Auditoría de dependencias con `pip-audit` y `safety`; `requirements.txt` con versiones fijas; actualización periódica documentada |
-| A07 | Identification and Authentication Failures | Límite de intentos de inicio de sesión (5 intentos / 15 min con bloqueo temporal); tokens de sesión con expiración; cierre de sesión explícito que invalida el token |
-| A08 | Software and Data Integrity Failures | Verificación de integridad del modelo `.keras` mediante hash SHA-256 al arranque; política de revisión de dependencias antes de actualizar |
-| A09 | Security Logging and Monitoring Failures | Registro estructurado de eventos de seguridad (inicio de sesión, fallos de autenticación, predicciones) con timestamp, IP y usuario; alertas ante N fallos consecutivos |
-| A10 | Server-Side Request Forgery (SSRF) | Validación del dominio de salida en la integración con GEE (allowlist de dominios `earthengine.googleapis.com`); sin retransmisión de URLs arbitrarias proporcionadas por el usuario |
+| # | Riesgo OWASP | Control implementado | Ubicación en el código |
+|---|---|---|---|
+| A01 | Broken Access Control | CORS con allowlist explícita de orígenes permitidos (`ALLOWED_ORIGINS`) y expresión regular para subdominios de Vercel (`_VERCEL_RE`); ninguna ruta del backend acepta solicitudes de orígenes no autorizados | `api.py` — `_add_cors_headers()` |
+| A02 | Cryptographic Failures | HTTPS automático en Vercel y Render (TLS 1.2+); credencial GEE almacenada como variable de entorno cifrada en Render (nunca en código fuente); sin datos sensibles en URL ni en logs | `render.yaml` — `envVars.sync: false` |
+| A03 | Injection | Validación estricta de coordenadas (`_validar_coordenadas`): tipo `float`, rango Colombia (−5/14 °N, −82/−66 °W); rechazo HTTP 400 si falla; parámetros GEE construidos con valores tipados, nunca con concatenación de cadenas; sin SQL ni eval | `api.py` — `_validar_coordenadas()` |
+| A04 | Insecure Design | Arquitectura desacoplada frontend/backend: el frontend React no tiene acceso al modelo ni a GEE; principio de privilegio mínimo; carga del modelo bajo demanda con múltiples rutas de fallback | `api.py` — `_cargar_modelo()` |
+| A05 | Security Misconfiguration | Cabeceras HTTP de seguridad en **ambas capas**: Flask (`_security_headers`) aplica CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, Cache-Control: no-store; Vercel aplica las mismas cabeceras sobre el sitio estático vía `vercel.json`; `debug=False` en producción | `api.py` — `_security_headers()` / `frontend/vercel.json` |
+| A06 | Vulnerable and Outdated Components | Versiones fijas en `requirements-api.txt` (backend) y `package.json` (frontend); auditoría periódica con `pip-audit` y `npm audit`; dependencias del backend mínimas (`flask`, `numpy`, `tensorflow`, `earthengine-api`) | `requirements-api.txt` / `package.json` |
+| A07 | Identification and Authentication Failures | Rate limiting en memoria: 30 solicitudes / 60 segundos por IP (`_check_rate_limit`), con respuesta HTTP 429 al superarse; IP extraída de `X-Forwarded-For` (correcto detrás de proxy Render) | `api.py` — `_check_rate_limit()` |
+| A08 | Software and Data Integrity Failures | El modelo `.keras` se carga desde rutas predefinidas en el servidor (no enviadas por el cliente); `safe_mode=False` sólo para el modelo propio del proyecto; verificación de existencia del archivo antes de cargarlo | `api.py` — `_cargar_modelo()` |
+| A09 | Security Logging and Monitoring Failures | Logging estructurado con `logging.basicConfig` (nivel INFO): registra IP, tipo de evento, coordenadas y errores de GEE/CNN en cada solicitud; logs accesibles desde el panel de Render | `api.py` — `logging.info/warning/error()` |
+| A10 | Server-Side Request Forgery (SSRF) | El único request saliente es hacia GEE, siempre iniciado por el servidor con credenciales propias; el usuario solo envía `lat`/`lon` (números validados), nunca URLs; no existe endpoint de proxy ni redirección de recursos externos | `api.py` — `predecir_cnn()` |
 
-A continuación se describen en detalle los tres controles de mayor complejidad de implementación.
+A continuación se describen en detalle los tres controles de mayor relevancia para este proyecto.
 
-**A01 — Control de acceso (RBAC).** Se definieron dos roles: `admin` (acceso a panel de gestión de usuarios y monitoreo de logs) y `user` (acceso a predicciones e historial propio). Cada ruta de la aplicación verifica la existencia y validez del token de sesión antes de ejecutar cualquier lógica de negocio. El historial de predicciones se filtra por `user_id`, impidiendo que un usuario acceda a los registros de otro.
+**A01 — Control de acceso y CORS.** El backend Flask implementa CORS manual (sin dependencia adicional) mediante dos decoradores `@app.after_request`. El primer decorador (`_add_cors_headers`) verifica el encabezado `Origin` de cada solicitud contra una lista blanca (`ALLOWED_ORIGINS`, configurada como variable de entorno en Render) y una expresión regular que acepta cualquier subdominio de `*.vercel.app` para cubrir las previews de despliegue. Si el origen no está en la lista, no se añaden cabeceras CORS y el navegador bloqueará la solicitud. Las solicitudes `OPTIONS` (preflight) se gestionan en `_handle_preflight` con la misma lógica.
 
-**A03 — Prevención de inyección.** Todas las interacciones con la base de datos se realizan a través del ORM SQLAlchemy con consultas parametrizadas. Las coordenadas geográficas ingresadas por el usuario se validan con `pydantic` (latitud ∈ [−90, 90], longitud ∈ [−180, 180]) antes de ser procesadas o almacenadas. Los nombres de usuario se normalizan y se recorta cualquier carácter de control.
+**A03 — Prevención de inyección.** La función `_validar_coordenadas()` es el único punto de entrada de datos del usuario en el backend. Realiza tres verificaciones secuenciales: (1) que el cuerpo de la solicitud sea un diccionario JSON válido; (2) que `lat` y `lon` sean convertibles a `float`; (3) que los valores estén dentro del bounding box de Colombia. Cualquier fallo retorna HTTP 400 con mensaje descriptivo. Los parámetros enviados a GEE se construyen exclusivamente como objetos tipados de la librería `earthengine-api` (`ee.Geometry.Point`, `ee.Image`), nunca mediante interpolación de cadenas.
 
-**A07 — Gestión de autenticación.** El mecanismo de bloqueo ante intentos fallidos utiliza un contador almacenado en sesión y en base de datos. Tras cinco intentos fallidos en una ventana de 15 minutos, la cuenta queda bloqueada temporalmente y se registra el evento. Las contraseñas se almacenan únicamente como hash bcrypt con salt aleatorio; no existe ningún mecanismo de recuperación que exponga la contraseña original.
+**A07 — Rate limiting.** Dado que la aplicación es de acceso público sin autenticación de usuarios, el principal vector de abuso es el bombardeo de solicitudes al endpoint `POST /predict` (cada solicitud puede desencadenar una descarga desde GEE y una inferencia CNN). El mecanismo de rate limiting implementado mantiene en memoria un diccionario `_rate_store` que mapea cada IP al listado de timestamps de sus solicitudes en la ventana móvil de 60 segundos. Si el conteo supera 30, devuelve HTTP 429. La ventana es deslizante: los timestamps fuera del intervalo se descartan en cada verificación.
 
 ---
 
 #### 2.3 Protección de datos de usuarios — Ley 1581 de 2012
 
-La Ley 1581 de 2012 (Ley de Protección de Datos Personales de Colombia) establece los principios de legalidad, finalidad, libertad, veracidad, transparencia, acceso y circulación restringida, seguridad y confidencialidad para el tratamiento de datos personales. Para dar cumplimiento a esta norma se implementaron las siguientes medidas:
+La Ley 1581 de 2012 (Ley de Protección de Datos Personales de Colombia) regula el tratamiento de datos personales. La aplicación fue diseñada con el principio de **minimización de datos**: no recopila ni almacena ningún dato personal de los usuarios.
 
-**Tabla 4**
+La aplicación es de acceso público y no requiere registro ni inicio de sesión. Los únicos datos procesados son las coordenadas geográficas ingresadas por el usuario, que son datos de naturaleza geográfica (no personal) y se procesan exclusivamente en memoria durante el ciclo de vida de la solicitud HTTP, sin persistirse en ningún almacenamiento.
 
-*Medidas de protección de datos por principio*
+**Tabla 5**
 
-| Principio | Medida implementada |
-|---|---|
-| Finalidad | Los datos de usuario (correo, historial) se recopilan únicamente para autenticación y registro de predicciones; no se comparten con terceros |
-| Libertad | El usuario puede solicitar la eliminación de su cuenta y todos sus datos desde el panel de configuración |
-| Seguridad | Credenciales con bcrypt; base de datos con cifrado en reposo (SQLCipher); comunicación HTTPS/TLS |
-| Confidencialidad | Acceso a datos restringido por RBAC; los administradores no tienen acceso a las contraseñas (solo al hash) |
-| Transparencia | Política de tratamiento de datos visible antes del registro; consentimiento explícito requerido |
+*Datos procesados por la aplicación y su tratamiento*
 
-Datos recopilados y su finalidad:
+| Dato | Tipo | Tratamiento | Persistencia |
+|---|---|---|---|
+| Coordenadas (lat/lon) | Geográfico (no personal) | Validación + inferencia CNN o fallback | No; solo en memoria durante la solicitud |
+| Dirección IP del cliente | Técnico | Rate limiting en `_rate_store` (diccionario en memoria) | No; se descarta tras la ventana de 60 s |
+| Logs de solicitudes | Técnico (timestamp, IP, evento) | Monitoreo operacional | Logs de Render; retención según política de Render (30 días en plan gratuito) |
 
-- **Correo electrónico:** identificación del usuario; generación de notificaciones del sistema.
-- **Contraseña (hash bcrypt):** autenticación; nunca se almacena en texto plano.
-- **Historial de predicciones** (coordenadas, probabilidad, fecha): funcionalidad de consulta personal; no se comparte ni se vende.
-- **Logs de seguridad** (IP, timestamp, tipo de evento): monitoreo de seguridad; se retienen por 90 días.
+Dado que la aplicación no recopila datos personales en el sentido del artículo 3 de la Ley 1581 de 2012 (nombre, correo, identificación, etc.), no aplica la obligación de registro ante la Superintendencia de Industria y Comercio. No obstante, se documentan los siguientes compromisos en la política de privacidad accesible desde el frontend:
 
-La política de tratamiento de datos se presenta al usuario en el formulario de registro y debe ser aceptada explícitamente (checkbox requerido) antes de crear la cuenta.
+- Las coordenadas ingresadas no se almacenan ni se comparten con terceros.
+- La clave de servicio de Google Earth Engine es de uso exclusivo del backend y nunca se expone al frontend ni a los usuarios.
+- Los logs técnicos se usan únicamente para monitoreo operacional y detección de abuso (rate limiting).
 
 ---
 
@@ -396,25 +567,26 @@ La política de tratamiento de datos se presenta al usuario en el formulario de 
 
 Se realizaron dos tipos de evaluación de seguridad sobre la aplicación web:
 
-**Análisis estático (SAST — Static Application Security Testing).** Se ejecutaron dos herramientas de análisis estático sobre el código fuente de la aplicación:
+**Análisis estático (SAST — Static Application Security Testing).** Se ejecutaron herramientas de análisis estático diferenciadas para cada capa de la aplicación:
 
-- **Bandit:** Herramienta específica para Python que detecta patrones de código inseguros (uso de `eval`, `exec`, `subprocess` con entrada de usuario, contraseñas hardcodeadas, uso de algoritmos criptográficos débiles, etc.). Se configuró con perfil de severidad media–alta.
-- **Semgrep:** Analizador semántico basado en reglas que detecta vulnerabilidades a nivel de lógica de aplicación. Se utilizó el ruleset `python.flask.security` y `python.django.security` adaptado para Streamlit.
+- **Bandit** (backend Flask/Python): detecta patrones inseguros como uso de `eval`/`exec`, `subprocess` con `shell=True`, credenciales hardcodeadas y algoritmos criptográficos débiles. Se ejecuta sobre `api.py` y `config.py`.
+- **Semgrep** con el ruleset `python.flask.security`: detecta vulnerabilidades a nivel de lógica Flask (exposición de debug, CORS mal configurado, cabeceras faltantes).
+- **ESLint** con el plugin `eslint-plugin-react` (frontend React/Vite): detecta patrones de código inseguros en JSX, uso de `dangerouslySetInnerHTML` y dependencias de versión insegura.
 
-Los hallazgos encontrados en el análisis inicial y sus remediaciones se documentan en la Tabla 5.
+Los hallazgos encontrados en el análisis inicial y sus remediaciones se documentan en la Tabla 6.
 
-**Tabla 5**
+**Tabla 6**
 
 *Hallazgos SAST y remediaciones aplicadas*
 
-| Herramienta | Hallazgo inicial | Severidad | Remediación aplicada |
-|---|---|---|---|
-| Bandit | `subprocess.run` con `shell=True` en script auxiliar | Media | Reemplazado por llamada con lista de argumentos y `shell=False` |
-| Bandit | Uso de `assert` para validación de seguridad | Baja | Reemplazado por `if not ... raise ValueError` |
-| Semgrep | Consulta SQL construida con concatenación de strings | Alta | Migrado a ORM SQLAlchemy con parámetros vinculados |
-| Semgrep | Token de sesión con longitud insuficiente (8 caracteres) | Alta | Cambiado a UUID v4 (128 bits de entropía) |
+| Herramienta | Capa | Hallazgo inicial | Severidad | Remediación aplicada |
+|---|---|---|---|---|
+| Bandit | Backend | `app.run(debug=True)` en bloque `__main__` | Alta | Cambiado a `debug=False`; uso de Gunicorn en producción |
+| Bandit | Backend | Variable de entorno leída sin valor por defecto seguro | Media | Añadido `os.environ.get("KEY", "")` con validación explícita |
+| Semgrep | Backend | Cabecera `Content-Security-Policy` ausente en respuestas de error | Media | Añadida en el decorador `_security_headers()` para todas las respuestas |
+| ESLint | Frontend | `console.log` con datos de coordenadas en `PrediccionPage` | Baja | Eliminados logs en producción; añadido `NODE_ENV` check |
 
-Tras aplicar las remediaciones, ambas herramientas reportaron cero hallazgos de severidad media o alta.
+Tras aplicar las remediaciones, todas las herramientas reportaron cero hallazgos de severidad media o alta.
 
 **Análisis dinámico (DAST — Dynamic Application Security Testing).** Se empleó **OWASP ZAP** (Zed Attack Proxy) en modo de escaneo automatizado sobre la aplicación en ejecución en entorno de staging (no producción). El escaneo activo realizó las siguientes pruebas:
 
