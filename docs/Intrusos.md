@@ -290,221 +290,174 @@ Esta integración garantiza que la seguridad se previene sistemáticamente desde
 
 ### Desarrollo de Ingeniería
 
-En este capítulo se describen los procedimientos realizados para implementar la interfaz web segura sobre el modelo GeotermiaCNN_V7, aplicar los controles del estándar OWASP Top 10 2025 y garantizar la protección de los datos personales de los usuarios conforme a la Ley 1581 de 2012.
+Este capítulo documenta las cinco etapas del ciclo de ingeniería segura aplicadas al proyecto. El sistema se construye en la carpeta raíz del proyecto (`geotermia-colombia-cnn`) y se complementa con el frontend en `frontend/`, la API Flask en `api.py` y el despliegue seguro en `render.yaml`.
 
 ---
 
-#### 2.1 Arquitectura de la interfaz web y entorno de despliegue
+#### 2.1 Etapa 1: Análisis e Ingeniería de Requerimientos
 
-La aplicación se implementó con una arquitectura desacoplada (decoupled architecture) que separa completamente la capa de presentación de la lógica de negocio e inferencia:
+En esta etapa se definieron los requerimientos de seguridad, funcionales y no funcionales necesarios para el sistema, además de las historias de usuario, los casos de uso y los casos de abuso.
 
-- **Frontend:** aplicación de página única (SPA) construida con **React 18 + Vite 5**, usando Tailwind CSS para estilos, React Router v7 para navegación, Leaflet/react-leaflet para mapas interactivos y Recharts para visualización de métricas. Se despliega como sitio estático en **Vercel**.
-- **Backend:** API REST construida con **Flask** (Python), que integra TensorFlow/Keras para la inferencia CNN y Google Earth Engine para la descarga de imágenes ASTER. Se despliega en **Render** usando Gunicorn como servidor WSGI, con la configuración declarativa del archivo `render.yaml`.
+##### Requisitos de seguridad
 
-Esta separación reduce la superficie de ataque: el frontend no tiene acceso directo al modelo ni a las credenciales de GEE; toda interacción con recursos sensibles ocurre en el backend.
+- Permitir solicitudes solo desde orígenes autorizados mediante CORS.
+- Validar y sanitizar las coordenadas recibidas en `POST /predict`.
+- Limitar solicitudes por IP a 30 peticiones en 60 segundos.
+- Aplicar cabeceras de seguridad HTTP en todas las respuestas.
+- Almacenar secretos de GEE en variables de entorno en Render.
+- Exigir HTTPS entre frontend y backend.
+- Registrar eventos técnicos sin exponer datos personales.
+- Garantizar la integridad del modelo cargado desde rutas internas.
 
-**Tabla 2**
+##### Requisitos funcionales
 
-*Stack tecnológico de la aplicación*
+- El backend debe recibir coordenadas geográficas y devolver la predicción de potencial geotérmico.
+- Debe exponer `/health` y `/zonas` como endpoints de soporte.
+- Debe devolver un JSON con probabilidad, zona cercana, metadatos y tiempos de procesamiento.
+- Debe permitir un fallback cuando GEE o el modelo no estén disponibles.
+- El frontend debe presentar resultados en un mapa interactivo.
 
-| Capa | Tecnología | Versión | Hosting |
+##### Requisitos no funcionales
+
+- Respuesta de predicción menor a 10 segundos en condiciones normales.
+- Disponibilidad del servicio cercana al 99 % en el entorno de despliegue.
+- Código mantenible con dependencias controladas en `requirements-api.txt` y `package.json`.
+- Despliegue reproducible con `render.yaml` y GitHub Actions.
+- Operación en modo producción sin `debug` activado.
+
+##### Historias de usuario
+
+- Como usuario, quiero seleccionar un punto en el mapa y obtener el potencial geotérmico para priorizar áreas.
+- Como operador, quiero verificar el estado de la API para constatar que el servicio está disponible.
+- Como desarrollador, quiero que el backend rechace orígenes no autorizados para proteger la aplicación.
+
+##### Casos de uso
+
+| Caso de uso | Actor | Descripción | Resultado esperado |
 |---|---|---|---|
-| **Frontend** | React + Vite | 18.2 / 5.2 | Vercel (estático) |
-| **Estilos** | Tailwind CSS | 3.4 | — |
-| **Routing** | React Router | 7.13 | — |
-| **Mapas** | Leaflet + react-leaflet | 1.9 / 4.2 | — |
-| **Gráficas** | Recharts | 3.8 | — |
-| **Backend** | Flask | 3.x | Render (Web Service) |
-| **Servidor WSGI** | Gunicorn | latest | Render |
-| **ML** | TensorFlow / Keras | 2.21 | — |
-| **Geodatos** | Google Earth Engine SDK | latest | — |
-| **CI/CD + Repo** | GitHub + GitHub Actions | — | GitHub |
+| CU1 | Usuario | Envía coordenadas al backend para obtener predicción | Recibe probabilidad y datos asociados |
+| CU2 | Frontend | Solicita lista de zonas geotérmicas | Muestra zonas en el mapa |
+| CU3 | Operador | Consulta el estado del servicio | Recibe estado y nombre del modelo |
+| CU4 | Sistema | Aplica fallback si GEE falla | Devuelve una predicción aproximada |
 
-**Stack tecnológico de despliegue**
+##### Casos de abuso
 
-| Herramienta | Plan | Función en el proyecto |
-|---|---|---|
-| **GitHub** | Gratuito | Repositorio del código fuente (rama `main`); webhook que activa Render y Vercel en cada push |
-| **GitHub Actions** | Gratuito (2 000 min/mes) | Pipeline CI/CD: SAST con Bandit (backend Flask) y ESLint (frontend React) antes de cada despliegue; bloquea el push si se detectan hallazgos de severidad media o alta |
-| **Render** | Gratuito (Web Service) | Hosting de la API Flask (`api.py`) vía Gunicorn; configuración declarativa en `render.yaml`; gestión segura de variables de entorno (`GEE_SERVICE_ACCOUNT_KEY`, `CORS_ORIGINS`) |
-| **Vercel** | Gratuito (Hobby) | Hosting del frontend React/Vite como sitio estático; HTTPS automático; cabeceras de seguridad configuradas en `vercel.json` (CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy) |
-
-**Figura 2a**
-
-*Pipeline CI/CD — ¿cómo llega el código del desarrollador a los servidores?*
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                                                                         │
-│  PASO 1 ── El desarrollador sube el código                              │
-│                                                                         │
-│   Desarrollador  ──── git push ────►  GitHub (rama main)               │
-│                                                                         │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  PASO 2 ── GitHub activa el análisis automático de seguridad            │
-│                                                                         │
-│   GitHub  ──────────────►  GitHub Actions                              │
-│                                 │                                       │
-│                    ┌────────────┴────────────┐                         │
-│                    │                         │                         │
-│              Bandit (Python)           ESLint (React)                  │
-│              Revisa api.py             Revisa frontend/                 │
-│                    │                         │                         │
-│                    └────────────┬────────────┘                         │
-│                                 │                                       │
-│                    ┌────────────┴────────────┐                         │
-│                    │                         │                         │
-│               SIN errores             CON errores                      │
-│                    │                         │                         │
-│                    ▼                         ▼                         │
-│              APROBADO ✓              BLOQUEADO ✗                       │
-│                                    (el despliegue                      │
-│                                     no avanza)                         │
-│                                                                         │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│  PASO 3 ── Solo si fue aprobado: despliegue en paralelo                 │
-│                                                                         │
-│   GitHub Actions  ──────────────────────────────────────               │
-│                         │                         │                    │
-│                         ▼                         ▼                    │
-│                  ┌─────────────┐         ┌─────────────┐              │
-│                  │   RENDER    │         │   VERCEL    │              │
-│                  │  (Backend)  │         │ (Frontend)  │              │
-│                  └──────┬──────┘         └──────┬──────┘              │
-│                         │                       │                      │
-│                         ▼                       ▼                      │
-│                   API Flask                Sitio React                 │
-│                   HTTPS auto.              HTTPS auto.                 │
-│                   render.yaml              vercel.json                 │
-│                   Clave GEE                Cabeceras CSP               │
-│                   (var. entorno)                                       │
-│                         │                       │                      │
-│                         └───────────────────────┘                      │
-│                                    │                                   │
-│                        Se comunican entre sí                           │
-│                        vía HTTPS + CORS                                │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-```
-
-*Nota.* Las credenciales del satélite (GEE) se guardan únicamente como variable de entorno en Render; nunca se escriben en el código ni en el repositorio de GitHub.
+- Peticiones con coordenadas inválidas o fuera de Colombia.
+- Solicitudes masivas desde la misma IP para provocar denegación de servicio.
+- Orígenes no autorizados intentando consumir la API.
+- Payload JSON malformado para generar errores en el servidor.
+- Intentos de descubrir rutas internas no expuestas.
 
 ---
 
-**Figura 2b**
+#### 2.2 Etapa 2: Arquitectura y Diseño
 
-*¿Qué ocurre paso a paso cuando el usuario pide una predicción?*
+En esta etapa se definió la arquitectura del sistema, los patrones de diseño aplicados y el modelado de ataques.
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                                                                         │
-│   USUARIO                                                               │
-│   ─────────────────────────────────────────────────────────────────    │
-│   Abre el sitio web y hace clic sobre un punto del mapa de Colombia.   │
-│   El sitio envía las coordenadas (latitud y longitud) al servidor.     │
-│                                                                         │
-│   Sitio web  ──── POST /predict { lat, lon } (HTTPS) ────►  API Flask  │
-│                                                                         │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│   API FLASK  (servidor en Render)                                       │
-│   ─────────────────────────────────────────────────────────────────    │
-│                                                                         │
-│   Verificación 1 — ¿Las coordenadas son válidas?                       │
-│      • ¿Son números?  ¿Están dentro del territorio colombiano?         │
-│        NO  →  responde "error 400 – coordenadas inválidas"             │
-│        SI  →  continúa                                                  │
-│                                                                         │
-│   Verificación 2 — ¿El usuario está abusando del sistema?              │
-│      • Si el mismo IP envió 30 o más solicitudes en 60 segundos:       │
-│        →  responde "error 429 – demasiadas solicitudes"                │
-│        →  continúa                                                      │
-│                                                                         │
-│   Obtención de la imagen satelital                                      │
-│      ┌─────────────────────────┐    ┌──────────────────────────────┐  │
-│      │  Caso normal            │    │  Caso de respaldo            │  │
-│      │  Google Earth Engine    │    │  (si GEE no está disponible) │  │
-│      │  disponible             │    │                              │  │
-│      │                         │    │  Se usan las 10 zonas        │  │
-│      │  Descarga imagen ASTER  │    │  geotérmicas conocidas de    │  │
-│      │  del punto pedido:      │    │  Colombia.                   │  │
-│      │  • 7 bandas espectrales │    │  Se calcula cuál queda más   │  │
-│      │  • Área de 5 km         │    │  cerca del punto pedido      │  │
-│      │  • 90 m por píxel       │    │  (fórmula de Haversine).     │  │
-│      │         │               │    │  La probabilidad se estima   │  │
-│      │         ▼               │    │  en función de esa distancia.│  │
-│      │   Modelo CNN            │    │                              │  │
-│      │   EfficientNetB0        │    │                              │  │
-│      │   Analiza 224×224 px    │    │                              │  │
-│      │   Devuelve probabilidad │    │                              │  │
-│      └──────────┬──────────────┘    └───────────────┬──────────────┘  │
-│                 └───────────────────────────────────┘                  │
-│                                     │                                  │
-│                                     ▼                                  │
-│   Respuesta al sitio web                                               │
-│      • Porcentaje de potencial geotérmico  (ej. 78 %)                 │
-│      • Zona conocida más cercana           (ej. Nevado del Ruiz)      │
-│      • Tiempo de respuesta y metadatos de la imagen                   │
-│                                                                         │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                         │
-│   SITIO WEB  (React en Vercel)                                          │
-│   ─────────────────────────────────────────────────────────────────    │
-│   Muestra el resultado sobre el mapa con un marcador de color:         │
-│      Verde  →  potencial alto       Amarillo  →  potencial medio       │
-│      Rojo   →  potencial bajo       Gris      →  sin datos             │
-│                                                                         │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+##### Arquitectura del sistema
 
-*Nota.* La aplicación no guarda ningún dato del usuario. Las coordenadas se procesan en memoria durante la solicitud y se descartan al responder.
+La solución se diseñó con una arquitectura desacoplada de tres capas:
 
-**Arquitectura lógica de la aplicación (tres capas)**
+- Presentación: frontend React/Vite en `frontend/src/`.
+- Lógica de negocio: API REST Flask en `api.py`.
+- Modelo y datos: TensorFlow/Keras en `models/saved_models/` y Google Earth Engine como fuente de imágenes.
 
-**Tabla 3**
+Esta separación permite mantener el modelo y las credenciales en el backend.
 
-*Capas lógicas de la aplicación web*
+##### Patrones de diseño aplicados
 
-| Capa | Componente | Responsabilidad |
-|---|---|---|
-| Presentación | React 18 + Vite (Vercel) | 5 páginas SPA: Inicio, Predicción, Métricas, Arquitectura CNN, Proyecto; mapas Leaflet; gráficas Recharts |
-| API / Lógica de negocio | Flask + Gunicorn (Render) | Validación de entradas, rate limiting, CORS, cabeceras de seguridad, inferencia CNN, fallback por proximidad |
-| Modelo + Geodatos | TensorFlow/Keras + GEE | Descarga ASTER desde NASA/ASTER_GED/AG100_003, normalización z-score, predicción EfficientNetB0 |
+- `Facade`: `api.py` expone endpoints simples que ocultan la complejidad de inferencia.
+- `Singleton`/lazy load: `_cargar_modelo()` y `_inicializar_ee()` se inicializan una sola vez.
+- `Adapter`: adaptación de las siete bandas ASTER al formato requerido por el modelo base.
+- `Strategy`: selección entre inferencia CNN y fallback por proximidad.
 
-**Páginas del frontend y endpoints del backend**
+##### Análisis de riesgos
 
-El frontend expone cinco páginas con React Router:
+| Riesgo | Impacto | Probabilidad | Control |
+|---|---|---|---|
+| Orígenes no autorizados | Alto | Medio | CORS allowlist en `api.py` |
+| Inyección de datos | Alto | Medio | Validación estricta de coordenadas |
+| Abuso por solicitudes masivas | Alto | Alto | Rate limiting en memoria |
+| Exposición de secretos | Alto | Medio | Variables de entorno en Render |
+| Falla de GEE | Medio | Medio | Fallback de proximidad |
+| Modelo no disponible | Medio | Bajo | Carga segura desde rutas internas |
 
-| Ruta | Componente | Descripción |
-|---|---|---|
-| `/` | `HomePage` | Presentación del proyecto con animaciones GSAP |
-| `/prediccion` | `PrediccionPage` | Mapa Leaflet interactivo; envía `POST /predict` al backend |
-| `/metricas` | `MetricasPage` | Métricas del modelo (Accuracy, Precision, Recall, F1, curva ROC) en Recharts |
-| `/arquitectura` | `ArquitecturaPage` | Diagrama de la arquitectura CNN (EfficientNetB0 + Channel Adapter) |
-| `/proyecto` | `ProyectoPage` | Descripción del proyecto y equipo |
+##### Modelado de ataques
 
-El backend expone tres endpoints REST:
+Se utilizó STRIDE para modelar amenazas contra los activos críticos:
 
-| Endpoint | Método | Descripción |
-|---|---|---|
-| `/predict` | `POST` | Recibe `{"lat": float, "lon": float}`; ejecuta CNN o fallback; devuelve porcentaje, zona cercana, metadatos ASTER y tiempos |
-| `/zonas` | `GET` | Devuelve la lista de 10 zonas geotérmicas conocidas en Colombia |
-| `/health` | `GET` | Estado del servicio: modelo cargado, nombre, shape, total de parámetros |
+- Spoofing: origen de petición falso.
+- Tampering: manipulación del JSON de entrada.
+- Repudiation: falta de registro de eventos.
+- Information disclosure: fuga de datos en cabeceras o logs.
+- Denial of service: solicitudes masivas al endpoint de predicción.
+- Elevation of privilege: uso indebido de endpoints internos.
 
-El flujo completo de una predicción sigue los pasos:
+El ataque principal es una petición mal formada a `/predict` desde un origen no autorizado.
 
-1. El usuario hace clic en el mapa Leaflet o escribe coordenadas manualmente en `PrediccionPage`.
-2. React envía `POST /predict` con `{ lat, lon }` al backend Flask en Render.
-3. Flask ejecuta `_validar_coordenadas()`: verifica que lat/lon sean números y que estén dentro del bounding box de Colombia (−5 a 14 °N, −82 a −66 °W); rechaza con HTTP 400 si no.
-4. Se verifica el rate limit: si el IP supera 30 solicitudes en 60 segundos, rechaza con HTTP 429.
-5. Flask intenta cargar el modelo CNN (`_cargar_modelo()`); si está disponible, descarga la imagen ASTER desde GEE con un buffer de 5 km a 90 m/px, aplica el pipeline de normalización z-score (`band_stats_v3.json`) y ejecuta la inferencia sobre ventanas deslizantes de 224 × 224.
-6. Si GEE o CNN no están disponibles, se activa el fallback: cálculo por distancia Haversine a la zona geotérmica conocida más cercana usando una sigmoide invertida.
-7. La respuesta JSON con el porcentaje de probabilidad, zona cercana, tiempos y metadatos satelitales se devuelve al frontend.
-8. React renderiza el resultado sobre el mapa con un marcador codificado por color y muestra los metadatos detallados.
+---
 
+#### 2.3 Etapa 3: Codificación e Integración
 
+Esta etapa cubre la implementación del código, la revisión de seguridad estática y la integración del frontend con el backend.
+
+##### Revisión de código
+
+- Inspección manual de `api.py` y `config.py` en busca de prácticas inseguras.
+- Revisión de `render.yaml` para verificar el manejo de variables de entorno sensibles.
+- Verificación de dependencias en `requirements-api.txt` y `package.json`.
+
+##### Escaneo de vulnerabilidades — Análisis Estático
+
+- Bandit analizó `api.py` y `config.py`.
+- Semgrep se aplicó con reglas de seguridad Flask.
+- ESLint se ejecutó sobre el frontend React.
+
+Las incidencias de severidad media y alta se corrigieron antes del despliegue.
+
+##### Integración
+
+- El frontend consume `POST /predict` y muestra la respuesta JSON en la interfaz.
+- El backend devuelve probabilidad, zona, tiempos y metadatos.
+- El modelo y las credenciales se mantienen exclusivos del backend.
+
+---
+
+#### 2.4 Etapa 4: Pruebas y Despliegue
+
+Esta etapa valida el sistema en ejecución y asegura la configuración segura.
+
+##### Escaneo de vulnerabilidades — Análisis Dinámico
+
+- Se ejecutó OWASP ZAP contra la API en staging.
+- Se probaron inyección, XSS, cabeceras y TLS.
+- No se encontraron alertas de severidad alta o media.
+
+##### Configuración segura
+
+- `render.yaml` define el servicio Flask con `gunicorn api:app --workers 1 --timeout 120`.
+- `CORS_ORIGINS` y `GEE_SERVICE_ACCOUNT_KEY` se declaran como variables de entorno.
+- El backend aplica cabeceras de seguridad en cada respuesta.
+- El frontend en Vercel refuerza CSP y otras políticas.
+- El modo de producción se ejecuta sin `debug`.
+
+##### Despliegue
+
+- El backend se despliega en Render mediante `render.yaml`.
+- El frontend se despliega en Vercel como sitio estático.
+- GitHub Actions asegura análisis previo al despliegue.
+
+---
+
+#### 2.5 Etapa 5: Entrega Final
+
+La entrega final incluye el código completo, la documentación de seguridad y la evidencia de pruebas.
+
+- Entrega del proyecto completo en `geotermia-colombia-cnn`.
+- Soportes en `.zip` con código, documentación y configuraciones de despliegue.
+- Enlace de sustentación grabada para respaldar la presentación final.
+
+Esta etapa cierra el ciclo de ingeniería segura y deja el sistema listo para revisión académica y despliegue.
 
 ---
 
