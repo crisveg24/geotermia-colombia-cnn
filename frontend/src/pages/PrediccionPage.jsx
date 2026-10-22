@@ -97,8 +97,10 @@ export default function PrediccionPage() {
   }, []);
 
   const handlePredict = async () => {
-    const latNum = parseFloat(coords.lat);
-    const lngNum = parseFloat(coords.lng);
+    const latStr = String(coords.lat ?? "").replace(",", ".");
+    const lngStr = String(coords.lng ?? "").replace(",", ".");
+    const latNum = parseFloat(latStr);
+    const lngNum = parseFloat(lngStr);
 
     if (isNaN(latNum) || isNaN(lngNum)) {
       alert("Por favor ingresa coordenadas numéricas válidas.");
