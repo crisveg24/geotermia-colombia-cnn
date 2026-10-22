@@ -3,7 +3,7 @@ services:
     name: api-geotermia
     runtime: python
     buildCommand: pip install -r requirements-api.txt
-    startCommand: gunicorn api:app --bind 0.0.0.0:$PORT --timeout 120 --workers 1
+    startCommand: gunicorn api:app --bind 0.0.0.0:$PORT --timeout 120 --workers 1 --max-requests 25 --max-requests-jitter 5
     envVars:
       - key: CORS_ORIGINS
         sync: false
@@ -13,3 +13,5 @@ services:
         sync: false
       - key: PYTHON_VERSION
         value: "3.10.14"
+      - key: MALLOC_TRIM_THRESHOLD_
+        value: "65536"

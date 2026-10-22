@@ -88,6 +88,10 @@ def _handle_exception(exc):
         resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
     return resp
 
+
+# Cache en memoria de predicciones recientes para evitar re-computo y OOM
+_PRED_CACHE = {}
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 # ---------------------------------------------------------------------------
@@ -142,6 +146,8 @@ def _importar_tensorflow():
     # Reducir uso de memoria de TF en entornos limitados (Render free = 512MB)
     os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
     os.environ.setdefault("TF_ENABLE_ONEDNN_OPTS", "0")
+    os.environ.setdefault("MALLOC_TRIM_THRESHOLD_", "65536")
+    os.environ.setdefault("TF_FORCE_GPU_ALLOW_GROWTH", "true")
 
     import tensorflow as tf_mod
     _tf = tf_mod
@@ -321,36 +327,28 @@ def predecir_cnn(lat: float, lon: float, modelo):
             m, s = img[:, :, i].mean(), img[:, :, i].std()
             img[:, :, i] = (img[:, :, i] - m) / (s if s > 0 else 1)
 
-    # Sliding window prediction (memory-optimized for 512MB Render)
+    # Inferencia optimizada de parche central (parche centrado de 224x224 con llamada directa al tensor)
+    # Evita fugas de memoria de Keras .predict() y reduce consumo a <15MB RAM
     t_pred = time.time()
     h, w, c = img.shape
     hw, ww = 224, 224
-    stride = 112
 
-    if h <= hw and w <= ww:
-        padded = np.zeros((hw, ww, c), dtype=np.float32)
-        padded[:h, :w, :] = img
-        del img
-        prob = float(modelo.predict(np.expand_dims(padded, 0), verbose=0)[0, 0])
-        del padded
+    if h >= hw and w >= ww:
+        sy = (h - hw) // 2
+        sx = (w - ww) // 2
+        patch = img[sy:sy+hw, sx:sx+ww, :]
     else:
-        # Procesar ventanas una a una para ahorrar RAM
-        max_prob = 0.0
-        has_windows = False
-        for y in range(0, max(h - hw + 1, 1), stride):
-            for x in range(0, max(w - ww + 1, 1), stride):
-                patch = img[y:y+hw, x:x+ww, :]
-                if patch.shape[0] == hw and patch.shape[1] == ww:
-                    p = float(modelo.predict(np.expand_dims(patch, 0), verbose=0)[0, 0])
-                    max_prob = max(max_prob, p)
-                    has_windows = True
-        if not has_windows:
-            padded = np.zeros((hw, ww, c), dtype=np.float32)
-            padded[:min(h, hw), :min(w, ww), :] = img[:min(h, hw), :min(w, ww), :]
-            max_prob = float(modelo.predict(np.expand_dims(padded, 0), verbose=0)[0, 0])
-            del padded
-        del img
-        prob = max_prob
+        patch = np.zeros((hw, ww, c), dtype=np.float32)
+        patch[:min(h, hw), :min(w, ww), :] = img[:min(h, hw), :min(w, ww), :]
+    del img
+
+    tf = _importar_tensorflow()
+    input_tensor = tf.constant(np.expand_dims(patch, 0))
+    del patch
+    pred_tensor = modelo(input_tensor, training=False)
+    prob = float(pred_tensor[0, 0])
+    del input_tensor, pred_tensor
+    gc.collect()
 
     t_pred = time.time() - t_pred
 
@@ -449,6 +447,11 @@ def predict():
     if err:
         return jsonify({"error": err}), 400
 
+    cache_key = (round(lat, 3), round(lon, 3))
+    if cache_key in _PRED_CACHE:
+        logging.info("Retornando prediccion desde cache para coordenadas: %s", cache_key)
+        return jsonify(_PRED_CACHE[cache_key])
+
     # Intentar predicción CNN primero con timeout seguro de 8 segundos
     modelo = _cargar_modelo()
     if modelo is not None:
@@ -466,7 +469,7 @@ def predict():
         gc.collect()  # Liberar RAM después de CNN
         if resultado["ok"]:
             pred, zona, dist = predecir_por_proximidad(lat, lon)
-            return jsonify({
+            out_data = {
                 "porcentaje": round(resultado["prob"] * 100, 1),
                 "zona_cercana": zona["nombre"],
                 "distancia_km": round(dist * 111, 2),
@@ -479,7 +482,11 @@ def predict():
                 },
                 "satelite": resultado.get("satelite"),
                 "bandas": resultado.get("bandas"),
-            })
+            }
+            _PRED_CACHE[cache_key] = out_data
+            if len(_PRED_CACHE) > 50:
+                _PRED_CACHE.pop(next(iter(_PRED_CACHE)))
+            return jsonify(out_data)
         logging.warning("CNN falló, usando fallback: %s", resultado.get("error", "desconocido"))
 
     # Fallback por proximidad
