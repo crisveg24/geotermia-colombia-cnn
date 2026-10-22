@@ -11,7 +11,11 @@ import json
 import logging
 import tempfile
 import time
+import concurrent.futures
 from pathlib import Path
+
+# Thread pool persistente para inferencia (máx 1 worker para proteger los 512MB RAM de Render)
+_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 import numpy as np
 from flask import Flask, request, jsonify
@@ -257,7 +261,7 @@ def predecir_cnn(lat: float, lon: float, modelo):
 
     tmp_path = Path(tempfile.gettempdir()) / f"pred_{lat:.4f}_{lon:.4f}_{int(time.time()*1000)}.tif"
     try:
-        geemap.ee_export_image(image, filename=str(tmp_path), scale=90, region=roi, file_per_band=False, timeout=12)
+        geemap.ee_export_image(image, filename=str(tmp_path), scale=90, region=roi, file_per_band=False, timeout=25)
     except Exception as exc:
         logging.error("Error descargando imagen ASTER: %s", exc)
         return {"prob": 0.0, "ok": False, "error": f"ASTER download error: {exc}"}
@@ -452,17 +456,15 @@ def predict():
         logging.info("Retornando prediccion desde cache para coordenadas: %s", cache_key)
         return jsonify(_PRED_CACHE[cache_key])
 
-    # Intentar predicción CNN primero con timeout seguro de 8 segundos
+    # Intentar predicción CNN primero con timeout de 35 segundos
     modelo = _cargar_modelo()
     if modelo is not None:
-        import concurrent.futures
         try:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(predecir_cnn, lat, lon, modelo)
-                resultado = future.result(timeout=8.0)
+            future = _EXECUTOR.submit(predecir_cnn, lat, lon, modelo)
+            resultado = future.result(timeout=35.0)
         except concurrent.futures.TimeoutError:
-            logging.warning("CNN/GEE excedio timeout de 8s en Render. Usando fallback por proximidad.")
-            resultado = {"ok": False, "error": "Timeout de 8s en descarga de satelite"}
+            logging.warning("CNN/GEE excedio timeout de 35s en Render. Usando fallback por proximidad.")
+            resultado = {"ok": False, "error": "Timeout en descarga de satelite (35s)"}
         except Exception as exc:
             logging.warning("Error ejecutando CNN: %s", exc)
             resultado = {"ok": False, "error": str(exc)}
@@ -535,6 +537,17 @@ def health():
             "total_params": int(modelo.count_params()) if hasattr(modelo, "count_params") else None,
         }
     return jsonify(info)
+
+
+# ---------------------------------------------------------------------------
+# Precarga de modelo en producción / Render
+# ---------------------------------------------------------------------------
+if os.environ.get("RENDER") or os.environ.get("FLASK_ENV") == "production":
+    try:
+        logging.info("Precargando modelo CNN al iniciar Gunicorn...")
+        _cargar_modelo()
+    except Exception as _exc:
+        logging.warning("No se pudo precargar modelo al arranque: %s", _exc)
 
 
 # ---------------------------------------------------------------------------

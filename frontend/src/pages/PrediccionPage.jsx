@@ -76,6 +76,7 @@ export default function PrediccionPage() {
   const [coords, setCoords] = useState({ lat: 4.5709, lng: -74.2973 });
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState("");
   const [result, setResult] = useState(null);
   const [healthInfo, setHealthInfo] = useState(null);
   const [history, setHistory] = useState(getHistory);
@@ -112,9 +113,22 @@ export default function PrediccionPage() {
     setLoading(true);
     setPrediction(null);
     setResult(null);
+    setLoadingStep("Conectando con el servidor...");
+
+    let elapsed = 0;
+    const stepInterval = setInterval(() => {
+      elapsed += 1;
+      if (elapsed >= 35) {
+        setLoadingStep("Iniciando servidor de Render (cold start gratuito, ya casi)...");
+      } else if (elapsed >= 18) {
+        setLoadingStep("Procesando bandas en modelo CNN (EfficientNetB0)...");
+      } else if (elapsed >= 5) {
+        setLoadingStep("Descargando bandas satelitales NASA ASTER...");
+      }
+    }, 1000);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000);
+    const timeoutId = setTimeout(() => controller.abort(), 65000);
 
     try {
       const response = await fetch(`${API_URL}/predict`, {
@@ -124,6 +138,8 @@ export default function PrediccionPage() {
         signal: controller.signal,
       });
       clearTimeout(timeoutId);
+      clearInterval(stepInterval);
+      setLoadingStep("");
 
       if (!response.ok) {
         const errBody = await response.json().catch(() => ({}));
@@ -155,11 +171,13 @@ export default function PrediccionPage() {
       setHistory(updated);
     } catch (error) {
       clearTimeout(timeoutId);
+      clearInterval(stepInterval);
+      setLoadingStep("");
       console.error("Error API:", error);
       setLoading(false);
       setPrediction("ERROR");
       if (error.name === "AbortError") {
-        setResult({ error: "El servidor tardó más de 25s en responder (timeout)." });
+        setResult({ error: "El servidor tardó más de 65s en responder (timeout). Puede que Render esté iniciando." });
       } else {
         setResult({ error: error.message });
       }
@@ -434,9 +452,12 @@ export default function PrediccionPage() {
                   <span className="text-xs font-mono block">{result?.error || "Error de conexión con API"}</span>
                 </div>
               ) : loading ? (
-                <div className="text-cyan-500 relative z-10">
-                  <Cpu size={40} className="mx-auto mb-4 animate-bounce" />
-                  <span className="text-[10px] font-mono tracking-widest animate-pulse">EVALUANDO TENSOR_</span>
+                <div className="text-cyan-500 relative z-10 flex flex-col items-center">
+                  <Cpu size={40} className="mx-auto mb-3 animate-bounce" />
+                  <span className="text-[11px] font-mono tracking-widest animate-pulse text-cyan-300">EVALUANDO TENSOR_</span>
+                  <span className="text-[11px] text-gray-400 font-mono text-center mt-2 max-w-[240px] leading-tight">
+                    {loadingStep}
+                  </span>
                 </div>
               ) : (
                 <div className="opacity-20">
