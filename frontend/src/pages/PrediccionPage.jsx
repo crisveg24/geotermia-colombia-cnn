@@ -120,17 +120,17 @@ export default function PrediccionPage() {
     let elapsed = 0;
     const stepInterval = setInterval(() => {
       elapsed += 1;
-      if (elapsed >= 35) {
-        setLoadingStep("Iniciando servidor de Render (cold start gratuito, ya casi)...");
-      } else if (elapsed >= 18) {
+      if (elapsed >= 45) {
+        setLoadingStep("Cargando TensorFlow y modelo en Render (cold start gratuito, casi listo)...");
+      } else if (elapsed >= 20) {
         setLoadingStep("Procesando bandas en modelo CNN (EfficientNetB0)...");
       } else if (elapsed >= 5) {
-        setLoadingStep("Descargando bandas satelitales NASA ASTER...");
+        setLoadingStep("Descargando bandas satelitales NASA ASTER desde Earth Engine...");
       }
     }, 1000);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 65000);
+    const timeoutId = setTimeout(() => controller.abort(), 95000);
 
     try {
       const response = await fetch(`${API_URL}/predict`, {
@@ -179,7 +179,7 @@ export default function PrediccionPage() {
       setLoading(false);
       setPrediction("ERROR");
       if (error.name === "AbortError") {
-        setResult({ error: "El servidor tardó más de 65s en responder (timeout). Puede que Render esté iniciando." });
+        setResult({ error: "El servidor tardó más de 90s en responder (timeout). Puede que Render esté iniciando." });
       } else {
         setResult({ error: error.message });
       }
