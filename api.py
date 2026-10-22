@@ -36,12 +36,22 @@ LON_MIN, LON_MAX = -82.0, -66.0
 app = Flask(__name__)
 
 
+def _is_allowed_origin(origin: str) -> bool:
+    if not origin:
+        return False
+    if origin in ALLOWED_ORIGINS:
+        return True
+    if origin.startswith("https://") and origin.endswith(".vercel.app"):
+        return True
+    return bool(_VERCEL_RE.match(origin))
+
+
 @app.after_request
 def _add_cors_headers(response):
     origin = request.headers.get("Origin", "")
-    if origin in ALLOWED_ORIGINS or _VERCEL_RE.match(origin):
+    if _is_allowed_origin(origin):
         response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
     return response
 
@@ -50,12 +60,25 @@ def _add_cors_headers(response):
 def _handle_preflight():
     if request.method == "OPTIONS":
         origin = request.headers.get("Origin", "")
-        if origin in ALLOWED_ORIGINS or _VERCEL_RE.match(origin):
+        if _is_allowed_origin(origin):
             resp = app.make_default_options_response()
             resp.headers["Access-Control-Allow-Origin"] = origin
-            resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+            resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
             resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
             return resp
+
+
+@app.errorhandler(Exception)
+def _handle_exception(exc):
+    logging.exception("Error interno no capturado: %s", exc)
+    origin = request.headers.get("Origin", "")
+    resp = jsonify({"error": "Error interno del servidor", "detalle": str(exc)})
+    resp.status_code = 500
+    if _is_allowed_origin(origin):
+        resp.headers["Access-Control-Allow-Origin"] = origin
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+        resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    return resp
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
@@ -172,6 +195,9 @@ def _inicializar_ee():
                 key_data["client_email"], key_data=sa_key
             )
             ee.Initialize(credentials=credentials, project=project)
+        elif os.environ.get("RENDER") or os.environ.get("FLASK_ENV") == "production":
+            logging.warning("GEE_SERVICE_ACCOUNT_KEY no configurada en Render. Se usará fallback por proximidad.")
+            return False
         else:
             ee.Initialize(project=project)
 
@@ -215,9 +241,9 @@ def predecir_cnn(lat: float, lon: float, modelo):
     ]
     image = ee.Image("NASA/ASTER_GED/AG100_003").select(aster_bands).clip(roi)
 
-    tmp_path = Path(tempfile.gettempdir()) / f"pred_{lat:.4f}_{lon:.4f}.tif"
+    tmp_path = Path(tempfile.gettempdir()) / f"pred_{lat:.4f}_{lon:.4f}_{int(time.time()*1000)}.tif"
     try:
-        geemap.ee_export_image(image, filename=str(tmp_path), scale=90, region=roi, file_per_band=False)
+        geemap.ee_export_image(image, filename=str(tmp_path), scale=90, region=roi, file_per_band=False, timeout=12)
     except Exception as exc:
         logging.error("Error descargando imagen ASTER: %s", exc)
         return {"prob": 0.0, "ok": False, "error": f"ASTER download error: {exc}"}
@@ -394,8 +420,14 @@ def _validar_coordenadas(data):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
-@app.route("/predict", methods=["POST"])
+@app.route("/predict", methods=["GET", "POST"])
 def predict():
+    if request.method == "GET":
+        return jsonify({
+            "status": "ok",
+            "mensaje": "Endpoint /predict activo. Para realizar una prediccion envia un POST con {'lat': float, 'lon': float}.",
+            "ejemplo": {"lat": 4.8951, "lon": -75.3222}
+        })
     # Rate limiting
     client_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "unknown").split(",")[0].strip()
     if not _check_rate_limit(client_ip):

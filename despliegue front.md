@@ -113,7 +113,32 @@ Similar a Render. Soporta Python nativamente.
 
 ---
 
-## 3. Estructura de rutas (React Router)
+## 3. Mantener el Backend Siempre Activo (UptimeRobot - 100% Gratis)
+
+En plataformas como **Render (Plan Free)**, los servicios web entran en modo de suspensión (*sleep*) tras 15 minutos de inactividad, lo que causa un retraso inicial (*cold start*) de 45 a 60 segundos en la primera consulta.
+
+Para evitar esto y garantizar que la API responda de inmediato durante la entrega o sustentación:
+
+### Configuración en UptimeRobot (Toma 2 minutos):
+1. Crear una cuenta gratuita en [uptimerobot.com](https://uptimerobot.com).
+2. Hacer clic en **Add New Monitor**.
+3. Configurar los siguientes campos:
+   - **Monitor Type:** `HTTP(s)`
+   - **Friendly Name:** `Geotermia Backend KeepAlive`
+   - **URL (or IP):** `https://tu-servicio-en-render.onrender.com/health`
+   - **Monitoring Interval:** `Every 5 minutes` (o `Every 10 minutes`)
+   - **Monitor Timeout:** `30 seconds`
+4. Hacer clic en **Create Monitor**.
+
+### ¿Por qué el endpoint `/health` es perfecto para UptimeRobot?
+- **Tiempo de respuesta ultra-rápido:** Responde en menos de **30 milisegundos**.
+- **Sin consumo de cuota de Earth Engine:** Solo verifica el estado del proceso en memoria sin descargar rásteres pesados.
+- **Sin bloqueo de Rate Limit:** El rate limit de 30 req/min de `api.py` aplica exclusivamente a `/predict`, por lo que los pings periódicos a `/health` nunca serán bloqueados.
+- **Mantiene el contenedor caliente:** Resetea el contador de inactividad de Render cada 5 minutos, manteniendo a TensorFlow y Gunicorn siempre listos en RAM.
+
+---
+
+## 4. Estructura de rutas (React Router)
 
 | Ruta | Página | Descripción |
 |---|---|---|
@@ -127,7 +152,7 @@ Navbar fijo horizontal con glassmorphism. Responsive con menú hamburguesa en m�
 
 ---
 
-## 4. Cumplimiento OWASP Top 10 (2025)
+## 5. Cumplimiento OWASP Top 10 (2025)
 
 ### A01 – Broken Access Control
 - La API no tiene endpoints protegidos que requieran autenticación (es de consulta pública).
@@ -179,7 +204,7 @@ Navbar fijo horizontal con glassmorphism. Responsive con menú hamburguesa en m�
 
 ---
 
-## 5. Variables de entorno — Resumen
+## 6. Variables de entorno — Resumen
 
 ### Frontend (`frontend/.env`)
 
@@ -198,7 +223,7 @@ FLASK_ENV=production
 
 ---
 
-## 6. Comandos útiles
+## 7. Comandos útiles
 
 ```bash
 # --- Frontend ---
@@ -220,7 +245,7 @@ pip audit                # Requiere pip-audit instalado
 
 ---
 
-## 7. Checklist pre-deploy
+## 8. Checklist pre-deploy
 
 - [ ] `VITE_API_URL` apunta a la URL de producción del backend
 - [ ] `CORS_ORIGINS` incluye la URL de Vercel
@@ -234,7 +259,7 @@ pip audit                # Requiere pip-audit instalado
 
 ---
 
-## 8. Endpoints de la API
+## 9. Endpoints de la API
 
 | Método | Ruta | Descripción | Body |
 |---|---|---|---|

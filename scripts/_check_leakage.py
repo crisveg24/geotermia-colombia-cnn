@@ -4,8 +4,15 @@
 import json, os, re
 from collections import Counter
 
-data_dir = "/home/cristian/geotermia/data/processed"
-with open(os.path.join(data_dir, "split_info.json")) as f:
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+data_dir = os.environ.get("GEOTERMIA_DATA_ROOT")
+data_dir = Path(data_dir) / "processed" if data_dir else PROJECT_ROOT / "data" / "processed"
+if not data_dir.exists():
+    data_dir = Path("/home/cristian/geotermia/data/processed")
+
+with open(os.path.join(data_dir, "split_info.json"), encoding="utf-8") as f:
     info = json.load(f)
 
 # Extract groups from filenames using the SAME logic as prepare_dataset.py

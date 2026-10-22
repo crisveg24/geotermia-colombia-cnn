@@ -108,3 +108,13 @@ token*
 node_modules/
 
 video_deeplearning.md
+
+# AI Tools & Agents
+.agents/
+.gemini/
+.cursor/
+.copilot/
+.windsurf/
+.claude/
+.system_generated/
+*.ai.cache

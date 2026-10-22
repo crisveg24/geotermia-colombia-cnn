@@ -1,7 +1,8 @@
 Métrica,Valor,Porcentaje
-Accuracy,0.9145,91.45%
-Precision,0.9794,97.94%
-Recall,0.8605,86.05%
-F1-Score,0.9161,91.61%
-ROC AUC,0.9831,98.31%
-MCC,0.8368,83.68%
+Accuracy,0.9228,92.28%
+Precision,0.9127,91.27%
+Recall,0.9317,93.17%
+F1-Score,0.9221,92.21%
+ROC AUC,0.9737,97.37%
+PR AUC,0.9693,96.93%
+MCC,0.8458,84.58%

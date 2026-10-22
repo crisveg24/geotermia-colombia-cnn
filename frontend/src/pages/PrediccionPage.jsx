@@ -96,16 +96,34 @@ export default function PrediccionPage() {
   }, []);
 
   const handlePredict = async () => {
+    const latNum = parseFloat(coords.lat);
+    const lngNum = parseFloat(coords.lng);
+
+    if (isNaN(latNum) || isNaN(lngNum)) {
+      alert("Por favor ingresa coordenadas numéricas válidas.");
+      return;
+    }
+
+    if (latNum < -5.0 || latNum > 14.0 || lngNum < -82.0 || lngNum > -66.0) {
+      alert("Las coordenadas están fuera de Colombia (Lat: -5.0° a 14.0°N, Lon: -82.0° a -66.0°W). Por favor selecciona un punto dentro del territorio colombiano.");
+      return;
+    }
+
     setLoading(true);
     setPrediction(null);
     setResult(null);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000);
 
     try {
       const response = await fetch(`${API_URL}/predict`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat: coords.lat, lon: coords.lng }),
+        body: JSON.stringify({ lat: latNum, lon: lngNum }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errBody = await response.json().catch(() => ({}));
@@ -125,8 +143,8 @@ export default function PrediccionPage() {
 
       // Save to history (localStorage)
       const entry = {
-        lat: coords.lat,
-        lon: coords.lng,
+        lat: latNum,
+        lon: lngNum,
         porcentaje: data.porcentaje,
         zona: data.zona_cercana,
         metodo: data.metodo,
@@ -136,10 +154,15 @@ export default function PrediccionPage() {
       saveHistory(updated);
       setHistory(updated);
     } catch (error) {
+      clearTimeout(timeoutId);
       console.error("Error API:", error);
       setLoading(false);
       setPrediction("ERROR");
-      setResult({ error: error.message });
+      if (error.name === "AbortError") {
+        setResult({ error: "El servidor tardó más de 25s en responder (timeout)." });
+      } else {
+        setResult({ error: error.message });
+      }
     }
   };
 
@@ -224,15 +247,21 @@ export default function PrediccionPage() {
               ))}
             </div>
 
-            <div className="h-[550px] w-full relative rounded-3xl overflow-hidden border border-white/5 bg-white shadow-[inset_0_0_20px_rgba(0,0,0,0.2)]">
+            <div className="h-[550px] w-full relative rounded-3xl overflow-hidden border border-white/5 bg-slate-950 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
               <MapContainer
                 center={[4.5709, -74.2973]}
                 zoom={5.5}
                 style={{ height: "100%", width: "100%", cursor: inputMode === "map" ? "crosshair" : "default" }}
               >
                 <TileLayer
-                  url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-                  attribution="&copy; OpenStreetMap contributors &copy; CARTO"
+                  url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                  attribution="Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics"
+                  maxZoom={18}
+                />
+                <TileLayer
+                  url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+                  attribution=""
+                  maxZoom={18}
                 />
                 <MapClickEvents setCoords={setCoords} mode={inputMode} />
 
@@ -315,7 +344,7 @@ export default function PrediccionPage() {
                       type="number"
                       step="any"
                       value={coords.lat}
-                      onChange={(e) => inputMode === "coords" && setCoords({ ...coords, lat: parseFloat(e.target.value) || 0 })}
+                      onChange={(e) => inputMode === "coords" && setCoords({ ...coords, lat: e.target.value })}
                       disabled={inputMode === "map"}
                       className="w-full bg-transparent text-xl text-white font-medium focus:outline-none focus:text-cyan-400 disabled:opacity-80"
                     />
@@ -326,7 +355,7 @@ export default function PrediccionPage() {
                       type="number"
                       step="any"
                       value={coords.lng}
-                      onChange={(e) => inputMode === "coords" && setCoords({ ...coords, lng: parseFloat(e.target.value) || 0 })}
+                      onChange={(e) => inputMode === "coords" && setCoords({ ...coords, lng: e.target.value })}
                       disabled={inputMode === "map"}
                       className="w-full bg-transparent text-xl text-white font-medium focus:outline-none focus:text-cyan-400 disabled:opacity-80"
                     />
@@ -540,8 +569,14 @@ export default function PrediccionPage() {
                   scrollWheelZoom={false}
                 >
                   <TileLayer
-                    url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                    attribution="&copy; CARTO"
+                    url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                    attribution="Tiles &copy; Esri &mdash; Source: Esri"
+                    maxZoom={18}
+                  />
+                  <TileLayer
+                    url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+                    attribution=""
+                    maxZoom={18}
                   />
                   {history.map((h, i) => (
                     <CircleMarker
