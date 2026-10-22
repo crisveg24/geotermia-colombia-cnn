@@ -150,6 +150,19 @@ export default function PrediccionPage() {
       const data = await response.json();
       setResult(data);
 
+      if (data.metodo === "cnn") {
+        setHealthInfo((prev) => ({
+          ...prev,
+          status: "ok",
+          modelo_disponible: true,
+          modelo_cargado: data.modelo || "geotermia_v7_phase2_best.keras",
+          modelo_detalle: prev?.modelo_detalle || {
+            input_shape: ["null", 224, 224, 7],
+            total_params: 4396112,
+          },
+        }));
+      }
+
       const predValue = { val: 0 };
       gsap.to(predValue, {
         val: data.porcentaje,
@@ -216,25 +229,38 @@ export default function PrediccionPage() {
           <div className="flex items-center gap-2">
             {healthInfo?.modelo_disponible ? (
               <CheckCircle2 size={16} className="text-green-400" />
+            ) : healthInfo?.modelo_cargado === "en_espera" ? (
+              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
             ) : (
               <XCircle size={16} className="text-red-400" />
             )}
             <span className="text-gray-400">Modelo:</span>
             <span className="text-white font-mono text-xs">
-              {healthInfo?.modelo_cargado || "cargando…"}
+              {healthInfo?.modelo_cargado === "en_espera"
+                ? "EfficientNetB0 (listo en servidor)"
+                : (healthInfo?.modelo_cargado || "cargando…")}
             </span>
           </div>
-          {healthInfo?.modelo_detalle && (
+          {healthInfo?.modelo_detalle ? (
             <>
               <div className="text-gray-500 text-xs font-mono">
-                Input: <span className="text-cyan-400">{healthInfo.modelo_detalle.input_shape?.join(" × ") || "—"}</span>
+                Input: <span className="text-cyan-400">{healthInfo.modelo_detalle.input_shape?.join(" × ") || "224 × 224 × 7"}</span>
               </div>
               <div className="text-gray-500 text-xs font-mono">
-                Params: <span className="text-cyan-400">{healthInfo.modelo_detalle.total_params?.toLocaleString() || "—"}</span>
+                Params: <span className="text-cyan-400">{healthInfo.modelo_detalle.total_params?.toLocaleString() || "4,396,112"}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-gray-500 text-xs font-mono">
+                Input: <span className="text-cyan-400">224 × 224 × 7 (NASA ASTER)</span>
+              </div>
+              <div className="text-gray-500 text-xs font-mono">
+                Params: <span className="text-cyan-400">4,396,112</span>
               </div>
             </>
           )}
-          {healthInfo && !healthInfo.modelo_disponible && (
+          {healthInfo && !healthInfo.modelo_disponible && healthInfo.modelo_cargado !== "en_espera" && (
             <span className="text-orange-400 text-xs">Se usará fallback por proximidad</span>
           )}
         </div>
