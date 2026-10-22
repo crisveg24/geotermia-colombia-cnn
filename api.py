@@ -15,6 +15,7 @@ from pathlib import Path
 
 import numpy as np
 from flask import Flask, request, jsonify
+from werkzeug.exceptions import HTTPException
 
 # ---------------------------------------------------------------------------
 # Configuración
@@ -70,10 +71,17 @@ def _handle_preflight():
 
 @app.errorhandler(Exception)
 def _handle_exception(exc):
-    logging.exception("Error interno no capturado: %s", exc)
+    if isinstance(exc, HTTPException):
+        code = exc.code
+        desc = exc.description
+    else:
+        logging.exception("Error interno no capturado: %s", exc)
+        code = 500
+        desc = "Error interno del servidor"
+
     origin = request.headers.get("Origin", "")
-    resp = jsonify({"error": "Error interno del servidor", "detalle": str(exc)})
-    resp.status_code = 500
+    resp = jsonify({"error": desc, "status": code})
+    resp.status_code = code
     if _is_allowed_origin(origin):
         resp.headers["Access-Control-Allow-Origin"] = origin
         resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
@@ -441,10 +449,20 @@ def predict():
     if err:
         return jsonify({"error": err}), 400
 
-    # Intentar predicción CNN primero
+    # Intentar predicción CNN primero con timeout seguro de 8 segundos
     modelo = _cargar_modelo()
     if modelo is not None:
-        resultado = predecir_cnn(lat, lon, modelo)
+        import concurrent.futures
+        try:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(predecir_cnn, lat, lon, modelo)
+                resultado = future.result(timeout=8.0)
+        except concurrent.futures.TimeoutError:
+            logging.warning("CNN/GEE excedio timeout de 8s en Render. Usando fallback por proximidad.")
+            resultado = {"ok": False, "error": "Timeout de 8s en descarga de satelite"}
+        except Exception as exc:
+            logging.warning("Error ejecutando CNN: %s", exc)
+            resultado = {"ok": False, "error": str(exc)}
         gc.collect()  # Liberar RAM después de CNN
         if resultado["ok"]:
             pred, zona, dist = predecir_por_proximidad(lat, lon)
@@ -472,6 +490,20 @@ def predict():
         "distancia_km": round(dist * 111, 2),
         "metodo": "proximidad",
         "modelo": _modelo_nombre or "ninguno",
+    })
+
+
+@app.route("/", methods=["GET"])
+def root():
+    return jsonify({
+        "status": "ok",
+        "servicio": "API Geotermia CNN Colombia",
+        "version": "v3",
+        "endpoints": {
+            "health": "/health",
+            "zonas": "/zonas",
+            "predict": "/predict (GET o POST)"
+        }
     })
 
 
