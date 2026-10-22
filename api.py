@@ -11,11 +11,7 @@ import json
 import logging
 import tempfile
 import time
-import concurrent.futures
 from pathlib import Path
-
-# Thread pool persistente para inferencia (máx 1 worker para proteger los 512MB RAM de Render)
-_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 import numpy as np
 from flask import Flask, request, jsonify
@@ -161,7 +157,8 @@ def _importar_tensorflow():
         _orig_dense_init(self, *args, **kwargs)
     tf_mod.keras.layers.Dense.__init__ = _dense_compat_init
 
-    tf_mod.keras.mixed_precision.set_global_policy("mixed_float16")
+    if tf_mod.config.list_physical_devices("GPU"):
+        tf_mod.keras.mixed_precision.set_global_policy("mixed_float16")
     return _tf
 
 
@@ -192,11 +189,11 @@ def _cargar_modelo():
 
 
 def _inicializar_ee():
-    """Inicializa Google Earth Engine una sola vez.
+    """Inicializa Google Earth Engine una sola vez de forma no bloqueante.
     
-    En local: usa credenciales ADC del usuario (ee.Authenticate previo).
-    En producción: usa Service Account vía la variable GEE_SERVICE_ACCOUNT_KEY
-    (JSON de la service account como string).
+    1. Si hay GEE_SERVICE_ACCOUNT_KEY (en Render u otro cloud), usa Service Account.
+    2. Si hay credenciales locales (~/.config/earthengine/credentials), usa ADC.
+    3. Si NO hay credenciales disponibles, retorna False de inmediato sin colgar la conexión.
     """
     global _ee_initialized
     if _ee_initialized:
@@ -204,24 +201,29 @@ def _inicializar_ee():
     try:
         import ee
         project = os.environ.get("GEE_PROJECT", "alpine-air-469115-f0")
+        sa_key = os.environ.get("GEE_SERVICE_ACCOUNT_KEY", "").strip()
 
-        sa_key = os.environ.get("GEE_SERVICE_ACCOUNT_KEY")
-        if sa_key:
+        if sa_key and sa_key.startswith("{"):
             import json as _json
             key_data = _json.loads(sa_key)
             credentials = ee.ServiceAccountCredentials(
                 key_data["client_email"], key_data=sa_key
             )
             ee.Initialize(credentials=credentials, project=project)
-        elif os.environ.get("RENDER") or os.environ.get("FLASK_ENV") == "production":
-            logging.warning("GEE_SERVICE_ACCOUNT_KEY no configurada en Render. Se usará fallback por proximidad.")
-            return False
-        else:
-            ee.Initialize(project=project)
+            _ee_initialized = True
+            logging.info("Google Earth Engine inicializado con Service Account (proyecto: %s)", project)
+            return True
 
-        _ee_initialized = True
-        logging.info("Google Earth Engine inicializado (proyecto: %s)", project)
-        return True
+        # Verificar si existen credenciales interactivas locales
+        credentials_file = Path.home() / ".config" / "earthengine" / "credentials"
+        if credentials_file.exists():
+            ee.Initialize(project=project)
+            _ee_initialized = True
+            logging.info("Google Earth Engine inicializado con credenciales locales (proyecto: %s)", project)
+            return True
+
+        logging.warning("No hay credenciales GEE (falta GEE_SERVICE_ACCOUNT_KEY). Retornando False de inmediato.")
+        return False
     except Exception as exc:
         logging.error("GEE init falló: %s", exc)
         return False
@@ -456,20 +458,16 @@ def predict():
         logging.info("Retornando prediccion desde cache para coordenadas: %s", cache_key)
         return jsonify(_PRED_CACHE[cache_key])
 
-    # Intentar predicción CNN primero con timeout de 35 segundos
+    # Intentar predicción CNN primero (si GEE y el modelo están disponibles)
     modelo = _cargar_modelo()
     if modelo is not None:
         try:
-            future = _EXECUTOR.submit(predecir_cnn, lat, lon, modelo)
-            resultado = future.result(timeout=35.0)
-        except concurrent.futures.TimeoutError:
-            logging.warning("CNN/GEE excedio timeout de 35s en Render. Usando fallback por proximidad.")
-            resultado = {"ok": False, "error": "Timeout en descarga de satelite (35s)"}
+            resultado = predecir_cnn(lat, lon, modelo)
         except Exception as exc:
             logging.warning("Error ejecutando CNN: %s", exc)
             resultado = {"ok": False, "error": str(exc)}
         gc.collect()  # Liberar RAM después de CNN
-        if resultado["ok"]:
+        if resultado.get("ok"):
             pred, zona, dist = predecir_por_proximidad(lat, lon)
             out_data = {
                 "porcentaje": round(resultado["prob"] * 100, 1),
@@ -489,7 +487,7 @@ def predict():
             if len(_PRED_CACHE) > 50:
                 _PRED_CACHE.pop(next(iter(_PRED_CACHE)))
             return jsonify(out_data)
-        logging.warning("CNN falló, usando fallback: %s", resultado.get("error", "desconocido"))
+        logging.warning("CNN no disponible o falló, usando fallback: %s", resultado.get("error", "desconocido"))
 
     # Fallback por proximidad
     pred, zona, dist = predecir_por_proximidad(lat, lon)
@@ -523,31 +521,19 @@ def get_zonas():
 
 @app.route("/health", methods=["GET"])
 def health():
-    modelo = _cargar_modelo()
     info = {
         "status": "ok",
-        "modelo_cargado": _modelo_nombre or "ninguno",
-        "modelo_disponible": modelo is not None,
+        "modelo_cargado": _modelo_nombre or "en_espera",
+        "modelo_disponible": _modelo is not None,
     }
-    if modelo is not None:
+    if _modelo is not None:
         info["modelo_detalle"] = {
             "nombre": _modelo_nombre,
-            "input_shape": list(modelo.input_shape) if hasattr(modelo, "input_shape") else None,
-            "output_shape": list(modelo.output_shape) if hasattr(modelo, "output_shape") else None,
-            "total_params": int(modelo.count_params()) if hasattr(modelo, "count_params") else None,
+            "input_shape": list(_modelo.input_shape) if hasattr(_modelo, "input_shape") else None,
+            "output_shape": list(_modelo.output_shape) if hasattr(_modelo, "output_shape") else None,
+            "total_params": int(_modelo.count_params()) if hasattr(_modelo, "count_params") else None,
         }
     return jsonify(info)
-
-
-# ---------------------------------------------------------------------------
-# Precarga de modelo en producción / Render
-# ---------------------------------------------------------------------------
-if os.environ.get("RENDER") or os.environ.get("FLASK_ENV") == "production":
-    try:
-        logging.info("Precargando modelo CNN al iniciar Gunicorn...")
-        _cargar_modelo()
-    except Exception as _exc:
-        logging.warning("No se pudo precargar modelo al arranque: %s", _exc)
 
 
 # ---------------------------------------------------------------------------
