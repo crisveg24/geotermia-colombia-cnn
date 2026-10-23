@@ -339,13 +339,14 @@ def predecir_cnn(lat: float, lon: float, modelo):
     h, w, c = img.shape
     hw, ww = 224, 224
 
-    if h >= hw and w >= ww:
-        sy = (h - hw) // 2
-        sx = (w - ww) // 2
-        patch = img[sy:sy+hw, sx:sx+ww, :]
+    if (h, w) == (hw, ww):
+        patch = img
     else:
-        patch = np.zeros((hw, ww, c), dtype=np.float32)
-        patch[:min(h, hw), :min(w, ww), :] = img[:min(h, hw), :min(w, ww), :]
+        # Mismo redimensionado que el entrenamiento (prepare_dataset.resize_image);
+        # rellenar con ceros produce entradas fuera de distribución.
+        from skimage.transform import resize
+        patch = resize(img, (hw, ww, c), mode="reflect", anti_aliasing=True,
+                       preserve_range=True).astype(np.float32)
     del img
 
     tf = _importar_tensorflow()
